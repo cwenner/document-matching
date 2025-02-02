@@ -1,0 +1,13 @@
+checkpoints
+env
+model
+# customer_data/
+
+final.json
+.dvc
+.vscode
+.git
+.gitignore
+.cache
+.neptune
+.vscode
