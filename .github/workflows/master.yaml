@@ -1,0 +1,26 @@
+name: document-matching
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: {}
+concurrency: singleton
+
+jobs:
+  build-publish:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v4
+    - run: docker buildx build . --push -q --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
+      id: build
+    - uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        repository: omnimodular/events
+        event-type: document-matching
+        client-payload: >
+          {
+            "repository": "omnimodular.azurecr.io/omnicoder/document-matching",
+            "tag": "latest",
+            "digest": "${{ steps.build.outputs.digest }}"
+          }
