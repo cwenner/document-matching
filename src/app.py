@@ -15,7 +15,8 @@ async def ready_handler(_request: Request):
 @app.post("/")
 async def request_handler(request: Request):
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")
-    document = await request.json()
+    indata = await request.json()
+    document = indata["document"]
 
     print(
         json.dumps(
