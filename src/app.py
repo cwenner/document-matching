@@ -21,28 +21,29 @@ logger = logging.getLogger("matching_service")
 
 # Whitelist of sites to use the real pipeline for
 WHITELISTED_SITES = {"badger-logistics", "falcon-logistics"}
-USE_PREDICTION = True
+USE_PREDICTION = False # @TODO Moving model to production environment
 
 
 predictor = None
 
-# @TODO use config file?
-script_dir = os.path.dirname(os.path.abspath(__file__))
-default_model_path = os.path.join(
-    script_dir, "..", "data", "models", "document-pairing-svm.pkl"
-)
-model_path = os.environ.get("DOCPAIR_MODEL_PATH", default_model_path)
-
-if not os.path.exists(model_path):
-    raise FileNotFoundError(
-        f"Predictor model not found. Checked default and environment variable paths. Last check: {os.path.abspath(model_path)}"
+if USE_PREDICTION:
+    # @TODO use config file?
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_model_path = os.path.join(
+        script_dir, "..", "data", "models", "document-pairing-svm.pkl"
     )
+    model_path = os.environ.get("DOCPAIR_MODEL_PATH", default_model_path)
 
-logger.info(
-    f"Initializing DocumentPairingPredictor with model: {os.path.abspath(model_path)}"
-)
-predictor = DocumentPairingPredictor(model_path, svc_threshold=0.05)
-logger.info("DocumentPairingPredictor initialized successfully.")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(
+            f"Predictor model not found. Checked default and environment variable paths. Last check: {os.path.abspath(model_path)}"
+        )
+
+    logger.info(
+        f"Initializing DocumentPairingPredictor with model: {os.path.abspath(model_path)}"
+    )
+    predictor = DocumentPairingPredictor(model_path, svc_threshold=0.05)
+    logger.info("DocumentPairingPredictor initialized successfully.")
 
 
 # --- FastAPI App ---
