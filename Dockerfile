@@ -1,5 +1,6 @@
 #       syntax=docker/dockerfile:1.4.2
 FROM    ubuntu:24.04 AS base
+
 RUN     apt-get update && apt-get install -y \
         curl \
         python3 \
@@ -21,6 +22,7 @@ RUN     apt update && apt install -y \
         python3-yaml \
         rustc \
         ;
+
 COPY    --link requirements.txt /whl/
 RUN     --mount=type=cache,target=/root/.cache/pip \
         python3 -m pip wheel --wheel-dir=/whl -r /whl/requirements.txt
@@ -48,12 +50,16 @@ RUN azcopy copy "https://nuprodsandbox.blob.core.windows.net/models/document-pai
 # ===========================
 
 FROM    base AS final
-COPY    --from=fetch /data/document-pairing-svm.pkl /data/models/document-pairing-svm.pkl
+COPY    src /opt/omnicoder/matching
+ENV     PYTHONPATH=/opt/omnicoder/matching
+COPY    --from=fetch /data/document-pairing-svm.pkl /opt/omnicoder/data/models/document-pairing-svm.pkl
 
-EXPOSE  5024
+# Kill PEP668
+RUN     find /usr -name 'EXTERNALLY-MANAGED' -exec rm -f {} +
+
 RUN     --mount=target=/mnt,from=builder \
         --mount=type=cache,target=/root/.cache/pip \
         python3 -m pip install --no-index --find-links=/mnt/whl -r /mnt/whl/requirements.txt
-COPY    src /opt/omnicoder/matching
-ENV     PYTHONPATH=/opt/omnicoder/matching
+
+EXPOSE  5024
 CMD     ["sh","-xc","uvicorn --log-level=warning --port=5024 --host=0.0.0.0 app:app"]
