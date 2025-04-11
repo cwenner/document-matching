@@ -9,6 +9,9 @@ on:
   workflow_dispatch: {}
 concurrency: singleton
 
+env:
+  DISABLE_MODELS: true
+
 jobs:
   build-publish:
     runs-on: self-hosted
@@ -21,6 +24,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
 
       - name: Run black
         run: black --check .

@@ -20,7 +20,7 @@ logger = logging.getLogger("matching_service")
 
 
 # Whitelist of sites to use the real pipeline for
-USE_PREDICTION = True
+USE_PREDICTION = os.environ.get("DISABLE_MODELS", "false").lower() != "true"
 WHITELISTED_SITES = {"badger-logistics", "falcon-logistics"}
 
 
