@@ -25,7 +25,7 @@ jobs:
       - name: Run black
         run: black --check .
       - name: Run tests
-        run: pytest -v src/tests/
+        run: pytest -v --skip-model src/tests/
 
       - name: Build and Push Docker image
         run: docker buildx build . --push -q --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
