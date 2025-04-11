@@ -20,8 +20,8 @@ logger = logging.getLogger("matching_service")
 
 
 # Whitelist of sites to use the real pipeline for
+USE_PREDICTION = True
 WHITELISTED_SITES = {"badger-logistics", "falcon-logistics"}
-USE_PREDICTION = False # @TODO Moving model to production environment
 
 
 predictor = None
