@@ -2,3 +2,6 @@ __pycache__
 /env/
 .venv
 /venv/
+
+data/converted-shared-data
+data/models
