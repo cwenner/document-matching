@@ -1,9 +1,11 @@
+black
 dateparser
 fastapi==0.115.12
 httpx
 numpy
 pandas
 pydantic
+pytest
 requests
 scikit-learn
 sentence-transformers
