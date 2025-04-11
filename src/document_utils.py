@@ -1,0 +1,265 @@
+from enum import StrEnum
+import logging
+import json
+
+logger = logging.getLogger(__name__)
+
+
+class DocumentKind(StrEnum):
+    INVOICE = "invoice"
+    PURCHASE_ORDER = "purchase-order"
+    DELIVERY_RECEIPT = "delivery-receipt"
+
+
+def get_field(element, key):
+    if not isinstance(element, dict):
+        return None
+    # Check headers first
+    if "headers" in element:
+        for header in element.get("headers", []):
+            if isinstance(header, dict) and header.get("name") == key:
+                return header.get("value")
+    # Then check item fields if present
+    if "fields" in element:
+        for field in element.get("fields", []):
+            if isinstance(field, dict) and field.get("name") == key:
+                return field.get("value")
+    # Finally, check root level keys
+    return element.get(key)
+
+
+def extract_item_data(item, document_kind, item_index):
+    item_data = {
+        "number": None,
+        "description": None,
+        "tax-percent": None,
+        "unit-price": None,
+        "quantity": None,
+        "currency": None,
+        "item-id": None,
+        "item_index": item_index,
+        "raw_item": item,  # Keep the original item structure
+        "document_kind": document_kind,
+    }
+
+    def _safe_float(value):
+        try:
+            return float(value) if value is not None else None
+        except (ValueError, TypeError):
+            return None
+
+    def _safe_int(value):
+        try:
+            return int(value) if value is not None else None
+        except (ValueError, TypeError):
+            return None
+
+    def _clean_desc(value):
+        return (
+            value.replace("\n", " ") if isinstance(value, str) else ""
+        )  # Replace newline with space for consistency
+
+    # Use get_field consistently to handle 'fields' list or direct keys
+    if document_kind == DocumentKind.PURCHASE_ORDER:
+        item_data["number"] = _safe_int(get_field(item, "lineNumber"))
+        item_data["description"] = _clean_desc(get_field(item, "description"))
+        item_data["unit-price"] = _safe_float(get_field(item, "unitAmount"))
+        item_data["quantity"] = _safe_float(get_field(item, "quantityToInvoice"))
+        item_data["item-id"] = get_field(item, "inventoryNumber")
+    elif document_kind == DocumentKind.INVOICE:
+        item_data["number"] = _safe_int(get_field(item, "lineNumber"))
+        item_data["description"] = _clean_desc(get_field(item, "text"))
+        # Prioritize specific fields if they exist, fall back
+        unit_price = (
+            get_field(item, "purchaseReceiptDataUnitAmount")
+            or get_field(item, "unit-price")
+            or get_field(item, "debit")
+        )
+        item_data["unit-price"] = _safe_float(unit_price)
+        # We may need to make these adjustments consistently
+        item_data["unit-price-adjusted"] = item_data["unit-price"]
+        item_data["quantity"] = _safe_float(
+            get_field(item, "purchaseReceiptDataQuantity") or get_field(item, "quantity")
+        )
+        item_data["item-id"] = (
+            get_field(item, "purchaseReceiptDataInventoryNumber")
+            or get_field(item, "inventoryNumber")
+            or get_field(item, "item-id")
+        )
+    elif document_kind == DocumentKind.DELIVERY_RECEIPT:
+        item_data["number"] = _safe_int(get_field(item, "lineNumber"))
+        item_data["description"] = _clean_desc(get_field(item, "inventoryDescription"))
+        item_data["unit-price"] = _safe_float(get_field(item, "unitAmount"))
+        item_data["quantity"] = _safe_float(get_field(item, "quantity"))
+        item_data["item-id"] = get_field(item, "inventoryNumber") or get_field(
+            item, "articleNumber"
+        )  # Allow articleNumber as fallback
+    else:
+        logger.warning(
+            f"Unknown document kind '{document_kind}' encountered during item extraction."
+        )
+        return None  # Return None for unknown types
+
+    return item_data
+
+
+def get_document_items(doc):
+    if not isinstance(doc, dict):
+        logger.warning(
+            "Invalid document format passed to get_document_items: expected dict."
+        )
+        return []
+    try:
+        # Use get_field to check header or root level for 'kind'
+        kind_str = get_field(doc, "kind")
+        if not kind_str:
+            raise ValueError("Document kind is missing or not found.")
+        doc_kind = DocumentKind(kind_str)
+    except ValueError as e:
+        logger.warning(
+            f"Invalid or missing document kind in document ID {doc.get('id')}: {e}"
+        )
+        return []
+
+    # Use get_field to check header or root level for 'items'
+    items = get_field(doc, "items")
+    if items is None:
+        items = doc.get("items", [])  # Fallback to root if not in headers/fields
+    if not isinstance(items, list):
+        logger.warning(
+            f"Document items format is not a list for doc ID {doc.get('id')}."
+        )
+        return []
+
+    extracted_items = []
+    for i, item in enumerate(items):
+        # Ensure item is a dict before processing
+        if isinstance(item, dict):
+            item_data = extract_item_data(item, doc_kind, i)
+            if item_data:  # Only append if extraction was successful
+                extracted_items.append(item_data)
+        else:
+            logger.warning(
+                f"Skipping non-dict item at index {i} in document ID {doc.get('id')}"
+            )
+    return extracted_items
+
+
+if __name__ == "__main__":
+    # Configure basic logging if running standalone
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    print("--- Testing document_utils ---")
+
+    # --- Test Data ---
+    sample_po = {
+        "id": "po-1",
+        "kind": "purchase-order",
+    "site": "SiteA",
+        "headers": [
+            {"name": "orderNumber", "value": "PO123"},
+            {"name": "currency", "value": "SEK"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "description", "value": "Widget A"},
+                    {"name": "unitAmount", "value": "10.50"},
+                    {"name": "quantityToInvoice", "value": "5"},
+                    {"name": "inventoryNumber", "value": "WID-A"},
+                ]
+            },
+            {
+                "description": "Service B",
+                "unitAmount": "100",
+                "quantityToInvoice": "1",
+            },  # Item without fields structure
+        ],
+    }
+    sample_invoice = {
+        "id": "inv-1",
+        "kind": "invoice",
+        "site": "SiteA",
+        "headers": [
+            {"name": "invoiceNumber", "value": "INV123"},
+            {"name": "currency", "value": "SEK"},
+            {"name": "incVatAmount", "value": "75.63"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "text", "value": "Widget A \n Delivered"},
+                    {"name": "debit", "value": "52.50"},
+                    {"name": "quantity", "value": "5"},
+                    {"name": "item-id", "value": "WID-A"},
+                ],
+                "purchaseReceiptDataUnitAmount": "10.50",
+            },
+            {"text": "Service B Charge", "debit": "100", "quantity": "1"},
+        ],
+    }
+    sample_delivery = {
+        "id": "del-1",
+        "kind": "delivery-receipt",
+        "site": "SiteA",
+        "headers": [{"name": "deliveryNumber", "value": "DEL123"}],
+        "items": [
+            {
+                "fields": [
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "inventoryDescription", "value": "Widget A"},
+                    {"name": "unitAmount", "value": "10.50"},
+                    {"name": "quantity", "value": "5"},
+                    {"name": "inventoryNumber", "value": "WID-A"},
+                ]
+            }
+        ],
+    }
+    invalid_doc = {"id": "bad-doc"}
+    doc_with_non_list_items = {
+        "id": "bad-items",
+        "kind": "invoice",
+        "items": "not a list",
+    }
+
+    # --- Test get_field ---
+    print("\nTesting get_field:")
+    print(f"  PO Order Number (Header): {get_field(sample_po, 'orderNumber')}")
+    print(
+        f"  PO Item 1 Description (Field): {get_field(sample_po['items'][0], 'description')}"
+    )
+    print(
+        f"  PO Item 2 Description (Root): {get_field(sample_po['items'][1], 'description')}"
+    )
+    print(
+        f"  Invoice Total Amount (Header): {get_field(sample_invoice, 'incVatAmount')}"
+    )
+    print(f"  Invoice Item 1 Text (Field): {get_field(sample_invoice['items'][0], 'text')}")
+    print(f"  Non-existent field: {get_field(sample_po, 'nonExistent')}")
+
+    # --- Test get_document_items ---
+    print("\nTesting get_document_items:")
+    po_items = get_document_items(sample_po)
+    print(f"  Extracted PO Items ({len(po_items)}):")
+    print(json.dumps(po_items, indent=2, default=str))
+
+    invoice_items = get_document_items(sample_invoice)
+    print(f"\n  Extracted Invoice Items ({len(invoice_items)}):")
+    print(json.dumps(invoice_items, indent=2, default=str))
+
+    delivery_items = get_document_items(sample_delivery)
+    print(f"\n  Extracted Delivery Items ({len(delivery_items)}):")
+    print(json.dumps(delivery_items, indent=2, default=str))
+
+    invalid_items = get_document_items(invalid_doc)
+    print(f"\n  Extracted Invalid Doc Items ({len(invalid_items)}): {invalid_items}")
+
+    bad_format_items = get_document_items(doc_with_non_list_items)
+    print(
+        f"\n  Extracted Bad Format Doc Items ({len(bad_format_items)}): {bad_format_items}"
+    )
+
+    print("\n--- document_utils tests finished ---")
