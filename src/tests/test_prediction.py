@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 
 # Adjust import dir for tests
-module_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+module_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 
@@ -22,7 +22,7 @@ WHITELISTED_DOC = {
     "kind": "invoice",
     "site": next(iter(WHITELISTED_SITES)),
     "stage": "input",
-    "items": [ {"fields": [{"name": "text", "value": "Item 1"}] } ]
+    "items": [{"fields": [{"name": "text", "value": "Item 1"}]}],
 }
 
 CANDIDATE_DOCS = [
@@ -31,7 +31,7 @@ CANDIDATE_DOCS = [
         "kind": "purchase-order",
         "site": next(iter(WHITELISTED_SITES)),
         "stage": "historical",
-        "items": [ {"fields": [{"name": "description", "value": "Item 1 PO"}] } ]
+        "items": [{"fields": [{"name": "description", "value": "Item 1 PO"}]}],
     }
 ]
 
@@ -49,13 +49,13 @@ def test_post_whitelisted_site_pipeline():
     assert response.status_code == 200
 
     report = response.json()
-    assert report["version"] == "v3" # Check adaptation
+    assert report["version"] == "v3"  # Check adaptation
     assert report["kind"] == "match-report"
     assert report["site"] == WHITELISTED_DOC["site"]
-    assert "labels" in report # Should have labels like "match" or "no-match"
+    assert "labels" in report  # Should have labels like "match" or "no-match"
     assert isinstance(report["labels"], list)
     assert "documents" in report
     assert isinstance(report["documents"], list)
-    assert len(report["documents"]) >= 1 # At least the input document
+    assert len(report["documents"]) >= 1  # At least the input document
     # @TODO more in depth prediction
     assert report["documents"][0]["id"] == WHITELISTED_DOC["id"]

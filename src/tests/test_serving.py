@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 
 # Adjust import dir for tests
-module_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+module_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 
@@ -12,6 +12,7 @@ if module_dir not in sys.path:
 # --- Setup ---
 # Test client
 from app import app
+
 client = TestClient(app)
 
 
@@ -19,22 +20,23 @@ client = TestClient(app)
 # Use ids that will deterministically trigger match/no-match in dummy logic
 # Which? Hard-coded for now
 DUMMY_DOC_NO_MATCH = {
-    "id": "id-even-hash-for-no-match", # May need updating
+    "id": "id-even-hash-for-no-match",  # May need updating
     "kind": "invoice",
     "site": "non-whitelisted-site",
     "stage": "input",
-    "items": []
+    "items": [],
 }
 
 DUMMY_DOC_MATCH = {
-    "id": "id-odd-hash-for-match", # May need updating
+    "id": "id-odd-hash-for-match",  # May need updating
     "kind": "invoice",
     "site": "non-whitelisted-site",
     "stage": "input",
-    "items": []
+    "items": [],
 }
 
 # --- Tests ---
+
 
 def test_readiness_endpoint():
     """Test the GET / endpoint for readiness."""
@@ -84,6 +86,6 @@ def test_post_non_whitelisted_site_dummy_match():
     assert report["kind"] == "match-report"
     assert report["site"] == DUMMY_DOC_MATCH["site"]
     assert report["labels"] == ["match"]
-    assert len(report["documents"]) == 2 # Dummy match has 2 docs
+    assert len(report["documents"]) == 2  # Dummy match has 2 docs
     assert report["documents"][0]["id"] == DUMMY_DOC_MATCH["id"]
     assert report["documents"][0]["kind"] == DUMMY_DOC_MATCH["kind"]
