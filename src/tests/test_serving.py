@@ -20,7 +20,7 @@ client = TestClient(app)
 # Use ids that will deterministically trigger match/no-match in dummy logic
 # Which? Hard-coded for now
 DUMMY_DOC_NO_MATCH = {
-    "id": "id-even-hash-for-no-match",  # May need updating
+    "id": "even-id",  # May need updating
     "kind": "invoice",
     "site": "non-whitelisted-site",
     "stage": "input",
@@ -28,7 +28,7 @@ DUMMY_DOC_NO_MATCH = {
 }
 
 DUMMY_DOC_MATCH = {
-    "id": "id-odd-hash-for-match",  # May need updating
+    "id": "hopefully-odd",  # May need updating
     "kind": "invoice",
     "site": "non-whitelisted-site",
     "stage": "input",

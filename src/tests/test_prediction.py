@@ -1,5 +1,6 @@
 import sys
 import os
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -38,6 +39,7 @@ CANDIDATE_DOCS = [
 # --- Tests ---
 
 
+@pytest.mark.model
 def test_post_whitelisted_site_pipeline():
     """
     Test real prediction POST / for a whitelisted site.
