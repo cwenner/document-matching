@@ -9,7 +9,7 @@ from fastapi import Request, Response, FastAPI, HTTPException
 
 
 from docpairing import DocumentPairingPredictor
-from match_pipeline_serving_adapt import run_matching_pipeline
+from match_pipeline import run_matching_pipeline
 from match_reporter import generate_no_match_report, DeviationSeverity
 
 
