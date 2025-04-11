@@ -5,8 +5,7 @@ import logging
 from fastapi import Request, Response, FastAPI, HTTPException
 
 
-#@TODO split this file up for server vs dummy vs real
-
+# @TODO split this file up for server vs dummy vs real
 
 
 from docpairing import DocumentPairingPredictor
@@ -29,13 +28,19 @@ predictor = None
 
 # @TODO use config file?
 script_dir = os.path.dirname(os.path.abspath(__file__))
-default_model_path = os.path.join(script_dir, "..", "data", "models", "document-pairing-svm.pkl")
+default_model_path = os.path.join(
+    script_dir, "..", "data", "models", "document-pairing-svm.pkl"
+)
 model_path = os.environ.get("DOCPAIR_MODEL_PATH", default_model_path)
 
 if not os.path.exists(model_path):
-    raise FileNotFoundError(f"Predictor model not found. Checked default and environment variable paths. Last check: {os.path.abspath(model_path)}")
+    raise FileNotFoundError(
+        f"Predictor model not found. Checked default and environment variable paths. Last check: {os.path.abspath(model_path)}"
+    )
 
-logger.info(f"Initializing DocumentPairingPredictor with model: {os.path.abspath(model_path)}")
+logger.info(
+    f"Initializing DocumentPairingPredictor with model: {os.path.abspath(model_path)}"
+)
 predictor = DocumentPairingPredictor(model_path, svc_threshold=0.05)
 logger.info("DocumentPairingPredictor initialized successfully.")
 
@@ -58,7 +63,7 @@ def adapt_report_to_v3(report: dict) -> dict:
 
     if "itempairs" in v3_report and v3_report["itempairs"]:
         for pair in v3_report["itempairs"]:
-            pair.pop("match_score", None) # @TODO name?
+            pair.pop("match_score", None)  # @TODO name?
 
     # Fill minimal defaults
     v3_report.setdefault("headers", [])
@@ -84,15 +89,25 @@ async def request_handler(request: Request):
     try:
         indata = await request.json()
         document = indata.get("document")
-        candidate_documents = indata.get("candidate_documents", []) # Default to empty list
+        candidate_documents = indata.get(
+            "candidate_documents", []
+        )  # Default to empty list
 
         if not document or not isinstance(document, dict):
-            logger.error(f"Trace ID {trace_id}: Invalid or missing 'document' in request body.")
-            raise HTTPException(status_code=400, detail="Missing or invalid 'document' in request body")
+            logger.error(
+                f"Trace ID {trace_id}: Invalid or missing 'document' in request body."
+            )
+            raise HTTPException(
+                status_code=400, detail="Missing or invalid 'document' in request body"
+            )
         if not isinstance(candidate_documents, list):
-             logger.error(f"Trace ID {trace_id}: Invalid 'candidate_documents' format, expected a list.")
-             raise HTTPException(status_code=400, detail="Invalid 'candidate_documents' format, expected a list")
-
+            logger.error(
+                f"Trace ID {trace_id}: Invalid 'candidate_documents' format, expected a list."
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid 'candidate_documents' format, expected a list",
+            )
 
         doc_id = document.get("id", "<id missing>")
         site = document.get("site", "<site missing>")
@@ -102,44 +117,66 @@ async def request_handler(request: Request):
         # Standard Logging
         log_entry = {
             "traceId": trace_id,
-            "level": "info", # Default level
+            "level": "info",  # Default level
             "site": site,
             "documentId": doc_id,
             "stage": stage,
             "kind": kind,
             "message": f"Received request for document {doc_id} from site {site}.",
-            "numCandidates": len(candidate_documents)
+            "numCandidates": len(candidate_documents),
         }
         logger.info(json.dumps(log_entry))
 
-
         # --- Decision Logic: Whitelist Check ---
         if site in WHITELISTED_SITES and USE_PREDICTION and predictor:
-            logger.info(f"Trace ID {trace_id}: Site '{site}' is whitelisted. Attempting real pipeline matching.")
+            logger.info(
+                f"Trace ID {trace_id}: Site '{site}' is whitelisted. Attempting real pipeline matching."
+            )
             try:
-                pipeline_report = run_matching_pipeline(predictor, document, candidate_documents)
+                pipeline_report = run_matching_pipeline(
+                    predictor, document, candidate_documents
+                )
 
                 if pipeline_report is None:
-                    logger.error(f"Trace ID {trace_id}: Pipeline run failed critically for document {doc_id}.")
-                    raise HTTPException(status_code=500, detail="Matching pipeline failed unexpectedly.")
+                    logger.error(
+                        f"Trace ID {trace_id}: Pipeline run failed critically for document {doc_id}."
+                    )
+                    raise HTTPException(
+                        status_code=500, detail="Matching pipeline failed unexpectedly."
+                    )
 
                 final_report = adapt_report_to_v3(pipeline_report)
 
                 if not final_report:
-                    logger.error(f"Trace ID {trace_id}: Pipeline returned an error for doc {doc_id}")
-                    raise HTTPException(status_code=500, detail=f"Matching pipeline error")
+                    logger.error(
+                        f"Trace ID {trace_id}: Pipeline returned an error for doc {doc_id}"
+                    )
+                    raise HTTPException(
+                        status_code=500, detail=f"Matching pipeline error"
+                    )
 
-                log_entry["message"] = f"Successfully processed document {doc_id} using pipeline."
-                log_entry["matchResult"] = final_report.get("labels", ["unknown"])[0] # Log match/no-match
+                log_entry["message"] = (
+                    f"Successfully processed document {doc_id} using pipeline."
+                )
+                log_entry["matchResult"] = final_report.get("labels", ["unknown"])[
+                    0
+                ]  # Log match/no-match
                 logger.info(json.dumps(log_entry))
                 return final_report
 
             except Exception as e:
-                logger.exception(f"Trace ID {trace_id}: Unhandled exception during pipeline execution for document {doc_id}.")
+                logger.exception(
+                    f"Trace ID {trace_id}: Unhandled exception during pipeline execution for document {doc_id}."
+                )
                 log_entry["level"] = "error"
-                log_entry["message"] = f"Unhandled exception during pipeline execution: {e}"
+                log_entry["message"] = (
+                    f"Unhandled exception during pipeline execution: {e}"
+                )
                 logger.error(json.dumps(log_entry))
-                raise HTTPException(status_code=500, detail=f"Internal server error during matching: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Internal server error during matching: {e}",
+                )
 
         else:
             dummy_report = get_dummy_matching_report(document)
@@ -168,11 +205,12 @@ def get_dummy_matching_report(document):
     else:
         return _dummy_match_report(document)
 
+
 def _dummy_no_match_report(document):
     """Generates a dummy V3 no-match report."""
     doc_id = document.get("id", "unknown-id")
     site = document.get("site", "unknown-site")
-    kind = document.get("kind", "unknown-kind") # Use actual kind if available
+    kind = document.get("kind", "unknown-kind")  # Use actual kind if available
     # Generate a somewhat unique report ID based on doc ID
     report_id = f"r-nomatch-{hash(str(doc_id)) & 0xfff:03x}"
     return {
@@ -182,26 +220,33 @@ def _dummy_no_match_report(document):
         "site": site,
         "stage": "output",
         "headers": [],
-        "documents": [
-            {"kind": kind, "id": doc_id}
-        ],
+        "documents": [{"kind": kind, "id": doc_id}],
         "labels": ["no-match"],
         "metrics": [
-            {"name": "certainty", "value": 0.95}, # Simplified value
-            {"name": "deviation-severity", "value": DeviationSeverity.NO_SEVERITY.value},
-            {"name": f"{kind}-has-future-match-certainty", "value": 0.88} # Use dynamic kind
+            {"name": "certainty", "value": 0.95},  # Simplified value
+            {
+                "name": "deviation-severity",
+                "value": DeviationSeverity.NO_SEVERITY.value,
+            },
+            {
+                "name": f"{kind}-has-future-match-certainty",
+                "value": 0.88,
+            },  # Use dynamic kind
         ],
         "deviations": [],
-        "itempairs": []
+        "itempairs": [],
     }
+
 
 def _dummy_match_report(document):
     """Generates a dummy V3 match report."""
     doc_id = document.get("id", "unknown-id")
     site = document.get("site", "unknown-site")
-    kind = document.get("kind", "invoice") # Assume invoice for dummy matched pair
+    kind = document.get("kind", "invoice")  # Assume invoice for dummy matched pair
     matched_kind = "purchase-order" if kind == "invoice" else "invoice"
-    matched_id = f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}" # Dummy matched ID
+    matched_id = (
+        f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}"  # Dummy matched ID
+    )
     report_id = f"r-match-{hash(str(doc_id)) & 0xfff:03x}"
     return {
         "version": "v3",
@@ -212,27 +257,33 @@ def _dummy_match_report(document):
         "headers": [],
         "documents": [
             {"kind": kind, "id": doc_id},
-            {"kind": matched_kind, "id": matched_id}
+            {"kind": matched_kind, "id": matched_id},
         ],
         "labels": ["match"],
         "metrics": [
-            {"name": "certainty", "value": 0.93}, # Simplified value
-            {"name": "deviation-severity", "value": DeviationSeverity.HIGH.value}, # Dummy severity
+            {"name": "certainty", "value": 0.93},  # Simplified value
+            {
+                "name": "deviation-severity",
+                "value": DeviationSeverity.HIGH.value,
+            },  # Dummy severity
             {"name": f"{kind}-has-future-match-certainty", "value": 0.98},
-            {"name": f"{matched_kind}-has-future-match-certainty", "value": 0.99}
+            {"name": f"{matched_kind}-has-future-match-certainty", "value": 0.99},
         ],
-        "deviations": [ # Dummy deviation
+        "deviations": [  # Dummy deviation
             {
                 "code": "amounts-differ",
                 "severity": DeviationSeverity.HIGH.value,
                 "message": "Incl VAT amount differs by 42.75 (dummy)",
-                "field_names": ["headers.incVatAmount", "headers.inc_vat_amount"], # Example dot notation (if required) or list
-                "values": ["1950.25", "1993.00"]
+                "field_names": [
+                    "headers.incVatAmount",
+                    "headers.inc_vat_amount",
+                ],  # Example dot notation (if required) or list
+                "values": ["1950.25", "1993.00"],
             }
         ],
-        "itempairs": [ # Dummy item pair
+        "itempairs": [  # Dummy item pair
             {
-                "item_indices": [0, 0], # Dummy indices
+                "item_indices": [0, 0],  # Dummy indices
                 "match_type": "matched",
                 "deviation_severity": DeviationSeverity.MEDIUM.value,
                 "item_unchanged_certainty": 0.88,
@@ -242,9 +293,9 @@ def _dummy_match_report(document):
                         "values": [9, 11],
                         "severity": DeviationSeverity.MEDIUM.value,
                         "message": "Quantity differs by 2 (dummy)",
-                        "code": "quantity-differs" # Use consistent code
+                        "code": "quantity-differs",  # Use consistent code
                     }
-                ]
+                ],
             }
-        ]
+        ],
     }

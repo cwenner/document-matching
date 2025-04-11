@@ -79,7 +79,8 @@ def extract_item_data(item, document_kind, item_index):
         # We may need to make these adjustments consistently
         item_data["unit-price-adjusted"] = item_data["unit-price"]
         item_data["quantity"] = _safe_float(
-            get_field(item, "purchaseReceiptDataQuantity") or get_field(item, "quantity")
+            get_field(item, "purchaseReceiptDataQuantity")
+            or get_field(item, "quantity")
         )
         item_data["item-id"] = (
             get_field(item, "purchaseReceiptDataInventoryNumber")
@@ -148,7 +149,8 @@ def get_document_items(doc):
 if __name__ == "__main__":
     # Configure basic logging if running standalone
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     print("--- Testing document_utils ---")
 
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     sample_po = {
         "id": "po-1",
         "kind": "purchase-order",
-    "site": "SiteA",
+        "site": "SiteA",
         "headers": [
             {"name": "orderNumber", "value": "PO123"},
             {"name": "currency", "value": "SEK"},
@@ -237,7 +239,9 @@ if __name__ == "__main__":
     print(
         f"  Invoice Total Amount (Header): {get_field(sample_invoice, 'incVatAmount')}"
     )
-    print(f"  Invoice Item 1 Text (Field): {get_field(sample_invoice['items'][0], 'text')}")
+    print(
+        f"  Invoice Item 1 Text (Field): {get_field(sample_invoice['items'][0], 'text')}"
+    )
     print(f"  Non-existent field: {get_field(sample_po, 'nonExistent')}")
 
     # --- Test get_document_items ---
