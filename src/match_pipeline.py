@@ -6,7 +6,7 @@ import logging
 from docpairing import DocumentPairingPredictor
 from wfields import get_document_items
 from itempairing import pair_document_items
-from itempair_deviations import collect_itempair_deviations
+from itempair_deviations import collect_itempair_deviations, FieldDeviation
 from match_reporter import (
     generate_match_report,
     generate_no_match_report,
