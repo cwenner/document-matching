@@ -42,7 +42,7 @@ if USE_PREDICTION:
     logger.info(
         f"Initializing DocumentPairingPredictor with model: {os.path.abspath(model_path)}"
     )
-    predictor = DocumentPairingPredictor(model_path, svc_threshold=0.05)
+    predictor = DocumentPairingPredictor(model_path, svc_threshold=0.15)
     logger.info("DocumentPairingPredictor initialized successfully.")
 
 

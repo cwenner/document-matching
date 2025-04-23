@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentPairingPredictor:
     def __init__(
-        self, model_path="data/models/document-pairing-svm.pkl", svc_threshold=0.5
+        self, model_path="data/models/document-pairing-svm.pkl", svc_threshold=0.15
     ):
         """
         Initialize the document pairing predictor with a trained SVM model.
@@ -120,7 +120,7 @@ class DocumentPairingPredictor:
                 )
 
     def predict_pairings(
-        self, document, candidate_documents, threshold=0.3, use_reference_logic=True
+        self, document, candidate_documents, threshold=0.15, use_reference_logic=True
     ):
         """
         Predict pairings between the input document and a list of candidate documents.
@@ -213,7 +213,7 @@ class DocumentPairingPredictor:
         return predictions
 
     def predict_best_pairing(
-        self, document, candidate_documents, threshold=0.3, use_reference_logic=True
+        self, document, candidate_documents, threshold=0.15, use_reference_logic=True
     ):
         """
         Predict the single best pairing for a document.

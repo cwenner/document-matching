@@ -411,7 +411,7 @@ if __name__ == "__main__":
                 )
 
         logger.info(f"Using SVM model from: {os.path.abspath(model_path)}")
-        predictor = DocumentPairingPredictor(model_path, svc_threshold=0.05)
+        predictor = DocumentPairingPredictor(model_path, svc_threshold=0.15)
         logger.info("Predictor initialized successfully.")
 
     except FileNotFoundError as e:
