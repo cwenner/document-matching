@@ -62,39 +62,43 @@ def extract_item_data(item, document_kind, item_index):
     # Use get_field consistently to handle 'fields' list or direct keys
     if document_kind == DocumentKind.PURCHASE_ORDER:
         item_data["number"] = _safe_int(get_field(item, "lineNumber"))
-        item_data["description"] = _clean_desc(get_field(item, "description"))
+        item_data["description"] = _clean_desc(wfields.get_item_description(item))
         item_data["unit-price"] = _safe_float(get_field(item, "unitAmount"))
         item_data["quantity"] = _safe_float(get_field(item, "quantityToInvoice"))
         item_data["item-id"] = get_field(item, "inventory")
+        item_data["unit-of-measure"] = get_field(item, "uom")
+        item_data["vat-code"] = get_field(item, "vatCode")
+        item_data["vat-code-id"] = get_field(item, "vatCodeId")
     elif document_kind == DocumentKind.INVOICE:
         item_data["number"] = _safe_int(get_field(item, "lineNumber"))
-        item_data["description"] = _clean_desc(get_field(item, "text"))
-        # Prioritize specific fields if they exist, fall back
+        item_data["description"] = _clean_desc(wfields.get_item_description(item))
+        # @TODO We need to extract these from original data
         unit_price = (
+            # @TODO This is only available in final
             get_field(item, "purchaseReceiptDataUnitAmount")
+            # @TODO This is no longer available
             or get_field(item, "unit-price")
-            or get_field(item, "debit")
         )
         item_data["unit-price"] = _safe_float(unit_price)
         # We may need to make these adjustments consistently
         item_data["unit-price-adjusted"] = item_data["unit-price"]
         item_data["quantity"] = _safe_float(
             get_field(item, "purchaseReceiptDataQuantity")
+            # @TODO we need to pull this from original data
             or get_field(item, "quantity")
         )
         item_data["item-id"] = (
             get_field(item, "purchaseReceiptDatainventory")
+            # @TODO we need to pull this from original data
             or get_field(item, "inventory")
-            or get_field(item, "item-id")
         )
     elif document_kind == DocumentKind.DELIVERY_RECEIPT:
         item_data["number"] = _safe_int(get_field(item, "lineNumber"))
-        item_data["description"] = _clean_desc(get_field(item, "inventoryDescription"))
+        item_data["description"] = _clean_desc(wfields.get_item_description(item))
         item_data["unit-price"] = _safe_float(get_field(item, "unitAmount"))
         item_data["quantity"] = _safe_float(get_field(item, "quantity"))
-        item_data["item-id"] = get_field(item, "inventory") or get_field(
-            item, "articleNumber"
-        )  # Allow articleNumber as fallback
+        item_data["unit-of-measure"] = get_field(item, "uom")
+        item_data["item-id"] = wfields.get_item_article_number(item)
     else:
         logger.warning(
             f"Unknown document kind '{document_kind}' encountered during item extraction."
