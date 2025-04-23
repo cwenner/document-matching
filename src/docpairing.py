@@ -257,7 +257,7 @@ class DocumentPairingPredictor:
                 paired_delivery_ids.append(delivery_id)
         elif document["kind"] == "delivery-receipt":
             for line in document.get("items", []):
-                po_nbr = line.get("poOrderNbr")
+                po_nbr = line.get("purchaseOrderNumber")
                 if po_nbr and po_nbr in self.purchase_order_nbr2id:
                     paired_purchase_order_ids.append(self.purchase_order_nbr2id[po_nbr])
                 for invoice_id in self.order_reference2invoice_ids.get(po_nbr, []):
@@ -950,7 +950,7 @@ if __name__ == "__main__":
         "headers": [
             {"name": "supplierInternalId", "value": "supplier-456"},
         ],
-        "items": [{"articleNumber": "ABC123", "poOrderNbr": "PO123"}],
+        "items": [{"articleNumber": "ABC123", "purchaseOrderNumber": "PO123"}],
     }
 
     # Demo usage - with reference-based logic first
