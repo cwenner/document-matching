@@ -548,6 +548,7 @@ class DocumentPairingPredictor:
                 return h.get("value")
         return None
 
+    # @TODO move to wfields
     def _get_document_date(self, document):
         """Extract date from document"""
         try:
