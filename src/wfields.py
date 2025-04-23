@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 def unpack_attachments(doc):
     if doc.get("attachments"):
         for attachment in doc["attachments"]:
-            if attachment["name"].endswith(".pdf"):
+            if attachment["name"].lower().endswith(".pdf"):
                 pass
-            elif attachment["name"] == "interpreted_data.json":
+            elif attachment["name"].lower() == "interpreted_data.json":
                 if "interpreted_data" not in doc:
                     try:
                         doc["interpreted_data"] = json.loads(
@@ -28,7 +28,7 @@ def unpack_attachments(doc):
                             f"Failed to decode interpreted_data.json: {e}",
                             exc_info=False,
                         )
-            elif attachment["name"] == "interpreted_xml.json":
+            elif attachment["name"].lower() == "interpreted_xml.json":
                 if "interpreted_xml" not in doc:
                     try:
                         doc["interpreted_xml"] = json.loads(
@@ -50,6 +50,7 @@ def get_supplier_ids(doc):
         "supplierExternalId",
         "supplierInternalId",
         "supplierIncomingId",
+        "bankgiro",
     ]:
         h = get_field(doc, n)
         if h:
