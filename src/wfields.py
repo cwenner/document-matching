@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 
@@ -7,6 +8,35 @@ from document_utils import get_field, DocumentKind
 
 
 logger = logging.getLogger(__name__)
+
+
+def unpack_attachments(doc):
+    if doc.get("attachments"):
+        for attachment in doc["attachments"]:
+            if attachment["name"].endswith(".pdf"):
+                pass
+            elif attachment["name"] == "interpreted_data.json":
+                if "interpreted_data" not in doc:
+                    try:
+                        doc["interpreted_data"] = base64.b64decode(
+                            attachment["value"],
+                        ).decode("utf-8")
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to decode interpreted_data.json: {e}",
+                            exc_info=False,
+                        )
+            elif attachment["name"] == "interpreted_xml.json":
+                if "interpreted_xml" not in doc:
+                    try:
+                        doc["interpreted_xml"] = base64.b64decode(
+                            attachment["value"],
+                        ).decode("utf-8")
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to decode interpreted_xml.json: {e}",
+                            exc_info=False,
+                        )
 
 
 def get_item_description(item) -> str:
