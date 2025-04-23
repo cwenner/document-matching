@@ -21,7 +21,7 @@ logger = logging.getLogger("matching_service")
 
 # Whitelist of sites to use the real pipeline for
 USE_PREDICTION = os.environ.get("DISABLE_MODELS", "false").lower() != "true"
-WHITELISTED_SITES = {"badger-logistics", "falcon-logistics"}
+WHITELISTED_SITES = {"badger-logistics", "falcon-logistics", "christopher-test"}
 
 
 predictor = None
@@ -147,6 +147,9 @@ async def request_handler(request: Request):
                     )
 
                 final_report = adapt_report_to_v3(pipeline_report)
+                final_report["metrics"].append(
+                    {"name": "candidate-documents", "value": len(candidate_documents)}
+                )
 
                 if not final_report:
                     logger.error(
@@ -181,6 +184,9 @@ async def request_handler(request: Request):
 
         else:
             dummy_report = get_dummy_matching_report(document)
+            dummy_report["metrics"].append(
+                {"name": "candidate-documents", "value": len(candidate_documents)}
+            )
 
             log_entry["message"] = f"Processed document {doc_id} using dummy logic."
             log_entry["matchResult"] = dummy_report.get("labels", ["unknown"])[0]
