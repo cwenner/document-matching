@@ -39,6 +39,15 @@ def unpack_attachments(doc):
                         )
 
 
+def get_supplier_ids(self, doc):
+    supplier_ids = []
+    for n in ["supplierId", "supplierExternalId", "supplierInternalId"]:
+        h = get_field(doc, "supplierId")
+        if h:
+            supplier_ids.append(h)
+    return supplier_ids
+
+
 def get_item_description(item) -> str:
     return (
         get_field(item, "inventoryDescription")

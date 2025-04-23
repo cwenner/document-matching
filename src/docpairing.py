@@ -8,6 +8,7 @@ import dateparser
 import pickle
 
 from document_utils import get_field
+from wfields import get_supplier_ids
 
 # @TODO everything here needs refactoring
 
@@ -69,7 +70,7 @@ class DocumentPairingPredictor:
         """
         self.id2document[doc["id"]] = doc
 
-        for supplier_id in self._get_supplier_ids(doc):
+        for supplier_id in get_supplier_ids(doc):
             self.supplier_id2document_ids[supplier_id].append(doc["id"])
 
         if doc["kind"] == "invoice":
@@ -278,7 +279,7 @@ class DocumentPairingPredictor:
         # Fallback: if no matched PO for an invoice, search based on supplier
         if not paired_purchase_order_ids and document["kind"] == "invoice":
             candidates = []
-            for supplier_id in self._get_supplier_ids(document):
+            for supplier_id in get_supplier_ids(document):
                 candidates += [
                     self.id2document[x]
                     for x in self.supplier_id2document_ids.get(supplier_id, [])
@@ -379,14 +380,14 @@ class DocumentPairingPredictor:
         if self.model is None:
             return base_pred
 
-        supplier_ids = self._get_supplier_ids(document)
+        supplier_ids = get_supplier_ids(document)
         candidate_po_ids = []
 
         # Get candidate POs from the same supplier created before this invoice
         for doc in candidate_documents:
             if (
                 doc["kind"] == "purchase-order"
-                and (set(self._get_supplier_ids(doc)) & set(supplier_ids))
+                and (set(get_supplier_ids(doc)) & set(supplier_ids))
                 and self._is_chronologically_valid(document, doc)
             ):
                 candidate_po_ids.append(doc["id"])
@@ -521,15 +522,7 @@ class DocumentPairingPredictor:
             # If date parsing fails, assume valid
             return True
 
-    def _get_supplier_ids(self, document):
-        """Extract supplier ID from document"""
-        supplier_ids = []
-        for n in ["supplierId", "supplierExternalId", "supplierInternalId"]:
-            h = self._get_header(document, "supplierId")
-            if h:
-                supplier_ids.append(h)
-        return supplier_ids
-
+    # @TODO drop this - use get_field instead
     def _get_header(self, doc, key):
         """Get a header value from a document"""
         for h in doc.get("headers", []):
