@@ -12,6 +12,7 @@ from wfields import get_supplier_ids
 
 # @TODO everything here needs refactoring
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -147,7 +148,8 @@ class DocumentPairingPredictor:
 
         # If using reference logic, try that first
         if use_reference_logic:
-            ref_pred = self._predict_document_by_order_ref(document)
+            # ref_pred = self._predict_document_by_order_ref(document)
+            ref_pred = {"paired_purchase_order_ids": []}  # temp
 
             # For invoices with no PO match, try SVM fallback
             if (
@@ -155,7 +157,9 @@ class DocumentPairingPredictor:
                 and not ref_pred["paired_purchase_order_ids"]
             ):
                 ref_pred = self._apply_svm_fallback(
-                    document, ref_pred, candidate_documents,
+                    document,
+                    ref_pred,
+                    candidate_documents,
                     ignore_chronology=ignore_chronology,
                 )
 
@@ -371,12 +375,12 @@ class DocumentPairingPredictor:
         return prediction
 
     def _apply_svm_fallback(
-            self,
-            document,
-            base_pred,
-            candidate_documents,
-            ignore_chronology=False,
-        ):
+        self,
+        document,
+        base_pred,
+        candidate_documents,
+        ignore_chronology=False,
+    ):
         """
         Apply SVM fallback for documents that didn't match using reference logic.
 
@@ -680,7 +684,9 @@ class DocumentPairingPredictor:
                     try:
                         article_numbers = []
                         for line in doc["items"]:
-                            item_id = get_field(line, "inventory") or get_field(line, "articleNumber")
+                            item_id = get_field(line, "inventory") or get_field(
+                                line, "articleNumber"
+                            )
                             if item_id:
                                 article_numbers.append(item_id)
                     except:
@@ -690,7 +696,9 @@ class DocumentPairingPredictor:
                 if "items" in doc:
                     article_numbers = []
                     for line in doc["items"]:
-                        item_id = get_field(line, "inventory") or get_field(line, "articleNumber")
+                        item_id = get_field(line, "inventory") or get_field(
+                            line, "articleNumber"
+                        )
                         if item_id:
                             article_numbers.append(item_id)
 
@@ -698,7 +706,9 @@ class DocumentPairingPredictor:
                 if "items" in doc:
                     article_numbers = []
                     for line in doc["items"]:
-                        item_id = get_field(line, "inventory") or get_field(line, "articleNumber")
+                        item_id = get_field(line, "inventory") or get_field(
+                            line, "articleNumber"
+                        )
                         if item_id:
                             article_numbers.append(item_id)
         except Exception as e:

@@ -97,7 +97,9 @@ def run_matching_pipeline(
     try:
         # Use the provided historical_documents as candidates
         pairings = predictor.predict_pairings(
-            input_document, historical_documents, use_reference_logic=True
+            input_document,
+            historical_documents,
+            use_reference_logic=True,
         )
         logger.info("Predicted Document Pairings (Historical Doc ID: Confidence):")
         if pairings:
@@ -434,7 +436,9 @@ if __name__ == "__main__":
 
     logger.info("--- Running Pipeline via run_matching_pipeline (__main__ Test) ---")
     final_report = run_matching_pipeline(
-        predictor, input_document, historical_documents
+        predictor,
+        input_document,
+        historical_documents,
     )
 
     logger.info("\n--- FINAL REPORT (Standalone Test) ---")

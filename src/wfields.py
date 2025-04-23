@@ -45,7 +45,12 @@ def unpack_attachments(doc):
 
 def get_supplier_ids(doc):
     supplier_ids = []
-    for n in ["supplierId", "supplierExternalId", "supplierInternalId", "supplierIncomingId"]:
+    for n in [
+        "supplierId",
+        "supplierExternalId",
+        "supplierInternalId",
+        "supplierIncomingId",
+    ]:
         h = get_field(doc, n)
         if h:
             supplier_ids.append(h)
@@ -66,10 +71,7 @@ def get_item_description(item) -> str:
 
 
 def get_item_article_number(item) -> str:
-    return (
-        get_field(item, "inventoryNumber")
-        or get_field(item, "inventory")
-    )
+    return get_field(item, "inventoryNumber") or get_field(item, "inventory")
 
 
 def extract_item_data(item, document_kind, item_index):
