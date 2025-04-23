@@ -148,7 +148,7 @@ async def request_handler(request: Request):
 
                 final_report = adapt_report_to_v3(pipeline_report)
                 final_report["metrics"].append(
-                    { "name": "candidate-documents", "value": len(candidate_documents) }
+                    {"name": "candidate-documents", "value": len(candidate_documents)}
                 )
 
                 if not final_report:
@@ -185,7 +185,7 @@ async def request_handler(request: Request):
         else:
             dummy_report = get_dummy_matching_report(document)
             dummy_report["metrics"].append(
-                { "name": "candidate-documents", "value": len(candidate_documents) }
+                {"name": "candidate-documents", "value": len(candidate_documents)}
             )
 
             log_entry["message"] = f"Processed document {doc_id} using dummy logic."
