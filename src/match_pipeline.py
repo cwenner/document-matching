@@ -4,7 +4,7 @@ import logging
 
 # Keep existing imports
 from docpairing import DocumentPairingPredictor
-from document_utils import get_document_items
+from wfields import get_document_items
 from itempairing import pair_document_items
 from itempair_deviations import collect_itempair_deviations
 from match_reporter import (
