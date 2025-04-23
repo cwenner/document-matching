@@ -386,7 +386,7 @@ class DocumentPairingPredictor:
         for doc in candidate_documents:
             if (
                 doc["kind"] == "purchase-order"
-                and (set(self._get_supplier_ids(doc) & set(supplier_ids)))
+                and (set(self._get_supplier_ids(doc)) & set(supplier_ids))
                 and self._is_chronologically_valid(document, doc)
             ):
                 candidate_po_ids.append(doc["id"])
