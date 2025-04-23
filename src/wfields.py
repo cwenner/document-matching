@@ -39,7 +39,7 @@ def unpack_attachments(doc):
                         )
 
 
-def get_supplier_ids(self, doc):
+def get_supplier_ids(doc):
     supplier_ids = []
     for n in ["supplierId", "supplierExternalId", "supplierInternalId"]:
         h = get_field(doc, "supplierId")
