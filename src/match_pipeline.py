@@ -4,7 +4,7 @@ import logging
 
 # Keep existing imports
 from docpairing import DocumentPairingPredictor
-from wfields import get_document_items
+from wfields import get_document_items, unpack_attachments
 from itempairing import pair_document_items
 from itempair_deviations import collect_itempair_deviations, FieldDeviation
 from match_reporter import (
@@ -45,6 +45,11 @@ def run_matching_pipeline(
     if not predictor:
         logger.error("Predictor is not initialized. Cannot run pipeline.")
         return None  # Or raise an exception
+
+    # Extract attachments
+    unpack_attachments(input_document)
+    for candidate_doc in historical_documents:
+        unpack_attachments(candidate_doc)
 
     # --- Record History (Crucial for Predictor State) ---
     try:
