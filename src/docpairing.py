@@ -120,7 +120,12 @@ class DocumentPairingPredictor:
                 )
 
     def predict_pairings(
-        self, document, candidate_documents, threshold=0.15, use_reference_logic=True
+        self,
+        document,
+        candidate_documents,
+        threshold=0.15,
+        use_reference_logic=True,
+        ignore_chronology=False,
     ):
         """
         Predict pairings between the input document and a list of candidate documents.
@@ -150,7 +155,8 @@ class DocumentPairingPredictor:
                 and not ref_pred["paired_purchase_order_ids"]
             ):
                 ref_pred = self._apply_svm_fallback(
-                    document, ref_pred, candidate_documents
+                    document, ref_pred, candidate_documents,
+                    ignore_chronology=ignore_chronology,
                 )
 
             predictions = []
@@ -213,7 +219,12 @@ class DocumentPairingPredictor:
         return predictions
 
     def predict_best_pairing(
-        self, document, candidate_documents, threshold=0.15, use_reference_logic=True
+        self,
+        document,
+        candidate_documents,
+        threshold=0.15,
+        use_reference_logic=True,
+        ignore_chronology=False,
     ):
         """
         Predict the single best pairing for a document.
@@ -232,6 +243,7 @@ class DocumentPairingPredictor:
             candidate_documents,
             threshold=threshold,
             use_reference_logic=use_reference_logic,
+            ignore_chronology=ignore_chronology,
         )
         if predictions:
             return predictions[0]
@@ -358,7 +370,13 @@ class DocumentPairingPredictor:
         prediction = self._make_pairings_transitive(document, prediction)
         return prediction
 
-    def _apply_svm_fallback(self, document, base_pred, candidate_documents):
+    def _apply_svm_fallback(
+            self,
+            document,
+            base_pred,
+            candidate_documents,
+            ignore_chronology=False,
+        ):
         """
         Apply SVM fallback for documents that didn't match using reference logic.
 
@@ -388,7 +406,7 @@ class DocumentPairingPredictor:
             if (
                 doc["kind"] == "purchase-order"
                 and (set(get_supplier_ids(doc)) & set(supplier_ids))
-                and self._is_chronologically_valid(document, doc)
+                and (ignore_chronology or self._is_chronologically_valid(document, doc))
             ):
                 candidate_po_ids.append(doc["id"])
 
