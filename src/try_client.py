@@ -169,6 +169,10 @@ if __name__ == "__main__":
         help="Path to a JSON file containing the 'candidate_documents' list.",
     )
     parser.add_argument(
+        "--add-candidate-file",
+        help="Path to a JSON file containing a document to be added to 'candidate_documents'.",
+    )
+    parser.add_argument(
         "--site",
         default=TEST_SITE,
         help=f"Override the site in the sample document (default: {TEST_SITE}). Use a non-whitelisted site to test dummy logic.",
@@ -203,10 +207,25 @@ if __name__ == "__main__":
                 file=sys.stderr,
             )
             sys.exit(1)
-    else:
+    if args.add_candidate_file:
+        try:
+            with open(args.add_candidate_file, "r") as f:
+                candidate_doc = json.load(f)
+                if "candidate_documents" not in payload:
+                    payload["candidate_documents"] = []
+                payload["candidate_documents"].append(candidate_doc)
+                print("Added candidate document from file.")
+        except Exception as e:
+            print(
+                f"Error loading add candidate file '{args.add_candidate_file}': {e}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    if not args.candidates_file and not args.add_candidate_file:
         payload["candidate_documents"] = SAMPLE_CANDIDATE_DOCUMENTS
         print("Using sample candidate documents.")
 
+    print(f"Sending {len(payload.get('candidate_documents', []))} candidate documents.")
     target_url = args.url.rstrip("/") + "/"
 
     send_request(target_url, payload)
