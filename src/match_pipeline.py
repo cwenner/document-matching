@@ -67,15 +67,11 @@ def run_matching_pipeline(
             # Decide how to handle this - maybe assign a temporary one or fail?
             # For now, we'll proceed but lookups might fail.
 
-        # It's essential to clear previous state if the predictor instance is reused across requests
-        # Or, ensure a fresh predictor state for each run if necessary
         predictor.clear_documents()
         recorded_count = 0
         for doc in historical_documents:
-            # Ensure doc is a dictionary before recording
-            if isinstance(doc, dict):
-                predictor.record_document(doc)
-                recorded_count += 1
+            predictor.record_document(doc)
+            recorded_count += 1
         # Also record the input document itself for feature generation etc.
         if isinstance(input_document, dict):
             predictor.record_document(input_document)
@@ -96,7 +92,7 @@ def run_matching_pipeline(
                 "severity": "high",
             }
         ]
-        return error_report  # Return an error report
+        return error_report
 
     # --- STEP 1: Predict Document Pairing ---
     pairings = []
@@ -113,7 +109,7 @@ def run_matching_pipeline(
             logger.info("  No suitable document pairings predicted.")
     except Exception as e:
         logger.exception("Error occurred during document pairing prediction.")
-        pairings = []  # Ensure pairings is empty list on error
+        pairings = []
 
     final_report = None
 
@@ -156,8 +152,7 @@ def run_matching_pipeline(
                     f"Collected {len(document_deviations)} document-level deviations."
                 )
             except Exception as e:
-                logger.exception("Error collecting document deviations.")
-                # Add a deviation to the report? Or handle later? For now, log and continue.
+                raise e
 
             logger.info("--- STEP 2b: Extracting Document Items ---")
             doc1_items, doc2_items = [], []
@@ -168,8 +163,7 @@ def run_matching_pipeline(
                     f"Extracted {len(doc1_items)} items from doc1 (ID: {doc1.get('id')}), {len(doc2_items)} items from doc2 (ID: {doc2.get('id')})."
                 )
             except Exception as e:
-                logger.exception("Error extracting document items.")
-                # Proceed without items? Generate error report? Let's proceed, report will show 0 items.
+                raise e
 
             processed_item_pairs = []
             if not doc1_items or not doc2_items:
