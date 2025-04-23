@@ -674,11 +674,11 @@ class DocumentPairingPredictor:
                                     article_numbers.append(num)
                             elif "inventory" in line:
                                 article_numbers.append(line["inventory"])
-                            elif "inventoryNumber" in line:
+                            elif "inventory" in line:
                                 logger.warning(
-                                    f"Using inventoryNumber as fallback for {line}"
+                                    f"Using inventory as fallback for {line}"
                                 )
-                                article_numbers.append(line["inventoryNumber"])
+                                article_numbers.append(line["inventory"])
                     except:
                         pass
 
@@ -694,11 +694,11 @@ class DocumentPairingPredictor:
                                 article_numbers.append(num)
                         elif "inventory" in line:
                             article_numbers.append(line["inventory"])
-                        elif "inventoryNumber" in line:
+                        elif "inventory" in line:
                             logger.warning(
-                                f"Using inventoryNumber as fallback for {line}"
+                                f"Using inventory as fallback for {line}"
                             )
-                            article_numbers.append(line["inventoryNumber"])
+                            article_numbers.append(line["inventory"])
 
             elif doc["kind"] == "delivery-receipt":
                 if "items" in doc:

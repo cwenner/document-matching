@@ -65,7 +65,7 @@ def extract_item_data(item, document_kind, item_index):
         item_data["description"] = _clean_desc(get_field(item, "description"))
         item_data["unit-price"] = _safe_float(get_field(item, "unitAmount"))
         item_data["quantity"] = _safe_float(get_field(item, "quantityToInvoice"))
-        item_data["item-id"] = get_field(item, "inventoryNumber")
+        item_data["item-id"] = get_field(item, "inventory")
     elif document_kind == DocumentKind.INVOICE:
         item_data["number"] = _safe_int(get_field(item, "lineNumber"))
         item_data["description"] = _clean_desc(get_field(item, "text"))
@@ -83,8 +83,8 @@ def extract_item_data(item, document_kind, item_index):
             or get_field(item, "quantity")
         )
         item_data["item-id"] = (
-            get_field(item, "purchaseReceiptDataInventoryNumber")
-            or get_field(item, "inventoryNumber")
+            get_field(item, "purchaseReceiptDatainventory")
+            or get_field(item, "inventory")
             or get_field(item, "item-id")
         )
     elif document_kind == DocumentKind.DELIVERY_RECEIPT:
@@ -92,7 +92,7 @@ def extract_item_data(item, document_kind, item_index):
         item_data["description"] = _clean_desc(get_field(item, "inventoryDescription"))
         item_data["unit-price"] = _safe_float(get_field(item, "unitAmount"))
         item_data["quantity"] = _safe_float(get_field(item, "quantity"))
-        item_data["item-id"] = get_field(item, "inventoryNumber") or get_field(
+        item_data["item-id"] = get_field(item, "inventory") or get_field(
             item, "articleNumber"
         )  # Allow articleNumber as fallback
     else:
@@ -170,7 +170,7 @@ if __name__ == "__main__":
                     {"name": "description", "value": "Widget A"},
                     {"name": "unitAmount", "value": "10.50"},
                     {"name": "quantityToInvoice", "value": "5"},
-                    {"name": "inventoryNumber", "value": "WID-A"},
+                    {"name": "inventory", "value": "WID-A"},
                 ]
             },
             {
@@ -215,7 +215,7 @@ if __name__ == "__main__":
                     {"name": "inventoryDescription", "value": "Widget A"},
                     {"name": "unitAmount", "value": "10.50"},
                     {"name": "quantity", "value": "5"},
-                    {"name": "inventoryNumber", "value": "WID-A"},
+                    {"name": "inventory", "value": "WID-A"},
                 ]
             }
         ],

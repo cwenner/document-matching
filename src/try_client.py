@@ -35,7 +35,7 @@ SAMPLE_INPUT_DOCUMENT = {
                 {"name": "item-id", "value": "ITEM-A"},
                 {"name": "purchaseReceiptDataUnitAmount", "value": "50.00"},
                 {"name": "purchaseReceiptDataQuantity", "value": "1"},
-                {"name": "purchaseReceiptDataInventoryNumber", "value": "ITEM-A"},
+                {"name": "purchaseReceiptDatainventory", "value": "ITEM-A"},
             ]
         },
         {
@@ -47,7 +47,7 @@ SAMPLE_INPUT_DOCUMENT = {
                 {"name": "item-id", "value": "ITEM-B"},
                 {"name": "purchaseReceiptDataUnitAmount", "value": "50.00"},
                 {"name": "purchaseReceiptDataQuantity", "value": "1"},
-                {"name": "purchaseReceiptDataInventoryNumber", "value": "ITEM-B"},
+                {"name": "purchaseReceiptDatainventory", "value": "ITEM-B"},
             ]
         },
     ],
@@ -76,7 +76,7 @@ SAMPLE_CANDIDATE_DOCUMENTS = [
                     },  # Slightly different desc
                     {"name": "unitAmount", "value": "50.00"},
                     {"name": "quantityToInvoice", "value": "1"},
-                    {"name": "inventoryNumber", "value": "ITEM-A"},  # Matches item ID
+                    {"name": "inventory", "value": "ITEM-A"},  # Matches item ID
                 ]
             },
             {
@@ -85,7 +85,7 @@ SAMPLE_CANDIDATE_DOCUMENTS = [
                     {"name": "description", "value": "Test Item Beta PO"},
                     {"name": "unitAmount", "value": "50.00"},
                     {"name": "quantityToInvoice", "value": "1"},
-                    {"name": "inventoryNumber", "value": "ITEM-B"},
+                    {"name": "inventory", "value": "ITEM-B"},
                 ]
             },
         ],
