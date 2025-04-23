@@ -132,7 +132,7 @@ FIELD_COMPARISONS.append(
         field_names={
             DocumentKind.INVOICE: "text",
             DocumentKind.PURCHASE_ORDER: "description",
-            DocumentKind.DELIVERY_RECEIPT: "inventoryDescription",
+            DocumentKind.DELIVERY_RECEIPT: "description",
         },
         field_encoded_type=str,
     )
@@ -321,7 +321,7 @@ if __name__ == "__main__":
             ],
             [
                 {"name": "amount", "value": "109.00"},
-                {"name": "inventoryDescription", "value": "Brandslang 63mm"},
+                {"name": "description", "value": "Brandslang 63mm"},
                 {"name": "unitAmount", "value": "109.00"},
                 {"name": "quantity", "value": "1"},
             ],
