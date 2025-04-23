@@ -45,8 +45,13 @@ def unpack_attachments(doc):
 
 def get_supplier_ids(doc):
     supplier_ids = []
-    for n in ["supplierId", "supplierExternalId", "supplierInternalId"]:
-        h = get_field(doc, "supplierId")
+    for n in ["supplierId", "supplierExternalId", "supplierInternalId", "supplierIncomingId"]:
+        h = get_field(doc, n)
+        if h:
+            supplier_ids.append(h)
+    # @TODO interpreted_xml as well?
+    if doc.get("interpreted_data"):
+        h = doc.get("interpreted_data").get("supplierId")
         if h:
             supplier_ids.append(h)
     return supplier_ids
