@@ -115,7 +115,7 @@ def run_matching_pipeline(
     if pairings:
         # Assume top pairing is the best match for now
         matched_doc_id = pairings[0][0]
-        match_confidence = pairings[0][1]  # Keep confidence for potential use in report
+        match_confidence = pairings[0][1]  # Keep confidence for use in report
         logger.info(
             f"\n--- Processing Top Match: ID {matched_doc_id} (Confidence: {match_confidence:.4f}) ---"
         )
