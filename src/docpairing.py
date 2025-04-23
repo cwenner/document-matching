@@ -2,11 +2,14 @@ import numpy as np
 import pandas as pd
 import collections
 import datetime
+import logging
 import re
 import dateparser
 import pickle
 
 # @TODO everything here needs refactoring
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentPairingPredictor:
@@ -665,11 +668,16 @@ class DocumentPairingPredictor:
                         for line in doc["items"]:
                             if "fields" in line:
                                 num = self._get_named_item(
-                                    line["fields"], "inventoryNumber"
+                                    line["fields"], "inventory"
                                 )
                                 if num:
                                     article_numbers.append(num)
+                            elif "inventory" in line:
+                                article_numbers.append(line["inventory"])
                             elif "inventoryNumber" in line:
+                                logger.warning(
+                                    f"Using inventoryNumber as fallback for {line}"
+                                )
                                 article_numbers.append(line["inventoryNumber"])
                     except:
                         pass
@@ -680,11 +688,16 @@ class DocumentPairingPredictor:
                     for line in doc["items"]:
                         if "fields" in line:
                             num = self._get_named_item(
-                                line["fields"], "inventoryNumber"
+                                line["fields"], "inventory"
                             )
                             if num:
                                 article_numbers.append(num)
+                        elif "inventory" in line:
+                            article_numbers.append(line["inventory"])
                         elif "inventoryNumber" in line:
+                            logger.warning(
+                                f"Using inventoryNumber as fallback for {line}"
+                            )
                             article_numbers.append(line["inventoryNumber"])
 
             elif doc["kind"] == "delivery-receipt":
@@ -693,12 +706,12 @@ class DocumentPairingPredictor:
                     for line in doc["items"]:
                         if "fields" in line:
                             num = self._get_named_item(
-                                line["fields"], "inventoryNumber"
+                                line["fields"], "inventory"
                             )
                             if num:
                                 article_numbers.append(num)
-                        elif "inventoryNumber" in line:
-                            article_numbers.append(line["inventoryNumber"])
+                        elif "inventory" in line:
+                            article_numbers.append(line["inventory"])
                         elif "articleNumber" in line:
                             article_numbers.append(line["articleNumber"])
         except Exception as e:
@@ -926,7 +939,7 @@ if __name__ == "__main__":
             {"name": "excVatAmount", "value": "1000.00"},
             {"name": "orderNumber", "value": "PO123"},
         ],
-        "items": [{"fields": [{"name": "inventoryNumber", "value": "ABC123"}]}],
+        "items": [{"fields": [{"name": "inventory", "value": "ABC123"}]}],
     }
 
     other_purchase_order = {
@@ -939,7 +952,7 @@ if __name__ == "__main__":
             {"name": "excVatAmount", "value": "2000.00"},
             {"name": "orderNumber", "value": "PO456"},
         ],
-        "items": [{"fields": [{"name": "inventoryNumber", "value": "XYZ456"}]}],
+        "items": [{"fields": [{"name": "inventory", "value": "XYZ456"}]}],
     }
 
     # Example delivery receipt
