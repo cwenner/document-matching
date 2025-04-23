@@ -64,8 +64,7 @@ class DocumentPairingPredictor:
         """
         self.id2document[doc["id"]] = doc
 
-        supplier_id = self._get_supplier_id(doc)
-        if supplier_id:
+        for supplier_id in self._get_supplier_ids(doc):
             self.supplier_id2document_ids[supplier_id].append(doc["id"])
 
         if doc["kind"] == "invoice":
@@ -74,7 +73,7 @@ class DocumentPairingPredictor:
                 self.order_reference2invoice_ids[order_reference].append(doc["id"])
         elif doc["kind"] == "delivery-receipt":
             for line in doc.get("items", []):
-                po_nbr = line.get("poOrderNbr")
+                po_nbr = line.get("purchaseOrderNumber")
                 if po_nbr:
                     self.purchase_order_nbr2delivery_ids[po_nbr].append(doc["id"])
         elif doc["kind"] == "purchase-order":
@@ -273,16 +272,17 @@ class DocumentPairingPredictor:
 
         # Fallback: if no matched PO for an invoice, search based on supplier
         if not paired_purchase_order_ids and document["kind"] == "invoice":
-            supplier_id = self._get_supplier_id(document)
-            candidates = [
-                self.id2document[x]
-                for x in self.supplier_id2document_ids.get(supplier_id, [])
-                if (
-                    x in self.id2document
-                    and self.id2document[x]["kind"] == "purchase-order"
-                    and x not in self.ids_have_received_invoices
-                )
-            ]
+            candidates = []
+            for supplier_id in self._get_supplier_ids(document):
+                candidates += [
+                    self.id2document[x]
+                    for x in self.supplier_id2document_ids.get(supplier_id, [])
+                    if (
+                        x in self.id2document
+                        and self.id2document[x]["kind"] == "purchase-order"
+                        and x not in self.ids_have_received_invoices
+                    )
+                ]
 
             if candidates:
                 expected_article_numbers = set(self._get_line_article_numbers(document))
@@ -374,14 +374,14 @@ class DocumentPairingPredictor:
         if self.model is None:
             return base_pred
 
-        supplier_id = self._get_supplier_id(document)
+        supplier_ids = self._get_supplier_ids(document)
         candidate_po_ids = []
 
         # Get candidate POs from the same supplier created before this invoice
         for doc in candidate_documents:
             if (
                 doc["kind"] == "purchase-order"
-                and self._get_supplier_id(doc) == supplier_id
+                and (set(self._get_supplier_ids(doc) & set(supplier_ids)))
                 and self._is_chronologically_valid(document, doc)
             ):
                 candidate_po_ids.append(doc["id"])
@@ -516,16 +516,14 @@ class DocumentPairingPredictor:
             # If date parsing fails, assume valid
             return True
 
-    def _get_supplier_id(self, document):
+    def _get_supplier_ids(self, document):
         """Extract supplier ID from document"""
-        if document["kind"] == "invoice":
-            return self._get_header(document, "supplierId")
-        elif document["kind"] == "delivery-receipt":
-            return self._get_header(document, "supplierInternalId")
-        elif document["kind"] == "purchase-order":
-            return self._get_header(document, "supplierId")
-        else:
-            return None
+        supplier_ids = []
+        for n in ["supplierId", "supplierExternalId", "supplierInternalId"]:
+            h = self._get_header(document, "supplierId")
+            if h:
+                supplier_ids.append(h)
+        return supplier_ids
 
     def _get_header(self, doc, key):
         """Get a header value from a document"""
