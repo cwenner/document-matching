@@ -64,8 +64,6 @@ def run_matching_pipeline(
             id2doc[input_document["id"]] = input_document
         else:
             logger.warning("Input document is missing an 'id'.")
-            # Decide how to handle this - maybe assign a temporary one or fail?
-            # For now, we'll proceed but lookups might fail.
 
         predictor.clear_documents()
         recorded_count = 0
