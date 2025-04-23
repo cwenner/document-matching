@@ -18,9 +18,11 @@ def unpack_attachments(doc):
             elif attachment["name"] == "interpreted_data.json":
                 if "interpreted_data" not in doc:
                     try:
-                        doc["interpreted_data"] = base64.b64decode(
-                            attachment["value"],
-                        ).decode("utf-8")
+                        doc["interpreted_data"] = json.loads(
+                            base64.b64decode(
+                                attachment["value"],
+                            ).decode("utf-8")
+                        )
                     except Exception as e:
                         logger.error(
                             f"Failed to decode interpreted_data.json: {e}",
@@ -29,9 +31,11 @@ def unpack_attachments(doc):
             elif attachment["name"] == "interpreted_xml.json":
                 if "interpreted_xml" not in doc:
                     try:
-                        doc["interpreted_xml"] = base64.b64decode(
-                            attachment["value"],
-                        ).decode("utf-8")
+                        doc["interpreted_xml"] = json.loads(
+                            base64.b64decode(
+                                attachment["value"],
+                            ).decode("utf-8")
+                        )
                     except Exception as e:
                         logger.error(
                             f"Failed to decode interpreted_xml.json: {e}",
