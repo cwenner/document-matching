@@ -7,6 +7,8 @@ import re
 import dateparser
 import pickle
 
+from document_utils import get_field
+
 # @TODO everything here needs refactoring
 
 logger = logging.getLogger(__name__)
@@ -76,7 +78,7 @@ class DocumentPairingPredictor:
                 self.order_reference2invoice_ids[order_reference].append(doc["id"])
         elif doc["kind"] == "delivery-receipt":
             for line in doc.get("items", []):
-                po_nbr = line["fields"].get("purchaseOrderNumber")
+                po_nbr = get_field(line, "purchaseOrderNumber")
                 if po_nbr:
                     self.purchase_order_nbr2delivery_ids[po_nbr].append(doc["id"])
         elif doc["kind"] == "purchase-order":
@@ -260,7 +262,7 @@ class DocumentPairingPredictor:
                 paired_delivery_ids.append(delivery_id)
         elif document["kind"] == "delivery-receipt":
             for line in document.get("items", []):
-                po_nbr = line["fields"].get("purchaseOrderNumber")
+                po_nbr = get_field(line, "purchaseOrderNumber")
                 if po_nbr and po_nbr in self.purchase_order_nbr2id:
                     paired_purchase_order_ids.append(self.purchase_order_nbr2id[po_nbr])
                 for invoice_id in self.order_reference2invoice_ids.get(po_nbr, []):
@@ -666,19 +668,9 @@ class DocumentPairingPredictor:
                     try:
                         article_numbers = []
                         for line in doc["items"]:
-                            if "fields" in line:
-                                num = self._get_named_item(
-                                    line["fields"], "inventory"
-                                )
-                                if num:
-                                    article_numbers.append(num)
-                            elif "inventory" in line:
-                                article_numbers.append(line["inventory"])
-                            elif "inventory" in line:
-                                logger.warning(
-                                    f"Using inventory as fallback for {line}"
-                                )
-                                article_numbers.append(line["inventory"])
+                            item_id = get_field(line, "inventory") or get_field(line, "articleNumber")
+                            if item_id:
+                                article_numbers.append(item_id)
                     except:
                         pass
 
@@ -686,34 +678,17 @@ class DocumentPairingPredictor:
                 if "items" in doc:
                     article_numbers = []
                     for line in doc["items"]:
-                        if "fields" in line:
-                            num = self._get_named_item(
-                                line["fields"], "inventory"
-                            )
-                            if num:
-                                article_numbers.append(num)
-                        elif "inventory" in line:
-                            article_numbers.append(line["inventory"])
-                        elif "inventory" in line:
-                            logger.warning(
-                                f"Using inventory as fallback for {line}"
-                            )
-                            article_numbers.append(line["inventory"])
+                        item_id = get_field(line, "inventory") or get_field(line, "articleNumber")
+                        if item_id:
+                            article_numbers.append(item_id)
 
             elif doc["kind"] == "delivery-receipt":
                 if "items" in doc:
                     article_numbers = []
                     for line in doc["items"]:
-                        if "fields" in line:
-                            num = self._get_named_item(
-                                line["fields"], "inventory"
-                            )
-                            if num:
-                                article_numbers.append(num)
-                        elif "inventory" in line:
-                            article_numbers.append(line["inventory"])
-                        elif "articleNumber" in line:
-                            article_numbers.append(line["articleNumber"])
+                        item_id = get_field(line, "inventory") or get_field(line, "articleNumber")
+                        if item_id:
+                            article_numbers.append(item_id)
         except Exception as e:
             # If article number extraction fails, return empty list
             return []
