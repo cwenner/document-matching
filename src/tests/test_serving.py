@@ -38,23 +38,23 @@ def test_readiness_endpoint():
 
 def test_post_missing_document():
     """Test POST / with missing 'document' field."""
-    payload = {"candidate_documents": []}
+    payload = {"candidate-documents": []}
     response = client.post("/", json=payload)
     assert response.status_code == 400
     assert "Missing or invalid 'document'" in response.json()["detail"]
 
 
 def test_post_invalid_candidates():
-    """Test POST / with 'candidate_documents' not being a list."""
-    payload = {"document": DUMMY_DOC, "candidate_documents": "not-a-list"}
+    """Test POST / with 'candidate-documents' not being a list."""
+    payload = {"document": DUMMY_DOC, "candidate-documents": "not-a-list"}
     response = client.post("/", json=payload)
     assert response.status_code == 400
-    assert "Invalid 'candidate_documents' format" in response.json()["detail"]
+    assert "Invalid 'candidate-documents' format" in response.json()["detail"]
 
 
 def test_post_non_whitelisted_site_dummy_no_match():
     """Test POST / for a non-whitelisted site, expecting dummy 'no-match'."""
-    payload = {"document": DUMMY_DOC, "candidate_documents": []}
+    payload = {"document": DUMMY_DOC, "candidate-documents": []}
     with patch("builtins.hash", return_value=0):
         response = client.post("/", json=payload)
     assert response.status_code == 200
@@ -70,7 +70,7 @@ def test_post_non_whitelisted_site_dummy_no_match():
 
 def test_post_non_whitelisted_site_dummy_match():
     """Test POST / for a non-whitelisted site, expecting dummy 'match'."""
-    payload = {"document": DUMMY_DOC, "candidate_documents": []}
+    payload = {"document": DUMMY_DOC, "candidate-documents": []}
     with patch("builtins.hash", return_value=1):
         response = client.post("/", json=payload)
     assert response.status_code == 200
