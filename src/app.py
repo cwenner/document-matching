@@ -91,7 +91,7 @@ async def request_handler(request: Request):
         indata = await request.json()
         document = indata.get("document")
         candidate_documents = indata.get(
-            "candidate_documents", []
+            "candidate-documents", []
         )  # Default to empty list
 
         if not document or not isinstance(document, dict):
@@ -103,11 +103,11 @@ async def request_handler(request: Request):
             )
         if not isinstance(candidate_documents, list):
             logger.error(
-                f"Trace ID {trace_id}: Invalid 'candidate_documents' format, expected a list."
+                f"Trace ID {trace_id}: Invalid 'candidate-documents' format, expected a list."
             )
             raise HTTPException(
                 status_code=400,
-                detail="Invalid 'candidate_documents' format, expected a list",
+                detail="Invalid 'candidate-documents' format, expected a list",
             )
 
         doc_id = document.get("id", "<id missing>")
