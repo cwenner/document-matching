@@ -36,17 +36,17 @@ jobs:
         run: |
           set -e
           set -o pipefail
-          stdout=$(docker buildx build . --push --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest 2> stderr.txt)
+          stdout=$(docker buildx build . --pus  h --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest 2> stderr.txt)
           echo "stdout BEGIN"
           echo "$stdout"
           echo "stdout END"
           echo "stderr BEGIN"
-          echo "$stderr.txt"
+          cat stderr.txt
           echo "stderr END"
-          if grep -q "sha256:" stdout.txt; then
-            echo "Digest found in stdout."
+          if grep -q "sha256:" stderr.txt; then
+            echo "Digest found in stderr."
           else
-            echo "Digest NOT found in stdout. This is likely the problem."
+            echo "Digest NOT found in stderr."
             exit 1
           fi
         id: build
