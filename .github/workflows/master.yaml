@@ -33,7 +33,7 @@ jobs:
 
       - name: Build and Push Docker image
         # run: docker buildx build . --push --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
-        run: docker buildx build . --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest
+        run: docker buildx build . --push --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest
         id: build
 
       - name: Dispatch repository event
