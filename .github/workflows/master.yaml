@@ -32,27 +32,7 @@ jobs:
         run: pytest -v --skip-model src/tests/
 
       - name: Build and Push Docker image
-        # run: docker buildx build . --push --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
         run: docker buildx build . --push -q --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
-        # run: |
-        #   set -e
-        #   set -x
-        #   set -o pipefail
-        #   echo "pre build"
-        #   stdout=$(docker buildx build . --push -q --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest 2> stderr.txt)
-        #   echo "post build"
-        #   echo "stdout BEGIN"
-        #   echo "$stdout"
-        #   echo "stdout END"
-        #   echo "stderr BEGIN"
-        #   cat stderr.txt
-        #   echo "stderr END"
-        #   if grep -q "sha256:" stderr.txt; then
-        #     echo "Digest found in stderr."
-        #   else
-        #     echo "Digest NOT found in stderr."
-        #     exit 1
-        #   fi
         id: build
 
       - name: Dispatch repository event
