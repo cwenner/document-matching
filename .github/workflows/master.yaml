@@ -35,8 +35,11 @@ jobs:
         # run: docker buildx build . --push --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
         run: |
           set -e
+          set -x
           set -o pipefail
-          stdout=$(docker buildx build . --pus  h --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest 2> stderr.txt)
+          echo "pre build"
+          stdout=$(docker buildx build . --push --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest 2> stderr.txt)
+          echo "post build"
           echo "stdout BEGIN"
           echo "$stdout"
           echo "stdout END"
