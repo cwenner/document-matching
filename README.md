@@ -8,14 +8,13 @@ Start server:
 
 ```
 source .venv/bin/activate
-cd src
-uvicorn app:app
+PYTHONPATH=src uvicorn app:app
 ```
 
 Send a document at it :
 
 ```
 source .venv/bin/activate
-python try_client.py
+python src/try_client.py
 ```
 
