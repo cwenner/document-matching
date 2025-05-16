@@ -1,7 +1,9 @@
 import json
+from universaljsonencoder import UniversalJSONEncoder
 import requests
 import os
 import sys
+import time
 from typing import List, Dict, Set, Tuple
 from collections import defaultdict
 
@@ -34,6 +36,17 @@ class MatchingEvaluator:
         self.document_accuracies = []
         self.max_tested = max_tested
         self.skip_portion = skip_portion
+
+        # Track document pairing history
+        # Map from document ID to lists of paired document IDs by document kind
+        self.document_pairings = {}
+        # Format: {
+        #   "doc_id": {
+        #     "invoice": ["invoice_id1", "invoice_id2", ...],
+        #     "delivery-receipt": ["delivery_id1", "delivery_id2", ...],
+        #     "purchase-order": ["po_id1", "po_id2", ...]
+        #   }
+        # }
         self.metrics = {
             "invoice": {
                 "true_positives": 0,
@@ -75,6 +88,74 @@ class MatchingEvaluator:
             print(f"Error loading dataset: {e}", file=sys.stderr)
             return False
 
+    def update_document_pairings(
+        self, document_id: str, document_kind: str, paired_ids: Dict
+    ):
+        """
+        Update document pairing history with new matches.
+
+        Args:
+            document_id: ID of the document to update pairings for
+            document_kind: Kind of the document (invoice, purchase-order, delivery-receipt)
+            paired_ids: Dictionary with lists of paired IDs by document kind
+        """
+        if document_id not in self.document_pairings:
+            self.document_pairings[document_id] = {
+                "invoice": set(),
+                "delivery-receipt": set(),
+                "purchase-order": set(),
+            }
+
+        # Add all paired IDs to the document's pairing history
+        for kind, ids in paired_ids.items():
+            for paired_id in ids:
+                if paired_id not in self.document_pairings[document_id][kind]:
+                    self.document_pairings[document_id][kind].add(paired_id)
+
+                # Also update the reverse relationship
+                if paired_id not in self.document_pairings:
+                    self.document_pairings[paired_id] = {
+                        "invoice": set(),
+                        "delivery-receipt": set(),
+                        "purchase-order": set(),
+                    }
+                if document_id not in self.document_pairings[paired_id][document_kind]:
+                    self.document_pairings[paired_id][document_kind].add(document_id)
+
+    def get_candidates(self, document: Dict) -> List[Dict]:
+        """
+        Get candidate documents from history based on overlapping supplier_ids.
+        Include their pairing history in the returned candidates.
+
+        Args:
+            document: The current document
+
+        Returns:
+            List of candidate documents with pairing history
+        """
+        document_supplier_ids = set(get_supplier_ids(document))
+        if not document_supplier_ids:
+            return []
+
+        candidates = []
+        for historical_doc in self.document_history:
+            historical_supplier_ids = set(get_supplier_ids(historical_doc))
+            # Check for non-empty intersection of supplier IDs
+            if document_supplier_ids.intersection(historical_supplier_ids):
+                # Create a copy of the historical document
+                candidate_doc = dict(historical_doc)
+
+                # Add pairing history if available
+                historical_doc_id = historical_doc.get("id")
+                if historical_doc_id in self.document_pairings:
+                    candidate_doc["pairing_history"] = self.document_pairings[
+                        historical_doc_id
+                    ]
+
+                candidates.append(candidate_doc)
+
+        return candidates
+
     def get_matching_candidates(self, document: Dict) -> List[Dict]:
         """
         Get candidate documents from history that have matching supplier IDs.
@@ -94,7 +175,24 @@ class MatchingEvaluator:
             historical_supplier_ids = set(get_supplier_ids(historical_doc))
             # Check for non-empty intersection of supplier IDs
             if document_supplier_ids.intersection(historical_supplier_ids):
-                candidates.append(historical_doc)
+                # Get the document ID
+                historical_doc_id = historical_doc.get("id")
+
+                # Add pairing history to the document if available
+                historical_doc_with_history = dict(historical_doc)
+
+                # Include pairing history if available for this document
+                if historical_doc_id in self.document_pairings:
+                    # Convert sets to lists for JSON serialization
+                    pairing_history = {
+                        kind: list(doc_ids)
+                        for kind, doc_ids in self.document_pairings[
+                            historical_doc_id
+                        ].items()
+                    }
+                    historical_doc_with_history["pairing_history"] = pairing_history
+
+                candidates.append(historical_doc_with_history)
 
         return candidates
 
@@ -104,16 +202,27 @@ class MatchingEvaluator:
 
         Args:
             document: The document to match
-            candidates: List of candidate documents
+            candidates: List of candidate documents (already include pairing history)
 
         Returns:
             Prediction response from the service
         """
-        payload = {"document": document, "candidate_documents": candidates}
+        # Add pairing history to the document if available
+        document_id = document.get("id")
+        document_with_history = dict(document)
+
+        if document_id in self.document_pairings:
+            document_with_history["pairing_history"] = self.document_pairings[
+                document_id
+            ]
+
+        payload = {"document": document_with_history, "candidate-documents": candidates}
 
         print(
-            f"Making prediction for document {document.get('id')} with {len(candidates)} candidates"
+            f"Making prediction for document {document_id} with {len(candidates)} candidates"
         )
+
+        start_time = time.time()
 
         try:
             headers = {
@@ -123,6 +232,9 @@ class MatchingEvaluator:
             response = requests.post(
                 self.api_url, headers=headers, json=payload, timeout=60
             )
+
+            elapsed = time.time() - start_time
+            print(f"API request completed in {elapsed:.2f} seconds")
 
             if response.ok:
                 return response.json()
@@ -136,9 +248,7 @@ class MatchingEvaluator:
             print(f"Error making prediction: {e}", file=sys.stderr)
             return {}
 
-    def evaluate_prediction(
-        self, document: Dict, prediction: Dict, target: Dict
-    ) -> Tuple[Dict, Dict]:
+    def evaluate_document(self, document: Dict, prediction: Dict, target: Dict) -> Dict:
         """
         Evaluate prediction against the expected target.
 
@@ -148,7 +258,7 @@ class MatchingEvaluator:
             target: The expected target from the dataset
 
         Returns:
-            Tuple of (document result, metrics update)
+            Dictionary with evaluation results
         """
         document_id = document.get("id")
         document_kind = document.get("kind")
@@ -158,17 +268,32 @@ class MatchingEvaluator:
         predicted_delivery_ids = set()
         predicted_purchase_order_ids = set()
 
-        if prediction and "matches" in prediction:
-            for match in prediction.get("matches", []):
-                match_id = match.get("id")
-                match_kind = match.get("kind")
+        # Check different API response formats
+        if prediction:
+            # Check for matched_documents format (new API)
+            if "matched_documents" in prediction:
+                for match in prediction.get("matched_documents", []):
+                    match_id = match.get("id")
+                    match_kind = match.get("kind")
 
-                if match_kind == DocumentKind.INVOICE.value:
-                    predicted_invoice_ids.add(match_id)
-                elif match_kind == DocumentKind.DELIVERY_RECEIPT.value:
-                    predicted_delivery_ids.add(match_id)
-                elif match_kind == DocumentKind.PURCHASE_ORDER.value:
-                    predicted_purchase_order_ids.add(match_id)
+                    if match_kind == DocumentKind.INVOICE.value:
+                        predicted_invoice_ids.add(match_id)
+                    elif match_kind == DocumentKind.DELIVERY_RECEIPT.value:
+                        predicted_delivery_ids.add(match_id)
+                    elif match_kind == DocumentKind.PURCHASE_ORDER.value:
+                        predicted_purchase_order_ids.add(match_id)
+            # Check for matches format (old API)
+            elif "matches" in prediction:
+                for match in prediction.get("matches", []):
+                    match_id = match.get("id")
+                    match_kind = match.get("kind")
+
+                    if match_kind == DocumentKind.INVOICE.value:
+                        predicted_invoice_ids.add(match_id)
+                    elif match_kind == DocumentKind.DELIVERY_RECEIPT.value:
+                        predicted_delivery_ids.add(match_id)
+                    elif match_kind == DocumentKind.PURCHASE_ORDER.value:
+                        predicted_purchase_order_ids.add(match_id)
 
         # Get expected IDs from the target
         expected_invoice_ids = set(target.get("paired_invoice_ids", []))
@@ -199,7 +324,7 @@ class MatchingEvaluator:
         po_fp = len(predicted_purchase_order_ids - expected_purchase_order_ids)
         po_fn = len(expected_purchase_order_ids - predicted_purchase_order_ids)
 
-        # Calculate accuracy for each document type according to the specified rules
+        # Calculate document accuracy
         invoice_accuracy = self._calculate_accuracy(
             predicted_invoice_ids, expected_invoice_ids
         )
@@ -222,7 +347,7 @@ class MatchingEvaluator:
         document_accuracy = self._calculate_accuracy(all_predicted, all_expected)
         self.document_accuracies.append(document_accuracy)
 
-        # Update metrics
+        # Prepare metrics update
         metrics_update = {
             "invoice": {
                 "true_positives": invoice_tp,
@@ -247,24 +372,34 @@ class MatchingEvaluator:
             },
         }
 
+        # Update overall metrics
+        self.update_metrics(metrics_update)
+
         # Prepare result for this document
         document_result = {
             "document_id": document_id,
             "document_kind": document_kind,
             "predicted": {
-                "invoice_ids": list(predicted_invoice_ids),
-                "delivery_ids": list(predicted_delivery_ids),
-                "purchase_order_ids": list(predicted_purchase_order_ids),
+                "invoice_ids": predicted_invoice_ids,  # Keep as set
+                "delivery_ids": predicted_delivery_ids,  # Keep as set
+                "purchase_order_ids": predicted_purchase_order_ids,  # Keep as set
             },
             "expected": {
-                "invoice_ids": list(expected_invoice_ids),
-                "delivery_ids": list(expected_delivery_ids),
-                "purchase_order_ids": list(expected_purchase_order_ids),
+                "invoice_ids": expected_invoice_ids,  # Keep as set
+                "delivery_ids": expected_delivery_ids,  # Keep as set
+                "purchase_order_ids": expected_purchase_order_ids,  # Keep as set
+            },
+            "accuracy": {
+                "invoice": invoice_accuracy,
+                "delivery": delivery_accuracy,
+                "purchase_order": po_accuracy,
+                "overall": document_accuracy,
             },
             "metrics": metrics_update,
+            "prediction": prediction,  # Store the raw prediction response
         }
 
-        return document_result, metrics_update
+        return document_result
 
     def _calculate_accuracy(
         self, predicted_ids: Set[str], expected_ids: Set[str]
@@ -457,9 +592,24 @@ class MatchingEvaluator:
         # First, build history without testing for the skip portion
         for i in range(skip_count):
             document = self.inputs[i]
+            target = self.targets[i]
+            document_id = document.get("id")
+            document_kind = document.get("kind")
+
             print(
-                f"\nAdding document {i+1}/{skip_count} to history (not testing): {document.get('id')}"
+                f"\nAdding document {i+1}/{skip_count} to history (not testing): {document_id}"
             )
+
+            # Record expected pairings from the target
+            paired_ids = {
+                "invoice": target.get("paired_invoice_ids", []),
+                "delivery-receipt": target.get("paired_delivery_ids", []),
+                "purchase-order": target.get("paired_purchase_order_ids", []),
+            }
+
+            # Update document's pairing history with expected matches
+            self.update_document_pairings(document_id, document_kind, paired_ids)
+
             # Just add to history without testing
             self.document_history.append(document)
 
@@ -467,33 +617,59 @@ class MatchingEvaluator:
         for i in range(test_start_idx, test_end_idx):
             document = self.inputs[i]
             target = self.targets[i]
+            document_id = document.get("id")
+            document_kind = document.get("kind")
+
             print(
-                f"\nProcessing document {i+1}/{total_documents} (test {i-test_start_idx+1}/{test_count}): {document.get('id')}"
+                f"\nProcessing document {i+1}/{total_documents} (test {i-test_start_idx+1}/{test_count}): {document_id}"
             )
 
-            # Get matching candidates from history
+            # Get matching candidates from history with pairing history included
             candidates = self.get_matching_candidates(document)
 
-            # Make prediction
+            # Make prediction using the API
             prediction = self.make_prediction(document, candidates)
 
-            # Evaluate prediction
-            document_result, metrics_update = self.evaluate_prediction(
-                document, prediction, target
-            )
-
-            # Update metrics
-            self.update_metrics(metrics_update)
+            # Check accuracy of the prediction against target
+            document_result = self.evaluate_document(document, prediction, target)
 
             # Store result
             self.prediction_results.append(document_result)
+
+            # Extract pairing history from API response (if available)
+            if "document" in prediction and "pairing_history" in prediction["document"]:
+                api_pairing_history = prediction["document"]["pairing_history"]
+                # Update document pairing history with API-returned history
+                self.update_document_pairings(
+                    document_id, document_kind, api_pairing_history
+                )
+
+            # Extract predicted matches from the evaluation result
+            predicted_ids = {
+                "invoice": document_result["predicted"]["invoice_ids"],
+                "delivery-receipt": document_result["predicted"]["delivery_ids"],
+                "purchase-order": document_result["predicted"]["purchase_order_ids"],
+            }
+
+            # Update pairing history with predicted matches
+            self.update_document_pairings(document_id, document_kind, predicted_ids)
+
+            # Update with expected matches as well
+            expected_ids = {
+                "invoice": document_result["expected"]["invoice_ids"],
+                "delivery-receipt": document_result["expected"]["delivery_ids"],
+                "purchase-order": document_result["expected"]["purchase_order_ids"],
+            }
+
+            # Update pairing history with expected matches
+            self.update_document_pairings(document_id, document_kind, expected_ids)
 
             # Add document to history AFTER making the prediction
             self.document_history.append(document)
 
             # Print interim results for this document
             print(f"Document {i+1} evaluation:")
-            for doc_type, values in metrics_update.items():
+            for doc_type, values in document_result["metrics"].items():
                 # Print accuracy results even if there are no matches (since we handle that case now)
                 tp = values.get("true_positives", 0)
                 tn = values.get("true_negatives", 0)
@@ -518,6 +694,7 @@ class MatchingEvaluator:
                     f"  {doc_type}: Precision={precision_str}, Recall={recall_str}, Accuracy={accuracy:.2f}"
                 )
 
+        # ---- Moved: Metrics and result saving code ----
         # Calculate final metrics - this will calculate precision and recall for all tested documents combined
         final_metrics = self.calculate_precision_recall()
 
@@ -572,12 +749,106 @@ class MatchingEvaluator:
                     },
                     f,
                     indent=2,
+                    cls=UniversalJSONEncoder,
                 )
             print(f"\nResults saved to {output_path}")
         except Exception as e:
             print(f"Error saving results: {e}", file=sys.stderr)
-
         return True
+
+    def update_document_pairings(
+        self, document_id: str, document_kind: str, paired_ids: Dict
+    ):
+        """
+        Update document pairing history with new matches.
+
+        Args:
+            document_id: ID of the document to update pairings for
+            document_kind: Kind of the document (invoice, purchase-order, delivery-receipt)
+            paired_ids: Dictionary with lists of paired IDs by document kind
+        """
+        if document_id not in self.document_pairings:
+            self.document_pairings[document_id] = {
+                "invoice": set(),
+                "delivery-receipt": set(),
+                "purchase-order": set(),
+            }
+
+        # Add all paired IDs to the document's pairing history
+        for kind, ids in paired_ids.items():
+            for paired_id in ids:
+                if paired_id not in self.document_pairings[document_id][kind]:
+                    self.document_pairings[document_id][kind].add(paired_id)
+
+                # Also update the reverse relationship
+                if paired_id not in self.document_pairings:
+                    self.document_pairings[paired_id] = {
+                        "invoice": set(),
+                        "delivery-receipt": set(),
+                        "purchase-order": set(),
+                    }
+                if document_id not in self.document_pairings[paired_id][document_kind]:
+                    self.document_pairings[paired_id][document_kind].add(document_id)
+
+        # Calculate final metrics - this will calculate precision and recall for all tested documents combined
+        final_metrics = self.calculate_precision_recall()
+
+        # Print final results
+        print("\n=== Final Evaluation Results ===")
+
+        # Calculate overall document accuracy
+        avg_doc_accuracy = (
+            sum(self.document_accuracies) / len(self.document_accuracies)
+            if self.document_accuracies
+            else 0
+        )
+        print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
+
+        for doc_type, metrics in final_metrics.items():
+            print(f"\n{doc_type.upper()}:")
+
+            # Format precision, recall, and F1 for display
+            precision = metrics["precision"]
+            recall = metrics["recall"]
+            f1 = metrics["f1_score"]
+            avg_accuracy = metrics["average_accuracy"]
+
+            precision_str = (
+                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            )
+            recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
+            f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
+            accuracy_str = (
+                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+            )
+
+            print(f"  Precision: {precision_str}")
+            print(f"  Recall: {recall_str}")
+            print(f"  F1 Score: {f1_str}")
+            print(f"  Average Accuracy: {accuracy_str}")
+            print(f"  True Positives: {metrics['true_positives']}")
+            print(f"  True Negatives: {metrics['true_negatives']}")
+            print(f"  False Positives: {metrics['false_positives']}")
+            print(f"  False Negatives: {metrics['false_negatives']}")
+
+        # Save results to file
+        output_path = os.path.join(
+            os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
+        )
+        recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
+        f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
+        accuracy_str = (
+            f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+        )
+
+        print(f"  Precision: {precision_str}")
+        print(f"  Recall: {recall_str}")
+        print(f"  F1 Score: {f1_str}")
+        print(f"  Average Accuracy: {accuracy_str}")
+        print(f"  True Positives: {metrics['true_positives']}")
+        print(f"  True Negatives: {metrics['true_negatives']}")
+        print(f"  False Positives: {metrics['false_positives']}")
+        print(f"  False Negatives: {metrics['false_negatives']}")
 
 
 if __name__ == "__main__":
