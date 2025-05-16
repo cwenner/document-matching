@@ -145,7 +145,7 @@ def generate_match_report(
             {"name": f"{kind1.value}-total-items", "value": len(doc1.get("items", []))},
             {"name": f"{kind2.value}-total-items", "value": len(doc2.get("items", []))},
         ],
-        "deviations": [dev.dict() for dev in document_deviations],
+        "deviations": [dev.model_dump() for dev in document_deviations],
         "itempairs": [],
     }
 
@@ -176,7 +176,7 @@ def generate_match_report(
             "match_score": pair_data.get("score"),
             "deviation_severity": pair_severity.value,
             "item_unchanged_certainty": 0.95,
-            "deviations": [dev.dict() for dev in item_deviations],
+            "deviations": [dev.model_dump() for dev in item_deviations],
         }
         report["itempairs"].append(item_pair_report)
 
