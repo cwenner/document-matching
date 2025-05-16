@@ -11,10 +11,14 @@ source .venv/bin/activate
 PYTHONPATH=src uvicorn app:app
 ```
 
-Send a document at it :
+Send a document at it:
 
 ```
 source .venv/bin/activate
-python src/try_client.py
+PYTHONPATH=src python -m try_client
 ```
 
+Run against an evaluation set:
+```
+PYTHONPATH=src python -m evaluate_matching --dataset ../popoc/data/pairing_structured.json --max-tested 100 --skip-portion 0.5
+```
