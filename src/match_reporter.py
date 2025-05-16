@@ -8,7 +8,6 @@ from itempair_deviations import (
     DocumentKind,
     DeviationSeverity,
     FieldDeviation,
-    # FIELD_COMPARISONS, # Removed unused import
     get_differing_amounts_severity,
 )
 from document_utils import get_field
