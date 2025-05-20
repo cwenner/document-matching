@@ -4,12 +4,14 @@ import requests
 import os
 import sys
 import time
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set, Tuple, Optional
 from collections import defaultdict
 
 from wfields import get_supplier_ids
 from document_utils import DocumentKind
 from try_client import DEFAULT_URL
+
+import matching_service
 
 
 class MatchingEvaluator:
@@ -19,6 +21,8 @@ class MatchingEvaluator:
         api_url: str = DEFAULT_URL,
         max_tested: int = 100,
         skip_portion: float = 0.5,
+        use_direct_calls: bool = False,
+        model_path: str = None,
     ):
         """
         Initialize the evaluator with the dataset path and API URL.
@@ -28,6 +32,8 @@ class MatchingEvaluator:
             api_url: URL of the matching service endpoint
             max_tested: Maximum number of documents to test (default: 100)
             skip_portion: Portion of documents to use for building history without testing (0.0-1.0)
+            use_direct_calls: If True, use direct method calls to matching_service instead of HTTP
+            model_path: Path to the model file (only used with direct calls)
         """
         self.dataset_path = dataset_path
         self.api_url = api_url.rstrip("/") + "/"
@@ -36,9 +42,14 @@ class MatchingEvaluator:
         self.document_accuracies = []
         self.max_tested = max_tested
         self.skip_portion = skip_portion
+        self.use_direct_calls = use_direct_calls
+        self.model_path = model_path
 
-        # Track document pairing history
-        # Map from document ID to lists of paired document IDs by document kind
+        if self.use_direct_calls:
+            if self.model_path:
+                os.environ["DOCPAIR_MODEL_PATH"] = self.model_path
+            self.predictor = matching_service.initialize_predictor()
+
         self.document_pairings = {}
         # Format: {
         #   "doc_id": {
@@ -199,13 +210,14 @@ class MatchingEvaluator:
     def make_prediction(self, document: Dict, candidates: List[Dict]) -> Dict:
         """
         Send document and candidates to the matching service and get predictions.
+        Can either use HTTP API or direct method calls based on configuration.
 
         Args:
             document: The document to match
-            candidates: List of candidate documents (already include pairing history)
+            candidates: List of candidate documents
 
         Returns:
-            Prediction response from the service
+            Prediction response from either API or direct service call
         """
         # Add pairing history to the document if available
         document_id = document.get("id")
@@ -216,37 +228,102 @@ class MatchingEvaluator:
                 document_id
             ]
 
-        payload = {"document": document_with_history, "candidate-documents": candidates}
+        # Use direct method calls if configured
+        if self.use_direct_calls:
+            print(
+                f"[DIRECT] Predicting for document {document_id} with {len(candidates)} candidates"
+            )
+            start_time = time.time()
 
-        print(
-            f"Making prediction for document {document_id} with {len(candidates)} candidates"
-        )
+            try:
+                # Generate a trace_id for logging
+                trace_id = f"eval-{document_id}-{int(time.time())}"
 
-        start_time = time.time()
+                # Call the process_document method directly
+                report, _ = matching_service.process_document(
+                    document_with_history, candidates, trace_id
+                )
 
-        try:
-            headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
+                elapsed = time.time() - start_time
+                print(f"Direct method call completed in {elapsed:.2f} seconds")
+
+                # Extract paired document IDs from the report
+                if report:
+                    # Extract paired document IDs from the headers
+                    paired_ids = {
+                        "invoice": [],
+                        "delivery-receipt": [],
+                        "purchase-order": [],
+                    }
+
+                    # Check if this is a match (no match will not have document2 headers)
+                    has_match = False
+                    for header in report.get("headers", []):
+                        if header.get("name") == "document2.id" and header.get("value"):
+                            has_match = True
+                        if header.get("name") == "document2.kind" and header.get(
+                            "value"
+                        ):
+                            matched_kind = header.get("value")
+
+                    # If there's a match, extract the document2 ID
+                    if has_match:
+                        for header in report.get("headers", []):
+                            if header.get("name") == "document2.id":
+                                matched_id = header.get("value")
+                                if matched_id:
+                                    # Find the kind of the matched document
+                                    for header in report.get("headers", []):
+                                        if header.get("name") == "document2.kind":
+                                            kind = header.get("value")
+                                            if kind:
+                                                paired_ids[kind].append(matched_id)
+
+                    return paired_ids
+                else:
+                    print(
+                        f"Error: No report returned from direct call", file=sys.stderr
+                    )
+                    return {}
+            except Exception as e:
+                print(f"Error making direct prediction: {e}", file=sys.stderr)
+                return {}
+        else:
+            # Use HTTP API (original behavior)
+            payload = {
+                "document": document_with_history,
+                "candidate-documents": candidates,
             }
-            response = requests.post(
-                self.api_url, headers=headers, json=payload, timeout=60
+
+            print(
+                f"[HTTP] Predicting for document {document_id} with {len(candidates)} candidates"
             )
 
-            elapsed = time.time() - start_time
-            print(f"API request completed in {elapsed:.2f} seconds")
+            start_time = time.time()
 
-            if response.ok:
-                return response.json()
-            else:
-                print(
-                    f"Error response from API: {response.status_code} - {response.text}",
-                    file=sys.stderr,
+            try:
+                headers = {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+                response = requests.post(
+                    self.api_url, headers=headers, json=payload, timeout=60
                 )
+
+                elapsed = time.time() - start_time
+                print(f"API request completed in {elapsed:.2f} seconds")
+
+                if response.ok:
+                    return response.json()
+                else:
+                    print(
+                        f"Error response from API: {response.status_code} - {response.text}",
+                        file=sys.stderr,
+                    )
+                    return {}
+            except Exception as e:
+                print(f"Error making HTTP prediction: {e}", file=sys.stderr)
                 return {}
-        except Exception as e:
-            print(f"Error making prediction: {e}", file=sys.stderr)
-            return {}
 
     def evaluate_document(self, document: Dict, prediction: Dict, target: Dict) -> Dict:
         """
@@ -694,7 +771,6 @@ class MatchingEvaluator:
                     f"  {doc_type}: Precision={precision_str}, Recall={recall_str}, Accuracy={accuracy:.2f}"
                 )
 
-        # ---- Moved: Metrics and result saving code ----
         # Calculate final metrics - this will calculate precision and recall for all tested documents combined
         final_metrics = self.calculate_precision_recall()
 
@@ -855,23 +931,19 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Evaluate document matching on sequential dataset."
+        description="Evaluate matching service performance"
     )
     parser.add_argument(
-        "--dataset",
-        default="pairing_sequential.json",
-        help="Path to the pairing_sequential.json dataset file",
+        "--dataset", required=True, help="Path to the pairing_sequential.json file"
     )
     parser.add_argument(
-        "--api-url",
-        default=DEFAULT_URL,
-        help=f"URL of the matching service endpoint (default: {DEFAULT_URL})",
+        "--api-url", default=DEFAULT_URL, help="URL of the matching service endpoint"
     )
     parser.add_argument(
         "--max-tested",
         type=int,
-        default=200,
-        help="Maximum number of documents to test (default: 100)",
+        default=100,
+        help="Maximum number of documents to test",
     )
     parser.add_argument(
         "--skip-portion",
@@ -879,11 +951,25 @@ if __name__ == "__main__":
         default=0.5,
         help="Portion of documents to use for building history without testing (0.0-1.0)",
     )
+    parser.add_argument(
+        "--use-direct-calls",
+        action="store_true",
+        help="Use direct method calls to matching_service instead of HTTP",
+    )
+    parser.add_argument(
+        "--model-path",
+        help="Path to the model file (only used with --use-direct-calls)",
+    )
 
     args = parser.parse_args()
 
     # Initialize and run evaluator
     evaluator = MatchingEvaluator(
-        args.dataset, args.api_url, args.max_tested, args.skip_portion
+        dataset_path=args.dataset,
+        api_url=args.api_url,
+        max_tested=args.max_tested,
+        skip_portion=args.skip_portion,
+        use_direct_calls=args.use_direct_calls,
+        model_path=args.model_path,
     )
     evaluator.run_evaluation()
