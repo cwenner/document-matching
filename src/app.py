@@ -1,79 +1,18 @@
 import json
-import sys
-import os
 import logging
 from fastapi import Request, Response, FastAPI, HTTPException
 
-
-# @TODO split this file up for server vs dummy vs real
-
-
-from docpairing import DocumentPairingPredictor
-from match_pipeline import run_matching_pipeline
-from match_reporter import generate_no_match_report, DeviationSeverity
-
+# Import the matching service module that contains all business logic
+import matching_service
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger = logging.getLogger("matching_service")
-
-
-# Whitelist of sites to use the real pipeline for
-USE_PREDICTION = os.environ.get("DISABLE_MODELS", "false").lower() != "true"
-WHITELISTED_SITES = {"badger-logistics", "falcon-logistics", "christopher-test"}
-
-
-predictor = None
-
-if USE_PREDICTION:
-    # @TODO use config file?
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    default_model_path = os.path.join(
-        script_dir, "..", "data", "models", "document-pairing-svm.pkl"
-    )
-    model_path = os.environ.get("DOCPAIR_MODEL_PATH", default_model_path)
-
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(
-            f"Predictor model not found. Checked default and environment variable paths. Last check: {os.path.abspath(model_path)}"
-        )
-
-    logger.info(
-        f"Initializing DocumentPairingPredictor with model: {os.path.abspath(model_path)}"
-    )
-    predictor = DocumentPairingPredictor(model_path, svc_threshold=0.15)
-    logger.info("DocumentPairingPredictor initialized successfully.")
-
+logger = logging.getLogger("matching_service_api")
 
 # --- FastAPI App ---
 app = FastAPI()
-logger.info(f"✔ Matching Service Ready")
-
-
-def adapt_report_to_v3(report: dict) -> dict:
-    """
-    Adapts report generated to API spec.
-    """
-    if not report:
-        return report
-
-    v3_report = report.copy()
-
-    v3_report["version"] = "v3"
-
-    if "itempairs" in v3_report and v3_report["itempairs"]:
-        for pair in v3_report["itempairs"]:
-            pair.pop("match_score", None)  # @TODO name?
-
-    # Fill minimal defaults
-    v3_report.setdefault("headers", [])
-    v3_report.setdefault("deviations", [])
-    v3_report.setdefault("itempairs", [])
-    v3_report.setdefault("metrics", [])
-    v3_report.setdefault("labels", [])
-
-    return v3_report
+logger.info(f"✔ Matching Service API Ready")
 
 
 @app.get("/")
@@ -88,12 +27,14 @@ async def request_handler(request: Request):
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")
 
     try:
+        # Parse request data
         indata = await request.json()
         document = indata.get("document")
         candidate_documents = indata.get(
             "candidate-documents", []
         )  # Default to empty list
 
+        # Validate request data
         if not document or not isinstance(document, dict):
             logger.error(
                 f"Trace ID {trace_id}: Invalid or missing 'document' in request body."
@@ -110,88 +51,27 @@ async def request_handler(request: Request):
                 detail="Invalid 'candidate-documents' format, expected a list",
             )
 
+        # Log request receipt
         doc_id = document.get("id", "<id missing>")
-        site = document.get("site", "<site missing>")
-        kind = document.get("kind", "<kind missing>")
-        stage = document.get("stage", "<stage missing>")
+        logger.info(
+            f"Trace ID {trace_id}: Processing request for document {doc_id} with {len(candidate_documents)} candidates"
+        )
 
-        # Standard Logging
-        log_entry = {
-            "traceId": trace_id,
-            "level": "info",  # Default level
-            "site": site,
-            "documentId": doc_id,
-            "stage": stage,
-            "kind": kind,
-            "message": f"Received request for document {doc_id} from site {site}.",
-            "numCandidates": len(candidate_documents),
-        }
+        # Delegate to matching service for processing
+        final_report, log_entry = matching_service.process_document(
+            document, candidate_documents, trace_id
+        )
+
+        # Handle errors
+        if not final_report:
+            logger.error(json.dumps(log_entry))
+            raise HTTPException(
+                status_code=500, detail="Matching service failed to process document"
+            )
+
+        # Log success and return result
         logger.info(json.dumps(log_entry))
-
-        # --- Decision Logic: Whitelist Check ---
-        if site in WHITELISTED_SITES and USE_PREDICTION and predictor:
-            logger.info(
-                f"Trace ID {trace_id}: Site '{site}' is whitelisted. Attempting real pipeline matching."
-            )
-            try:
-                pipeline_report = run_matching_pipeline(
-                    predictor, document, candidate_documents
-                )
-
-                if pipeline_report is None:
-                    logger.error(
-                        f"Trace ID {trace_id}: Pipeline run failed critically for document {doc_id}."
-                    )
-                    raise HTTPException(
-                        status_code=500, detail="Matching pipeline failed unexpectedly."
-                    )
-
-                final_report = adapt_report_to_v3(pipeline_report)
-                final_report["metrics"].append(
-                    {"name": "candidate-documents", "value": len(candidate_documents)}
-                )
-
-                if not final_report:
-                    logger.error(
-                        f"Trace ID {trace_id}: Pipeline returned an error for doc {doc_id}"
-                    )
-                    raise HTTPException(
-                        status_code=500, detail=f"Matching pipeline error"
-                    )
-
-                log_entry["message"] = (
-                    f"Successfully processed document {doc_id} using pipeline."
-                )
-                log_entry["matchResult"] = final_report.get("labels", ["unknown"])[
-                    0
-                ]  # Log match/no-match
-                logger.info(json.dumps(log_entry))
-                return final_report
-
-            except Exception as e:
-                logger.exception(
-                    f"Trace ID {trace_id}: Unhandled exception during pipeline execution for document {doc_id}."
-                )
-                log_entry["level"] = "error"
-                log_entry["message"] = (
-                    f"Unhandled exception during pipeline execution: {e}"
-                )
-                logger.error(json.dumps(log_entry))
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Internal server error during matching: {e}",
-                )
-
-        else:
-            dummy_report = get_dummy_matching_report(document)
-            dummy_report["metrics"].append(
-                {"name": "candidate-documents", "value": len(candidate_documents)}
-            )
-
-            log_entry["message"] = f"Processed document {doc_id} using dummy logic."
-            log_entry["matchResult"] = dummy_report.get("labels", ["unknown"])[0]
-            logger.info(json.dumps(log_entry))
-            return dummy_report
+        return final_report
 
     except json.JSONDecodeError:
         logger.error(f"Trace ID {trace_id}: Failed to decode JSON request body.")
@@ -233,7 +113,7 @@ def _dummy_no_match_report(document):
             {"name": "certainty", "value": 0.95},  # Simplified value
             {
                 "name": "deviation-severity",
-                "value": DeviationSeverity.NO_SEVERITY.value,
+                "value": matching_service.DeviationSeverity.NO_SEVERITY.value,
             },
             {
                 "name": f"{kind}-has-future-match-certainty",
@@ -271,7 +151,7 @@ def _dummy_match_report(document):
             {"name": "certainty", "value": 0.93},  # Simplified value
             {
                 "name": "deviation-severity",
-                "value": DeviationSeverity.HIGH.value,
+                "value": matching_service.DeviationSeverity.HIGH.value,
             },  # Dummy severity
             {"name": f"{kind}-has-future-match-certainty", "value": 0.98},
             {"name": f"{matched_kind}-has-future-match-certainty", "value": 0.99},
@@ -279,7 +159,7 @@ def _dummy_match_report(document):
         "deviations": [  # Dummy deviation
             {
                 "code": "amounts-differ",
-                "severity": DeviationSeverity.HIGH.value,
+                "severity": matching_service.DeviationSeverity.HIGH.value,
                 "message": "Incl VAT amount differs by 42.75 (dummy)",
                 "field_names": [
                     "headers.incVatAmount",
@@ -292,13 +172,13 @@ def _dummy_match_report(document):
             {
                 "item_indices": [0, 0],  # Dummy indices
                 "match_type": "matched",
-                "deviation_severity": DeviationSeverity.MEDIUM.value,
+                "deviation_severity": matching_service.DeviationSeverity.MEDIUM.value,
                 "item_unchanged_certainty": 0.88,
                 "deviations": [
                     {
                         "field_names": ["fields.quantity", "fields.quantity"],
                         "values": [9, 11],
-                        "severity": DeviationSeverity.MEDIUM.value,
+                        "severity": matching_service.DeviationSeverity.MEDIUM.value,
                         "message": "Quantity differs by 2 (dummy)",
                         "code": "quantity-differs",  # Use consistent code
                     }
