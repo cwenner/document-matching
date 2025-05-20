@@ -24,7 +24,7 @@ class MatchingService:
     def __init__(self, model_path=None, svc_threshold=0.15):
         """
         Initialize the matching service.
-        
+
         Args:
             model_path: Optional path to the model file. If not provided, will use default or environment variable
             svc_threshold: Threshold for the SVM classifier
@@ -58,7 +58,9 @@ class MatchingService:
                 default_model_path = os.path.join(
                     script_dir, "..", "data", "models", "document-pairing-svm.pkl"
                 )
-                self.model_path = os.environ.get("DOCPAIR_MODEL_PATH", default_model_path)
+                self.model_path = os.environ.get(
+                    "DOCPAIR_MODEL_PATH", default_model_path
+                )
 
             if not os.path.exists(self.model_path):
                 raise FileNotFoundError(
@@ -68,13 +70,14 @@ class MatchingService:
             logger.info(
                 f"Initializing DocumentPairingPredictor with model: {os.path.abspath(self.model_path)}"
             )
-            predictor = DocumentPairingPredictor(self.model_path, svc_threshold=self.svc_threshold)
+            predictor = DocumentPairingPredictor(
+                self.model_path, svc_threshold=self.svc_threshold
+            )
             logger.info("DocumentPairingPredictor initialized successfully.")
             return predictor
         except Exception as e:
             logger.error(f"Failed to initialize predictor: {e}")
             return None
-
 
     def adapt_report_to_v3(self, report: dict) -> dict:
         """
@@ -100,19 +103,17 @@ class MatchingService:
 
         return v3_report
 
-
     def get_dummy_matching_report(self, document: Dict) -> Dict:
         """
         Generates a dummy matching report based on hash of document ID.
         """
         document_id = document.get("id", "<id missing>")
-        
+
         # Simple hash based logic for dummy data - matches app.py implementation
         if hash(str(document_id)) % 2 == 0:
             return self._dummy_no_match_report(document)
         else:
             return self._dummy_match_report(document)
-
 
     def _dummy_no_match_report(self, document: Dict) -> Dict:
         """
@@ -121,10 +122,10 @@ class MatchingService:
         doc_id = document.get("id", "<id missing>")
         doc_kind = document.get("kind", "unknown")
         site = document.get("site", "unknown-site")
-        
+
         # Generate a somewhat unique report ID based on doc ID
         report_id = f"r-nomatch-{hash(str(doc_id)) & 0xfff:03x}"
-        
+
         report = {
             "version": "v3",
             "id": report_id,
@@ -168,17 +169,20 @@ class MatchingService:
 
         return report
 
-
     def _dummy_match_report(self, document: Dict) -> Dict:
         """
         Generates a dummy V3 match report.
         """
         doc_id = document.get("id", "<id missing>")
-        doc_kind = document.get("kind", "invoice")  # Assume invoice for dummy matched pair
+        doc_kind = document.get(
+            "kind", "invoice"
+        )  # Assume invoice for dummy matched pair
         site = document.get("site", "unknown-site")
 
         # Generate a fake partner document ID and report ID
-        matched_id = f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}"  # Dummy matched ID
+        matched_id = (
+            f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}"  # Dummy matched ID
+        )
         report_id = f"r-match-{hash(str(doc_id)) & 0xfff:03x}"
         partner_kind = "purchase-order" if doc_kind == "invoice" else "invoice"
 
@@ -214,7 +218,7 @@ class MatchingService:
                         "headers.inc_vat_amount",
                     ],
                     "values": ["1950.25", "1993.00"],
-                }
+                },
             ],
             "itempairs": [
                 {
@@ -252,7 +256,6 @@ class MatchingService:
 
         return report
 
-
     def process_document(
         self,
         document: Dict,
@@ -273,7 +276,7 @@ class MatchingService:
         # Ensure we have a predictor if needed - lazy initialization
         if self._predictor is None and USE_PREDICTION:
             self.initialize()
-            
+
         doc_id = document.get("id", "<id missing>")
         site = document.get("site", "<site missing>")
         kind = document.get("kind", "<kind missing>")
@@ -321,7 +324,9 @@ class MatchingService:
                         f"Trace ID {trace_id}: Pipeline returned an error for doc {doc_id}"
                     )
                     log_entry["level"] = "error"
-                    log_entry["message"] = f"Pipeline returned an error for doc {doc_id}"
+                    log_entry["message"] = (
+                        f"Pipeline returned an error for doc {doc_id}"
+                    )
                     return None, log_entry
 
                 log_entry["message"] = (
@@ -337,7 +342,9 @@ class MatchingService:
                     f"Trace ID {trace_id}: Unhandled exception during pipeline execution for document {doc_id}."
                 )
                 log_entry["level"] = "error"
-                log_entry["message"] = f"Unhandled exception during pipeline execution: {e}"
+                log_entry["message"] = (
+                    f"Unhandled exception during pipeline execution: {e}"
+                )
                 return None, log_entry
 
         else:
@@ -349,28 +356,3 @@ class MatchingService:
             log_entry["message"] = f"Processed document {doc_id} using dummy logic."
             log_entry["matchResult"] = dummy_report.get("labels", ["unknown"])[0]
             return dummy_report, log_entry
-
-
-# Create a default service instance for backward compatibility
-default_service = MatchingService()
-
-# For backward compatibility with existing code
-def initialize_predictor() -> Optional[DocumentPairingPredictor]:
-    """Initialize and return the predictor from the default service"""
-    return default_service.initialize()
-
-def adapt_report_to_v3(report: dict) -> dict:
-    """Adapt a report to V3 format using the default service"""
-    return default_service.adapt_report_to_v3(report)
-
-def get_dummy_matching_report(document: Dict) -> Dict:
-    """Get a dummy matching report using the default service"""
-    return default_service.get_dummy_matching_report(document)
-
-def process_document(
-    document: Dict,
-    candidate_documents: List[Dict],
-    trace_id: str = "<trace_id missing>",
-) -> Tuple[Dict, Dict]:
-    """Process a document using the default service"""
-    return default_service.process_document(document, candidate_documents, trace_id)

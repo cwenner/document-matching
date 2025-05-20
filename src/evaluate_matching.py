@@ -11,7 +11,7 @@ from wfields import get_supplier_ids
 from document_utils import DocumentKind
 from try_client import DEFAULT_URL
 
-import matching_service
+from matching_service import MatchingService
 
 
 class MatchingEvaluator:
@@ -46,9 +46,10 @@ class MatchingEvaluator:
         self.model_path = model_path
 
         if self.use_direct_calls:
-            if self.model_path:
-                os.environ["DOCPAIR_MODEL_PATH"] = self.model_path
-            self.predictor = matching_service.initialize_predictor()
+            # Create our own service instance for direct calls
+            self.matching_service = MatchingService(model_path=self.model_path)
+            # Initialize it immediately to catch any issues early
+            self.matching_service.initialize()
 
         self.document_pairings = {}
         # Format: {
@@ -239,8 +240,8 @@ class MatchingEvaluator:
                 # Generate a trace_id for logging
                 trace_id = f"eval-{document_id}-{int(time.time())}"
 
-                # Call the process_document method directly
-                report, _ = matching_service.process_document(
+                # Call the process_document method directly on our service instance
+                report, _ = self.matching_service.process_document(
                     document_with_history, candidates, trace_id
                 )
 

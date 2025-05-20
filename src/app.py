@@ -2,13 +2,16 @@ import json
 import logging
 from fastapi import Request, Response, FastAPI, HTTPException
 
-# Import the matching service module that contains all business logic
-import matching_service
+# Import the MatchingService class
+from matching_service import MatchingService
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("matching_service_api")
+
+# Create a service instance
+matching_service = MatchingService()
 
 # --- FastAPI App ---
 app = FastAPI()
@@ -56,6 +59,10 @@ async def request_handler(request: Request):
         logger.info(
             f"Trace ID {trace_id}: Processing request for document {doc_id} with {len(candidate_documents)} candidates"
         )
+
+        # Ensure the service is initialized (lazy initialization)
+        if matching_service._predictor is None:
+            matching_service.initialize()
 
         # Delegate to matching service for processing
         final_report, log_entry = matching_service.process_document(
