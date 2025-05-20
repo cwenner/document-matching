@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 class DocumentPairingPredictor:
     def __init__(
-        self, model_path="data/models/document-pairing-svm.pkl", svc_threshold=0.15, filter_by_supplier=True
+        self,
+        model_path="data/models/document-pairing-svm.pkl",
+        svc_threshold=0.15,
+        filter_by_supplier=True,
     ):
         """
         Initialize the document pairing predictor with a trained SVM model.
@@ -429,14 +432,16 @@ class DocumentPairingPredictor:
                 if (
                     doc["kind"] == "purchase-order"
                     and (set(get_supplier_ids(doc)) & set(supplier_ids))
-                    and (ignore_chronology or self._is_chronologically_valid(document, doc))
+                    and (
+                        ignore_chronology
+                        or self._is_chronologically_valid(document, doc)
+                    )
                 ):
                     candidate_po_ids.append(doc["id"])
         else:
             for doc in candidate_documents:
-                if (
-                    doc["kind"] == "purchase-order"
-                    and (ignore_chronology or self._is_chronologically_valid(document, doc))
+                if doc["kind"] == "purchase-order" and (
+                    ignore_chronology or self._is_chronologically_valid(document, doc)
                 ):
                     candidate_po_ids.append(doc["id"])
 
