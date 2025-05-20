@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentPairingPredictor:
     def __init__(
-        self, model_path="data/models/document-pairing-svm.pkl", svc_threshold=0.15
+        self, model_path="data/models/document-pairing-svm.pkl", svc_threshold=0.15, filter_by_supplier=True
     ):
         """
         Initialize the document pairing predictor with a trained SVM model.
@@ -34,6 +34,9 @@ class DocumentPairingPredictor:
 
         # Set SVM threshold
         self.svc_threshold = svc_threshold
+
+        # Option to filter by supplier
+        self.filter_by_supplier = filter_by_supplier
 
         # Initialize data structures for tracking documents and pairings
         self.order_reference2invoice_ids = collections.defaultdict(list)
@@ -71,8 +74,12 @@ class DocumentPairingPredictor:
         """
         self.id2document[doc["id"]] = doc
 
-        for supplier_id in get_supplier_ids(doc):
-            self.supplier_id2document_ids[supplier_id].append(doc["id"])
+        if self.filter_by_supplier:
+            for supplier_id in get_supplier_ids(doc):
+                self.supplier_id2document_ids[supplier_id].append(doc["id"])
+        else:
+            # Use a stand-in value to group all docs together if not filtering
+            self.supplier_id2document_ids[None].append(doc["id"])
 
         if doc["kind"] == "invoice":
             order_reference = self._get_header(doc, "orderReference")
@@ -295,10 +302,21 @@ class DocumentPairingPredictor:
         # Fallback: if no matched PO for an invoice, search based on supplier
         if not paired_purchase_order_ids and document["kind"] == "invoice":
             candidates = []
-            for supplier_id in get_supplier_ids(document):
-                candidates += [
+            if self.filter_by_supplier:
+                for supplier_id in get_supplier_ids(document):
+                    candidates += [
+                        self.id2document[x]
+                        for x in self.supplier_id2document_ids.get(supplier_id, [])
+                        if (
+                            x in self.id2document
+                            and self.id2document[x]["kind"] == "purchase-order"
+                            and x not in self.ids_have_received_invoices
+                        )
+                    ]
+            else:
+                candidates = [
                     self.id2document[x]
-                    for x in self.supplier_id2document_ids.get(supplier_id, [])
+                    for x in self.supplier_id2document_ids.get(None, [])
                     if (
                         x in self.id2document
                         and self.id2document[x]["kind"] == "purchase-order"
@@ -406,13 +424,21 @@ class DocumentPairingPredictor:
         candidate_po_ids = []
 
         # Get candidate POs from the same supplier created before this invoice
-        for doc in candidate_documents:
-            if (
-                doc["kind"] == "purchase-order"
-                and (set(get_supplier_ids(doc)) & set(supplier_ids))
-                and (ignore_chronology or self._is_chronologically_valid(document, doc))
-            ):
-                candidate_po_ids.append(doc["id"])
+        if self.filter_by_supplier:
+            for doc in candidate_documents:
+                if (
+                    doc["kind"] == "purchase-order"
+                    and (set(get_supplier_ids(doc)) & set(supplier_ids))
+                    and (ignore_chronology or self._is_chronologically_valid(document, doc))
+                ):
+                    candidate_po_ids.append(doc["id"])
+        else:
+            for doc in candidate_documents:
+                if (
+                    doc["kind"] == "purchase-order"
+                    and (ignore_chronology or self._is_chronologically_valid(document, doc))
+                ):
+                    candidate_po_ids.append(doc["id"])
 
         if not candidate_po_ids:
             return base_pred
