@@ -162,6 +162,7 @@ class DocumentPairingPredictor:
             ref_pred = {"paired_purchase_order_ids": []}  # temp
 
             # For invoices with no PO match, try SVM fallback
+            # @TODO this should be all documents
             if (
                 document["kind"] == "invoice"
                 and not ref_pred["paired_purchase_order_ids"]
