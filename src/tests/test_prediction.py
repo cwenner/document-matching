@@ -10,7 +10,8 @@ if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 
 
-from app import app, WHITELISTED_SITES
+from app import app
+from matching_service import WHITELISTED_SITES
 
 # --- Test Client ---
 client = TestClient(app)
