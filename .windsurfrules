@@ -1,0 +1,84 @@
+Always start by reviewing what has been said, and all recent human messages and other information relevant to the request. Make sure that all expressed preferences, concerns, or considerations are taken into account. Reason before responding. Recall goals, objectives, purpose, what we are optimizing for, constraints, and failure models, Be pragmatic. Reason from first principles and identify pivot points. Consider what is most important. Consider best trade-off solutions. Be maximally competent.
+
+Favor pragmatic options. Use simple, clear, and concise code. Avoid unnecessary comments. Use black & PEP8. Have a plan for implementation that follows BDD+TDD but makes as small steps as possible all tests are not passing. Eg implement subsets of features one at a time. Frequently run relevant tests and other checks after making changes. Run everything before considering an undertaking complete.
+
+When starting on a new ticket, always:
+1. Review the project.
+2. Read any development instructions.
+3. Figure out what is actually requested.
+4. Review all user stories and feature files.
+5. Change feature files, only if necessary.
+6. Install requirements.txt and requirements-dev.txt.
+7. Load environment variables from .env
+8. Run python -m nox.
+9. Make a plan.
+10. Write down context and plan to CURRENT_WORKING_NOTES.md
+11. Execute on the plan. Update CURRENT_WORKING_NOTES.md as you go - it should be possible to at any point hand over the task to someone else who can pick up after reading this file.
+12. Repeat until ready to submit code changes to close the ticket.
+13. Run python -m nox.
+14. Fix lint issues.
+15. Validate that everything is ready. If not, go to 8.
+16. Update documentation.
+17. Review documentation for consistency.
+18. Clean up.
+19. Write down learnings. Document major changes.
+20. Simulate critical code review. Go to 8 as needed.
+21. Simulate critical review against ticket in #1. Go to 8 as needed.
+22. Declare ready to submit.
+23. Delete CURRENT_WORKING_NOTES.md.
+
+Stay focused on the task. Write down requests for improvements to FUTURE_STEPS.md
+
+**Knowledge Persistence:**
+*   **Log:** Bugs/Issues/Prevention (`GOTCHAS.md`), Optimizations (`IMPLEMENTATION_DETAILS.md`), Edge Cases (`GOTCHAS.md`), Arch Insights (`MENTAL_MODEL.md`), Rule Nuances (Relevant Doc). Log immediately.
+*   **Memory:** Maintain active session recall of all logged items.
+*   **Pre-Action:** Review logs. Apply history, avoid repeats, build optimizations.
+*   **Post-Action:** Log cause/solution/rationale. Update docs. Add prevention (`GOTCHAS.md`).
+
+
+**Framework: BDD-Driven Development (Recursive)**
+
+**Goal:** Implement & validate software via BDD specifications and automated hierarchical testing.
+
+**Core Process (Recursive Steps):**
+
+1.  **SPECIFY_BEHAVIOR (BDD):**
+    *   **Input:** Business Reqs OR Aggregate Consumer Component Needs.
+    *   **Action:** Define observable behavior (Given/When/Then) in Gherkin `.feature` file.
+    *   **Output:** Executable BDD Specification (`.feature`).
+
+2.  **DEFINE_INTERFACE:**
+    *   **Input:** BDD Specification (`.feature`).
+    *   **Action:** Define formal Interface Contract (API Spec, ABC, Pydantic, etc.) enabling BDD interaction.
+    *   **Output:** Interface Contract.
+
+3.  **IMPLEMENT_CODE (TDD Inner Loop):**
+    *   **Input:** BDD Specification (`.feature`), Interface Contract.
+    *   **Action:** Write code implementing Interface Contract to satisfy BDD Specification. Use TDD (Red-Green-Refactor) for internal logic units. Dependencies: Interact via existing Interface Contracts. If new internal Dep needed, recurse Step 1 for Dep based on consumer need, get Dep Contract.
+    *   **Output:** Implementation Code.
+
+4.  **VALIDATE_BEHAVIOR (Automated BDD):**
+    *   **Input:** BDD Specification (`.feature`), Implementation Code.
+    *   **Action:** Execute `.feature` file (e.g., `behave`). Mock ALL direct dependencies based *strictly* on their Interface Contracts. Verify SUT produces observable outcomes defined in `Then` steps.
+    *   **Output:** Pass/Fail Result (Specification Conformance).
+
+5.  **REFACTOR_CODE:**
+    *   **Input:** Passing Implementation Code & its VALIDATE test (Step 4).
+    *   **Action:** Improve internal code quality.
+    *   **Validation:** Re-run Step 4 VALIDATE; must pass.
+
+**Key Principles:**
+
+*   **Recursion/Hierarchy:** Process applies system-wide and to all internal components (builds DAG).
+*   **Consumer-Driven:** Component specs derive from aggregate needs of all its consumers.
+*   **State Handling:** Isolated (via BDD sequences), Shared (via Interface dependency, mock interface in VALIDATE).
+*   **NFRs:** Separate specification & validation (specialized tests/tools); NFR-specific mocking differs from functional mocking.
+*   **Interface Stability:** Maintain backward compatibility, guarded by consumer VALIDATE tests.
+
+**Automation:** CI/CD pipeline executes Step 4 VALIDATE tests.
+
+Clarifications:
+* Write Gherkin to Express Requirements, Not for Step Reuse
+* Write .feature files in clear, business-oriented language. It is up to behave files to convert these to code.
+* Try to never change .feature files for the purpose of implementation. Exception: If the same phrase is used in multiple features and actually by context are intended to be different, then update all places to be more specific. If what is being expressed is intended to be the same, use a shared_steps file.
+* Prefer keeping implementation of tests for different features in separate files.
