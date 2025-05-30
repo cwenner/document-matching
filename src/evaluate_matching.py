@@ -10,7 +10,7 @@ from typing import List, Dict, Set, Tuple, Optional, Any
 from collections import defaultdict
 
 # Configure logging
-logging.basicConfig(level=logging.WARNING, format='%(message)s')
+logging.basicConfig(level=logging.WARNING, format="%(message)s")
 
 from wfields import get_supplier_ids
 from document_utils import DocumentKind, get_field
@@ -106,9 +106,9 @@ class MatchingEvaluator:
 
             # Create a mapping from document ID to document for easy lookup
             for document in self.inputs:
-                if 'id' in document:
+                if "id" in document:
                     # Store with composite key to avoid ID collisions between different document types
-                    self.id2document[(document['id'], document['kind'])] = document
+                    self.id2document[(document["id"], document["kind"])] = document
 
             if self.verbose:
                 print(f"Loaded dataset with {len(self.inputs)} documents")
@@ -119,7 +119,7 @@ class MatchingEvaluator:
 
     def print_final_results(self, final_metrics):
         """Print the final evaluation results.
-        
+
         Args:
             final_metrics: Dictionary with final evaluation metrics
         """
@@ -129,7 +129,7 @@ class MatchingEvaluator:
             if self.document_accuracies
             else 0
         )
-        
+
         # Print header
         print("\n=== Final Evaluation Results ===")
         print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
@@ -138,7 +138,7 @@ class MatchingEvaluator:
         for doc_type, metrics in final_metrics.items():
             if doc_type == "overall":
                 continue
-                
+
             print(f"\n{doc_type.upper()}:")
 
             # Format precision, recall, and F1 for display
@@ -147,10 +147,14 @@ class MatchingEvaluator:
             f1 = metrics["f1_score"]
             avg_accuracy = metrics["average_accuracy"]
 
-            precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            precision_str = (
+                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            )
             recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
             f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-            accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+            accuracy_str = (
+                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+            )
 
             print(f"  Precision: {precision_str}")
             print(f"  Recall: {recall_str}")
@@ -160,30 +164,40 @@ class MatchingEvaluator:
             print(f"  True Negatives: {metrics['true_negatives']}")
             print(f"  False Positives: {metrics['false_positives']}")
             print(f"  False Negatives: {metrics['false_negatives']}")
-        
+
         # Print overall metrics
         print("\nOVERALL:")
-        
+
         # Format for display
         precision = final_metrics["overall"]["precision"]
         recall = final_metrics["overall"]["recall"]
         f1 = final_metrics["overall"]["f1_score"]
         avg_accuracy = final_metrics["overall"]["average_accuracy"]
-        
+
         precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
         recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
         f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-        accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-        
+        accuracy_str = (
+            f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+        )
+
         print(f"  Precision: {precision_str}")
         print(f"  Recall: {recall_str}")
         print(f"  F1 Score: {f1_str}")
         print(f"  Average Accuracy: {accuracy_str}")
-        print(f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}")
-        print(f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}")
-        print(f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}")
-        print(f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}")
-        
+        print(
+            f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}"
+        )
+
         # Save results to file
         output_path = os.path.join(
             os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
@@ -192,7 +206,10 @@ class MatchingEvaluator:
         # Create results dictionary for saving
         results = {
             "overall_document_accuracy": float(avg_doc_accuracy),
-            "metrics": {k: {kk: vv for kk, vv in v.items() if kk != "accuracies"} for k, v in self.metrics.items()},
+            "metrics": {
+                k: {kk: vv for kk, vv in v.items() if kk != "accuracies"}
+                for k, v in self.metrics.items()
+            },
             "precision": final_metrics["overall"]["precision"],
             "recall": final_metrics["overall"]["recall"],
             "f1_score": final_metrics["overall"]["f1_score"],
@@ -392,11 +409,11 @@ class MatchingEvaluator:
             #                                     paired_ids[kind].append(matched_id)
 
             #         return paired_ids
-                # else:
-                #     print(
-                #         f"Error: No report returned from direct call", file=sys.stderr
-                #     )
-                #     return {}
+            # else:
+            #     print(
+            #         f"Error: No report returned from direct call", file=sys.stderr
+            #     )
+            #     return {}
             except Exception as e:
                 print(f"Error making direct prediction: {e}", file=sys.stderr)
                 return {}
@@ -495,30 +512,38 @@ class MatchingEvaluator:
         invoice_tn = 1 if not predicted_invoice_ids and not expected_invoice_ids else 0
         invoice_fp = len(predicted_invoice_ids - expected_invoice_ids)
         invoice_fn = len(expected_invoice_ids - predicted_invoice_ids)
-        
+
         delivery_tp = len(predicted_delivery_ids.intersection(expected_delivery_ids))
-        delivery_tn = 1 if not predicted_delivery_ids and not expected_delivery_ids else 0
+        delivery_tn = (
+            1 if not predicted_delivery_ids and not expected_delivery_ids else 0
+        )
         delivery_fp = len(predicted_delivery_ids - expected_delivery_ids)
         delivery_fn = len(expected_delivery_ids - predicted_delivery_ids)
-        
-        po_tp = len(predicted_purchase_order_ids.intersection(expected_purchase_order_ids))
-        po_tn = 1 if not predicted_purchase_order_ids and not expected_purchase_order_ids else 0
+
+        po_tp = len(
+            predicted_purchase_order_ids.intersection(expected_purchase_order_ids)
+        )
+        po_tn = (
+            1
+            if not predicted_purchase_order_ids and not expected_purchase_order_ids
+            else 0
+        )
         po_fp = len(predicted_purchase_order_ids - expected_purchase_order_ids)
         po_fn = len(expected_purchase_order_ids - predicted_purchase_order_ids)
-        
+
         # Consolidate false negative reporting for better debugging
         if invoice_fn or delivery_fn or po_fn:
             print("\n====================================================")
             print(f"FALSE NEGATIVE REPORT FOR DOCUMENT {document['id']}")
             print("====================================================\n")
-            
+
             # Document info section
             print("CURRENT DOCUMENT:")
             print(f"  ID: {document['id']}")
             print(f"  Kind: {document['kind']}")
-            
+
             # Document field details based on kind
-            if document['kind'] == "invoice":
+            if document["kind"] == "invoice":
                 # Get orderReference from header if present
                 order_ref = None
                 if "orderReference" in document:
@@ -526,76 +551,92 @@ class MatchingEvaluator:
                 elif "header" in document and "orderReference" in document["header"]:
                     order_ref = document["header"]["orderReference"]
                 print(f"  Order Reference: {order_ref}")
-            elif document['kind'] == "delivery-receipt":
+            elif document["kind"] == "delivery-receipt":
                 po_numbers = []
                 for line in document.get("items", []):
                     po_nbr = get_field(line, "purchaseOrderNumber")
                     if po_nbr and po_nbr not in po_numbers:
                         po_numbers.append(po_nbr)
                 print(f"  PO Numbers: {po_numbers}")
-            elif document['kind'] == "purchase-order":
+            elif document["kind"] == "purchase-order":
                 po_number = document["id"]
                 print(f"  PO Number: {po_number}")
-                
+
             # Document header fields
-            header = document.get('header', {})
+            header = document.get("header", {})
             if header:
                 print("  Header Info:")
                 for key, value in header.items():
-                    if key in ['orderReference', 'orderNumber', 'documentDate', 'supplierName']:
+                    if key in [
+                        "orderReference",
+                        "orderNumber",
+                        "documentDate",
+                        "supplierName",
+                    ]:
                         print(f"    {key}: {value}")
-            
+
             # Supplier IDs
             supplier_ids = get_supplier_ids(document)
             if supplier_ids:
                 print(f"  Supplier IDs: {supplier_ids}")
             print("\n")
-            
+
             # False negative details by document type
             if invoice_fn:
                 missed_invoice_ids = expected_invoice_ids - predicted_invoice_ids
                 print(f"INVOICE FALSE NEGATIVES: {invoice_fn}")
                 print(f"  Missed invoice IDs: {missed_invoice_ids}")
-                
+
                 # Details for each missed invoice
                 for missed_id in missed_invoice_ids:
                     # Use composite key (id, kind) to look up invoice
-                    if (missed_id, 'invoice') in self.id2document:
-                        missed_doc = self.id2document[(missed_id, 'invoice')]
+                    if (missed_id, "invoice") in self.id2document:
+                        missed_doc = self.id2document[(missed_id, "invoice")]
                         print("\n  Missed Invoice Details:")
                         print(f"    ID: {missed_id}")
                         # Get orderReference from header if present
                         order_ref = None
                         if "orderReference" in missed_doc:
                             order_ref = missed_doc["orderReference"]
-                        elif "header" in missed_doc and "orderReference" in missed_doc["header"]:
+                        elif (
+                            "header" in missed_doc
+                            and "orderReference" in missed_doc["header"]
+                        ):
                             order_ref = missed_doc["header"]["orderReference"]
                         print(f"    Order Reference: {order_ref}")
-                        
+
                         # Header info for the missed document
-                        header = missed_doc.get('header', {})
+                        header = missed_doc.get("header", {})
                         if header:
                             for key, value in header.items():
-                                if key in ['orderReference', 'documentDate', 'supplierName']:
+                                if key in [
+                                    "orderReference",
+                                    "documentDate",
+                                    "supplierName",
+                                ]:
                                     print(f"    {key}: {value}")
-                        
+
                         # Supplier matching info
                         missed_supplier_ids = get_supplier_ids(missed_doc)
                         print(f"    Supplier IDs: {missed_supplier_ids}")
-                        common_suppliers = set(supplier_ids).intersection(set(missed_supplier_ids)) if supplier_ids and missed_supplier_ids else set()
+                        common_suppliers = (
+                            set(supplier_ids).intersection(set(missed_supplier_ids))
+                            if supplier_ids and missed_supplier_ids
+                            else set()
+                        )
                         print(f"    Common Suppliers: {common_suppliers}")
                 print("\n")
-            
+
             if delivery_fn:
                 missed_delivery_ids = expected_delivery_ids - predicted_delivery_ids
                 print(f"DELIVERY FALSE NEGATIVES: {delivery_fn}")
                 print(f"  Missed delivery IDs: {missed_delivery_ids}")
-                
+
                 # Details for each missed delivery
                 for missed_id in missed_delivery_ids:
                     # Use composite key (id, kind) to look up delivery receipt
-                    if (missed_id, 'delivery-receipt') in self.id2document:
-                        missed_doc = self.id2document[(missed_id, 'delivery-receipt')]
+                    if (missed_id, "delivery-receipt") in self.id2document:
+                        missed_doc = self.id2document[(missed_id, "delivery-receipt")]
                         print("\n  Missed Delivery Details:")
                         print(f"    ID: {missed_id}")
                         po_numbers = []
@@ -604,49 +645,63 @@ class MatchingEvaluator:
                             if po_nbr and po_nbr not in po_numbers:
                                 po_numbers.append(po_nbr)
                         print(f"    PO Numbers: {po_numbers}")
-                        
+
                         # Header info
-                        header = missed_doc.get('header', {})
+                        header = missed_doc.get("header", {})
                         if header:
                             for key, value in header.items():
-                                if key in ['documentDate', 'supplierName']:
+                                if key in ["documentDate", "supplierName"]:
                                     print(f"    {key}: {value}")
-                        
+
                         # Supplier matching info
                         missed_supplier_ids = get_supplier_ids(missed_doc)
                         print(f"    Supplier IDs: {missed_supplier_ids}")
-                        common_suppliers = set(supplier_ids).intersection(set(missed_supplier_ids)) if supplier_ids and missed_supplier_ids else set()
+                        common_suppliers = (
+                            set(supplier_ids).intersection(set(missed_supplier_ids))
+                            if supplier_ids and missed_supplier_ids
+                            else set()
+                        )
                         print(f"    Common Suppliers: {common_suppliers}")
                 print("\n")
-            
+
             if po_fn:
-                missed_po_ids = expected_purchase_order_ids - predicted_purchase_order_ids
+                missed_po_ids = (
+                    expected_purchase_order_ids - predicted_purchase_order_ids
+                )
                 print(f"PURCHASE ORDER FALSE NEGATIVES: {po_fn}")
                 print(f"  Missed purchase order IDs: {missed_po_ids}")
-                
+
                 # Details for each missed purchase order
                 for missed_id in missed_po_ids:
                     # Use composite key (id, kind) to look up purchase order
-                    if (missed_id, 'purchase-order') in self.id2document:
-                        missed_doc = self.id2document[(missed_id, 'purchase-order')]
+                    if (missed_id, "purchase-order") in self.id2document:
+                        missed_doc = self.id2document[(missed_id, "purchase-order")]
                         print("\n  Missed Purchase Order Details:")
                         print(f"    ID: {missed_id}")
                         po_number = missed_doc["id"]
                         print(f"    PO Number: {po_number}")
-                        
+
                         # Header info
-                        header = missed_doc.get('header', {})
+                        header = missed_doc.get("header", {})
                         if header:
                             for key, value in header.items():
-                                if key in ['orderNumber', 'documentDate', 'supplierName']:
+                                if key in [
+                                    "orderNumber",
+                                    "documentDate",
+                                    "supplierName",
+                                ]:
                                     print(f"    {key}: {value}")
-                        
+
                         # Supplier matching info
                         missed_supplier_ids = get_supplier_ids(missed_doc)
                         print(f"    Supplier IDs: {missed_supplier_ids}")
-                        common_suppliers = set(supplier_ids).intersection(set(missed_supplier_ids)) if supplier_ids and missed_supplier_ids else set()
+                        common_suppliers = (
+                            set(supplier_ids).intersection(set(missed_supplier_ids))
+                            if supplier_ids and missed_supplier_ids
+                            else set()
+                        )
                         print(f"    Common Suppliers: {common_suppliers}")
-                        
+
             print("\n====================================================\n")
 
         # Calculate document accuracy
@@ -726,8 +781,6 @@ class MatchingEvaluator:
 
         return document_result
 
-
-        
     def _calculate_accuracy(
         self, predicted_ids: Set[str], expected_ids: Set[str]
     ) -> float:
@@ -890,10 +943,10 @@ class MatchingEvaluator:
         """Run the full evaluation process."""
         if not self.load_dataset():
             return False
-    
+
         total_documents = len(self.inputs)
         if self.verbose:
-            print(f"Total documents: {total_documents}") 
+            print(f"Total documents: {total_documents}")
 
         # Calculate how many documents to skip for history building
         skip_count = int(total_documents * self.skip_portion)
@@ -997,10 +1050,10 @@ class MatchingEvaluator:
 
             # Update pairing history with expected matches
             self.update_document_pairings(document_id, document_kind, expected_ids)
-            
+
             # Add document to history AFTER making the prediction
             self.document_history.append(document)
-            
+
             # Only print per-document evaluation results if verbose mode is enabled
             if self.verbose:
                 try:
@@ -1019,15 +1072,15 @@ class MatchingEvaluator:
                 except Exception as e:
                     if self.verbose:
                         logging.error(f"Error printing document result: {e}")
-        
+
         # Calculate final metrics and print results
         final_metrics = self.calculate_precision_recall()
         self.print_final_results(final_metrics)
         return True
-        
+
     def print_final_results(self, final_metrics):
         """Print the final evaluation results.
-        
+
         Args:
             final_metrics: Dictionary with final evaluation metrics
         """
@@ -1037,7 +1090,7 @@ class MatchingEvaluator:
             if self.document_accuracies
             else 0
         )
-        
+
         # Print header
         print("\n=== Final Evaluation Results ===")
         print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
@@ -1046,7 +1099,7 @@ class MatchingEvaluator:
         for doc_type, metrics in final_metrics.items():
             if doc_type == "overall":
                 continue
-                
+
             print(f"\n{doc_type.upper()}:")
 
             # Format precision, recall, and F1 for display
@@ -1055,10 +1108,14 @@ class MatchingEvaluator:
             f1 = metrics["f1_score"]
             avg_accuracy = metrics["average_accuracy"]
 
-            precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            precision_str = (
+                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            )
             recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
             f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-            accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+            accuracy_str = (
+                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+            )
 
             print(f"  Precision: {precision_str}")
             print(f"  Recall: {recall_str}")
@@ -1068,30 +1125,40 @@ class MatchingEvaluator:
             print(f"  True Negatives: {metrics['true_negatives']}")
             print(f"  False Positives: {metrics['false_positives']}")
             print(f"  False Negatives: {metrics['false_negatives']}")
-        
+
         # Print overall metrics
         print("\nOVERALL:")
-        
+
         # Format for display
         precision = final_metrics["overall"]["precision"]
         recall = final_metrics["overall"]["recall"]
         f1 = final_metrics["overall"]["f1_score"]
         avg_accuracy = final_metrics["overall"]["average_accuracy"]
-        
+
         precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
         recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
         f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-        accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-        
+        accuracy_str = (
+            f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+        )
+
         print(f"  Precision: {precision_str}")
         print(f"  Recall: {recall_str}")
         print(f"  F1 Score: {f1_str}")
         print(f"  Average Accuracy: {accuracy_str}")
-        print(f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}")
-        print(f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}")
-        print(f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}")
-        print(f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}")
-        
+        print(
+            f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}"
+        )
+
         # Save results to file
         output_path = os.path.join(
             os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
@@ -1100,7 +1167,10 @@ class MatchingEvaluator:
         # Create results dictionary for saving
         results = {
             "overall_document_accuracy": float(avg_doc_accuracy),
-            "metrics": {k: {kk: vv for kk, vv in v.items() if kk != "accuracies"} for k, v in self.metrics.items()},
+            "metrics": {
+                k: {kk: vv for kk, vv in v.items() if kk != "accuracies"}
+                for k, v in self.metrics.items()
+            },
             "precision": final_metrics["overall"]["precision"],
             "recall": final_metrics["overall"]["recall"],
             "f1_score": final_metrics["overall"]["f1_score"],
@@ -1148,10 +1218,10 @@ class MatchingEvaluator:
                 if document_id not in self.document_pairings[paired_id][document_kind]:
                     self.document_pairings[paired_id][document_kind].add(document_id)
         return True
-        
+
     def print_final_results(self, final_metrics):
         """Print the final evaluation results.
-        
+
         Args:
             final_metrics: Dictionary with final evaluation metrics
         """
@@ -1161,7 +1231,7 @@ class MatchingEvaluator:
             if self.document_accuracies
             else 0
         )
-        
+
         # Print header
         print("\n=== Final Evaluation Results ===")
         print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
@@ -1170,7 +1240,7 @@ class MatchingEvaluator:
         for doc_type, metrics in final_metrics.items():
             if doc_type == "overall":
                 continue
-                
+
             print(f"\n{doc_type.upper()}:")
 
             # Format precision, recall, and F1 for display
@@ -1179,10 +1249,14 @@ class MatchingEvaluator:
             f1 = metrics["f1_score"]
             avg_accuracy = metrics["average_accuracy"]
 
-            precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            precision_str = (
+                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            )
             recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
             f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-            accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+            accuracy_str = (
+                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+            )
 
             print(f"  Precision: {precision_str}")
             print(f"  Recall: {recall_str}")
@@ -1192,30 +1266,40 @@ class MatchingEvaluator:
             print(f"  True Negatives: {metrics['true_negatives']}")
             print(f"  False Positives: {metrics['false_positives']}")
             print(f"  False Negatives: {metrics['false_negatives']}")
-        
+
         # Print overall metrics
         print("\nOVERALL:")
-        
+
         # Format for display
         precision = final_metrics["overall"]["precision"]
         recall = final_metrics["overall"]["recall"]
         f1 = final_metrics["overall"]["f1_score"]
         avg_accuracy = final_metrics["overall"]["average_accuracy"]
-        
+
         precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
         recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
         f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-        accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-        
+        accuracy_str = (
+            f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+        )
+
         print(f"  Precision: {precision_str}")
         print(f"  Recall: {recall_str}")
         print(f"  F1 Score: {f1_str}")
         print(f"  Average Accuracy: {accuracy_str}")
-        print(f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}")
-        print(f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}")
-        print(f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}")
-        print(f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}")
-        
+        print(
+            f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}"
+        )
+        print(
+            f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}"
+        )
+
         # Save results to file
         output_path = os.path.join(
             os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
@@ -1224,7 +1308,10 @@ class MatchingEvaluator:
         # Create results dictionary for saving
         results = {
             "overall_document_accuracy": float(avg_doc_accuracy),
-            "metrics": {k: {kk: vv for kk, vv in v.items() if kk != "accuracies"} for k, v in self.metrics.items()},
+            "metrics": {
+                k: {kk: vv for kk, vv in v.items() if kk != "accuracies"}
+                for k, v in self.metrics.items()
+            },
             "precision": final_metrics["overall"]["precision"],
             "recall": final_metrics["overall"]["recall"],
             "f1_score": final_metrics["overall"]["f1_score"],
@@ -1238,6 +1325,7 @@ class MatchingEvaluator:
         except Exception as e:
             print(f"Error saving results: {e}", file=sys.stderr)
 
+
 if __name__ == "__main__":
     import argparse
 
@@ -1248,7 +1336,9 @@ if __name__ == "__main__":
         "--dataset", required=True, help="Path to the pairing_sequential.json file"
     )
     parser.add_argument(
-        "--api-url", default=DEFAULT_URL, help="URL of the matching service endpoint. Only used with --use-api-calls"
+        "--api-url",
+        default=DEFAULT_URL,
+        help="URL of the matching service endpoint. Only used with --use-api-calls",
     )
     parser.add_argument(
         "--max-tested",
@@ -1283,7 +1373,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    
+
     # Set logging level based on flags
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
