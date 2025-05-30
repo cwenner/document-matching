@@ -295,6 +295,7 @@ class MatchingService:
         }
 
         # --- Decision Logic: Whitelist Check ---
+        # @TODO drop this
         if site in WHITELISTED_SITES and USE_PREDICTION and self._predictor:
             logger.info(
                 f"Trace ID {trace_id}: Site '{site}' is whitelisted. Attempting real pipeline matching."
