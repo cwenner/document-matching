@@ -4,13 +4,17 @@ import requests
 import os
 import sys
 import time
-from typing import List, Dict, Set, Tuple, Optional
+import numpy as np
+import logging
+from typing import List, Dict, Set, Tuple, Optional, Any
 from collections import defaultdict
 
-from wfields import get_supplier_ids
-from document_utils import DocumentKind
-from try_client import DEFAULT_URL
+# Configure logging
+logging.basicConfig(level=logging.WARNING, format='%(message)s')
 
+from wfields import get_supplier_ids
+from document_utils import DocumentKind, get_field
+from try_client import DEFAULT_URL
 from matching_service import MatchingService
 
 
@@ -23,6 +27,7 @@ class MatchingEvaluator:
         skip_portion: float = 0.5,
         use_direct_calls: bool = False,
         model_path: str = None,
+        verbose: bool = False,
     ):
         """
         Initialize the evaluator with the dataset path and API URL.
@@ -44,6 +49,11 @@ class MatchingEvaluator:
         self.skip_portion = skip_portion
         self.use_direct_calls = use_direct_calls
         self.model_path = model_path
+        # Use (id, kind) tuple as key to avoid collisions between documents of different kinds with same ID
+        self.id2document = {}
+        self.verbose = verbose
+
+        # We'll use direct field access for document extraction
 
         if self.use_direct_calls:
             # Create our own service instance for direct calls
@@ -86,16 +96,115 @@ class MatchingEvaluator:
     def load_dataset(self):
         """Load the sequential pairing dataset."""
         try:
+            # Load JSON data from file
             with open(self.dataset_path, "r") as f:
                 data = json.load(f)
-                self.inputs = data.get("inputs", [])
-                self.targets = data.get("targets", [])
 
-            if len(self.inputs) != len(self.targets):
-                raise ValueError("Inputs and targets must have the same length")
+            # Extract inputs and targets
+            self.inputs = data.get("inputs", [])
+            self.targets = data.get("targets", [])
 
-            print(f"Loaded dataset with {len(self.inputs)} documents")
+            # Create a mapping from document ID to document for easy lookup
+            for document in self.inputs:
+                if 'id' in document:
+                    # Store with composite key to avoid ID collisions between different document types
+                    self.id2document[(document['id'], document['kind'])] = document
+
+            if self.verbose:
+                print(f"Loaded dataset with {len(self.inputs)} documents")
             return True
+        except Exception as e:
+            print(f"Error loading dataset: {e}", file=sys.stderr)
+            return False
+
+    def print_final_results(self, final_metrics):
+        """Print the final evaluation results.
+        
+        Args:
+            final_metrics: Dictionary with final evaluation metrics
+        """
+        # Calculate overall document accuracy
+        avg_doc_accuracy = (
+            sum(self.document_accuracies) / len(self.document_accuracies)
+            if self.document_accuracies
+            else 0
+        )
+        
+        # Print header
+        print("\n=== Final Evaluation Results ===")
+        print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
+
+        # Print per-document type metrics
+        for doc_type, metrics in final_metrics.items():
+            if doc_type == "overall":
+                continue
+                
+            print(f"\n{doc_type.upper()}:")
+
+            # Format precision, recall, and F1 for display
+            precision = metrics["precision"]
+            recall = metrics["recall"]
+            f1 = metrics["f1_score"]
+            avg_accuracy = metrics["average_accuracy"]
+
+            precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+            recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
+            f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
+            accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+
+            print(f"  Precision: {precision_str}")
+            print(f"  Recall: {recall_str}")
+            print(f"  F1 Score: {f1_str}")
+            print(f"  Average Accuracy: {accuracy_str}")
+            print(f"  True Positives: {metrics['true_positives']}")
+            print(f"  True Negatives: {metrics['true_negatives']}")
+            print(f"  False Positives: {metrics['false_positives']}")
+            print(f"  False Negatives: {metrics['false_negatives']}")
+        
+        # Print overall metrics
+        print("\nOVERALL:")
+        
+        # Format for display
+        precision = final_metrics["overall"]["precision"]
+        recall = final_metrics["overall"]["recall"]
+        f1 = final_metrics["overall"]["f1_score"]
+        avg_accuracy = final_metrics["overall"]["average_accuracy"]
+        
+        precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+        recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
+        f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
+        accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+        
+        print(f"  Precision: {precision_str}")
+        print(f"  Recall: {recall_str}")
+        print(f"  F1 Score: {f1_str}")
+        print(f"  Average Accuracy: {accuracy_str}")
+        print(f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}")
+        print(f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}")
+        print(f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}")
+        print(f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}")
+        
+        # Save results to file
+        output_path = os.path.join(
+            os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
+        )
+
+        # Create results dictionary for saving
+        results = {
+            "overall_document_accuracy": float(avg_doc_accuracy),
+            "metrics": {k: {kk: vv for kk, vv in v.items() if kk != "accuracies"} for k, v in self.metrics.items()},
+            "precision": final_metrics["overall"]["precision"],
+            "recall": final_metrics["overall"]["recall"],
+            "f1_score": final_metrics["overall"]["f1_score"],
+            "average_accuracy": final_metrics["overall"]["average_accuracy"],
+        }
+
+        try:
+            with open(output_path, "w") as f:
+                json.dump(results, f, cls=UniversalJSONEncoder, indent=4)
+            print(f"Results saved to {output_path}")
+        except Exception as e:
+            print(f"Error saving results: {e}", file=sys.stderr)
         except Exception as e:
             print(f"Error loading dataset: {e}", file=sys.stderr)
             return False
@@ -231,9 +340,9 @@ class MatchingEvaluator:
 
         # Use direct method calls if configured
         if self.use_direct_calls:
-            print(
-                f"[DIRECT] Predicting for document {document_id} with {len(candidates)} candidates"
-            )
+            # print(
+            #     f"[DIRECT] Predicting for document {document_id} with {len(candidates)} candidates"
+            # )
             start_time = time.time()
 
             try:
@@ -244,48 +353,50 @@ class MatchingEvaluator:
                 report, _ = self.matching_service.process_document(
                     document_with_history, candidates, trace_id
                 )
+                return report
 
-                elapsed = time.time() - start_time
-                print(f"Direct method call completed in {elapsed:.2f} seconds")
+            #     elapsed = time.time() - start_time
+            #     # Comment out timing info to reduce output
+            # # print(f"Direct method call completed in {elapsed:.2f} seconds")
 
-                # Extract paired document IDs from the report
-                if report:
-                    # Extract paired document IDs from the headers
-                    paired_ids = {
-                        "invoice": [],
-                        "delivery-receipt": [],
-                        "purchase-order": [],
-                    }
+            #     # Extract paired document IDs from the report
+            #     if report:
+            #         # Extract paired document IDs from the headers
+            #         paired_ids = {
+            #             "invoice": [],
+            #             "delivery-receipt": [],
+            #             "purchase-order": [],
+            #         }
 
-                    # Check if this is a match (no match will not have document2 headers)
-                    has_match = False
-                    for header in report.get("headers", []):
-                        if header.get("name") == "document2.id" and header.get("value"):
-                            has_match = True
-                        if header.get("name") == "document2.kind" and header.get(
-                            "value"
-                        ):
-                            matched_kind = header.get("value")
+            #         # Check if this is a match (no match will not have document2 headers)
+            #         has_match = False
+            #         for header in report.get("headers", []):
+            #             if header.get("name") == "document2.id" and header.get("value"):
+            #                 has_match = True
+            #             if header.get("name") == "document2.kind" and header.get(
+            #                 "value"
+            #             ):
+            #                 matched_kind = header.get("value")
 
-                    # If there's a match, extract the document2 ID
-                    if has_match:
-                        for header in report.get("headers", []):
-                            if header.get("name") == "document2.id":
-                                matched_id = header.get("value")
-                                if matched_id:
-                                    # Find the kind of the matched document
-                                    for header in report.get("headers", []):
-                                        if header.get("name") == "document2.kind":
-                                            kind = header.get("value")
-                                            if kind:
-                                                paired_ids[kind].append(matched_id)
+            #         # If there's a match, extract the document2 ID
+            #         if has_match:
+            #             for header in report.get("headers", []):
+            #                 if header.get("name") == "document2.id":
+            #                     matched_id = header.get("value")
+            #                     if matched_id:
+            #                         # Find the kind of the matched document
+            #                         for header in report.get("headers", []):
+            #                             if header.get("name") == "document2.kind":
+            #                                 kind = header.get("value")
+            #                                 if kind:
+            #                                     paired_ids[kind].append(matched_id)
 
-                    return paired_ids
-                else:
-                    print(
-                        f"Error: No report returned from direct call", file=sys.stderr
-                    )
-                    return {}
+            #         return paired_ids
+                # else:
+                #     print(
+                #         f"Error: No report returned from direct call", file=sys.stderr
+                #     )
+                #     return {}
             except Exception as e:
                 print(f"Error making direct prediction: {e}", file=sys.stderr)
                 return {}
@@ -296,9 +407,9 @@ class MatchingEvaluator:
                 "candidate-documents": candidates,
             }
 
-            print(
-                f"[HTTP] Predicting for document {document_id} with {len(candidates)} candidates"
-            )
+            # print(
+            #     f"[HTTP] Predicting for document {document_id} with {len(candidates)} candidates"
+            # )
 
             start_time = time.time()
 
@@ -312,7 +423,7 @@ class MatchingEvaluator:
                 )
 
                 elapsed = time.time() - start_time
-                print(f"API request completed in {elapsed:.2f} seconds")
+                # print(f"API request completed in {elapsed:.2f} seconds")
 
                 if response.ok:
                     return response.json()
@@ -379,28 +490,164 @@ class MatchingEvaluator:
         expected_purchase_order_ids = set(target.get("paired_purchase_order_ids", []))
 
         # Calculate true positives, false positives, and false negatives
+        # Calculate TP, TN, FP, FN metrics for each document type
         invoice_tp = len(predicted_invoice_ids.intersection(expected_invoice_ids))
         invoice_tn = 1 if not predicted_invoice_ids and not expected_invoice_ids else 0
         invoice_fp = len(predicted_invoice_ids - expected_invoice_ids)
         invoice_fn = len(expected_invoice_ids - predicted_invoice_ids)
-
+        
         delivery_tp = len(predicted_delivery_ids.intersection(expected_delivery_ids))
-        delivery_tn = (
-            1 if not predicted_delivery_ids and not expected_delivery_ids else 0
-        )
+        delivery_tn = 1 if not predicted_delivery_ids and not expected_delivery_ids else 0
         delivery_fp = len(predicted_delivery_ids - expected_delivery_ids)
         delivery_fn = len(expected_delivery_ids - predicted_delivery_ids)
-
-        po_tp = len(
-            predicted_purchase_order_ids.intersection(expected_purchase_order_ids)
-        )
-        po_tn = (
-            1
-            if not predicted_purchase_order_ids and not expected_purchase_order_ids
-            else 0
-        )
+        
+        po_tp = len(predicted_purchase_order_ids.intersection(expected_purchase_order_ids))
+        po_tn = 1 if not predicted_purchase_order_ids and not expected_purchase_order_ids else 0
         po_fp = len(predicted_purchase_order_ids - expected_purchase_order_ids)
         po_fn = len(expected_purchase_order_ids - predicted_purchase_order_ids)
+        
+        # Consolidate false negative reporting for better debugging
+        if invoice_fn or delivery_fn or po_fn:
+            print("\n====================================================")
+            print(f"FALSE NEGATIVE REPORT FOR DOCUMENT {document['id']}")
+            print("====================================================\n")
+            
+            # Document info section
+            print("CURRENT DOCUMENT:")
+            print(f"  ID: {document['id']}")
+            print(f"  Kind: {document['kind']}")
+            
+            # Document field details based on kind
+            if document['kind'] == "invoice":
+                # Get orderReference from header if present
+                order_ref = None
+                if "orderReference" in document:
+                    order_ref = document["orderReference"]
+                elif "header" in document and "orderReference" in document["header"]:
+                    order_ref = document["header"]["orderReference"]
+                print(f"  Order Reference: {order_ref}")
+            elif document['kind'] == "delivery-receipt":
+                po_numbers = []
+                for line in document.get("items", []):
+                    po_nbr = get_field(line, "purchaseOrderNumber")
+                    if po_nbr and po_nbr not in po_numbers:
+                        po_numbers.append(po_nbr)
+                print(f"  PO Numbers: {po_numbers}")
+            elif document['kind'] == "purchase-order":
+                po_number = document["id"]
+                print(f"  PO Number: {po_number}")
+                
+            # Document header fields
+            header = document.get('header', {})
+            if header:
+                print("  Header Info:")
+                for key, value in header.items():
+                    if key in ['orderReference', 'orderNumber', 'documentDate', 'supplierName']:
+                        print(f"    {key}: {value}")
+            
+            # Supplier IDs
+            supplier_ids = get_supplier_ids(document)
+            if supplier_ids:
+                print(f"  Supplier IDs: {supplier_ids}")
+            print("\n")
+            
+            # False negative details by document type
+            if invoice_fn:
+                missed_invoice_ids = expected_invoice_ids - predicted_invoice_ids
+                print(f"INVOICE FALSE NEGATIVES: {invoice_fn}")
+                print(f"  Missed invoice IDs: {missed_invoice_ids}")
+                
+                # Details for each missed invoice
+                for missed_id in missed_invoice_ids:
+                    # Use composite key (id, kind) to look up invoice
+                    if (missed_id, 'invoice') in self.id2document:
+                        missed_doc = self.id2document[(missed_id, 'invoice')]
+                        print("\n  Missed Invoice Details:")
+                        print(f"    ID: {missed_id}")
+                        # Get orderReference from header if present
+                        order_ref = None
+                        if "orderReference" in missed_doc:
+                            order_ref = missed_doc["orderReference"]
+                        elif "header" in missed_doc and "orderReference" in missed_doc["header"]:
+                            order_ref = missed_doc["header"]["orderReference"]
+                        print(f"    Order Reference: {order_ref}")
+                        
+                        # Header info for the missed document
+                        header = missed_doc.get('header', {})
+                        if header:
+                            for key, value in header.items():
+                                if key in ['orderReference', 'documentDate', 'supplierName']:
+                                    print(f"    {key}: {value}")
+                        
+                        # Supplier matching info
+                        missed_supplier_ids = get_supplier_ids(missed_doc)
+                        print(f"    Supplier IDs: {missed_supplier_ids}")
+                        common_suppliers = set(supplier_ids).intersection(set(missed_supplier_ids)) if supplier_ids and missed_supplier_ids else set()
+                        print(f"    Common Suppliers: {common_suppliers}")
+                print("\n")
+            
+            if delivery_fn:
+                missed_delivery_ids = expected_delivery_ids - predicted_delivery_ids
+                print(f"DELIVERY FALSE NEGATIVES: {delivery_fn}")
+                print(f"  Missed delivery IDs: {missed_delivery_ids}")
+                
+                # Details for each missed delivery
+                for missed_id in missed_delivery_ids:
+                    # Use composite key (id, kind) to look up delivery receipt
+                    if (missed_id, 'delivery-receipt') in self.id2document:
+                        missed_doc = self.id2document[(missed_id, 'delivery-receipt')]
+                        print("\n  Missed Delivery Details:")
+                        print(f"    ID: {missed_id}")
+                        po_numbers = []
+                        for line in missed_doc.get("items", []):
+                            po_nbr = get_field(line, "purchaseOrderNumber")
+                            if po_nbr and po_nbr not in po_numbers:
+                                po_numbers.append(po_nbr)
+                        print(f"    PO Numbers: {po_numbers}")
+                        
+                        # Header info
+                        header = missed_doc.get('header', {})
+                        if header:
+                            for key, value in header.items():
+                                if key in ['documentDate', 'supplierName']:
+                                    print(f"    {key}: {value}")
+                        
+                        # Supplier matching info
+                        missed_supplier_ids = get_supplier_ids(missed_doc)
+                        print(f"    Supplier IDs: {missed_supplier_ids}")
+                        common_suppliers = set(supplier_ids).intersection(set(missed_supplier_ids)) if supplier_ids and missed_supplier_ids else set()
+                        print(f"    Common Suppliers: {common_suppliers}")
+                print("\n")
+            
+            if po_fn:
+                missed_po_ids = expected_purchase_order_ids - predicted_purchase_order_ids
+                print(f"PURCHASE ORDER FALSE NEGATIVES: {po_fn}")
+                print(f"  Missed purchase order IDs: {missed_po_ids}")
+                
+                # Details for each missed purchase order
+                for missed_id in missed_po_ids:
+                    # Use composite key (id, kind) to look up purchase order
+                    if (missed_id, 'purchase-order') in self.id2document:
+                        missed_doc = self.id2document[(missed_id, 'purchase-order')]
+                        print("\n  Missed Purchase Order Details:")
+                        print(f"    ID: {missed_id}")
+                        po_number = missed_doc["id"]
+                        print(f"    PO Number: {po_number}")
+                        
+                        # Header info
+                        header = missed_doc.get('header', {})
+                        if header:
+                            for key, value in header.items():
+                                if key in ['orderNumber', 'documentDate', 'supplierName']:
+                                    print(f"    {key}: {value}")
+                        
+                        # Supplier matching info
+                        missed_supplier_ids = get_supplier_ids(missed_doc)
+                        print(f"    Supplier IDs: {missed_supplier_ids}")
+                        common_suppliers = set(supplier_ids).intersection(set(missed_supplier_ids)) if supplier_ids and missed_supplier_ids else set()
+                        print(f"    Common Suppliers: {common_suppliers}")
+                        
+            print("\n====================================================\n")
 
         # Calculate document accuracy
         invoice_accuracy = self._calculate_accuracy(
@@ -479,6 +726,8 @@ class MatchingEvaluator:
 
         return document_result
 
+
+        
     def _calculate_accuracy(
         self, predicted_ids: Set[str], expected_ids: Set[str]
     ) -> float:
@@ -637,12 +886,14 @@ class MatchingEvaluator:
 
         return results
 
-    def run_evaluation(self):
+    def run_evaluation(self) -> bool:
         """Run the full evaluation process."""
         if not self.load_dataset():
             return False
-
+    
         total_documents = len(self.inputs)
+        if self.verbose:
+            print(f"Total documents: {total_documents}") 
 
         # Calculate how many documents to skip for history building
         skip_count = int(total_documents * self.skip_portion)
@@ -674,9 +925,10 @@ class MatchingEvaluator:
             document_id = document.get("id")
             document_kind = document.get("kind")
 
-            print(
-                f"\nAdding document {i+1}/{skip_count} to history (not testing): {document_id}"
-            )
+            if self.verbose:
+                print(
+                    f"\nAdding document {i+1}/{skip_count} to history (not testing): {document_id}"
+                )
 
             # Record expected pairings from the target
             paired_ids = {
@@ -698,11 +950,15 @@ class MatchingEvaluator:
             document_id = document.get("id")
             document_kind = document.get("kind")
 
-            print(
-                f"\nProcessing document {i+1}/{total_documents} (test {i-test_start_idx+1}/{test_count}): {document_id}"
-            )
+            # print(
+            #     f"\nProcessing document {i+1}/{len(self.inputs)} (test {i-test_start_idx+1}/{test_count}): {document['id']}"
+            # )
 
             # Get matching candidates from history with pairing history included
+
+            if document["id"] != "000713" or document["kind"] != "purchase-order":
+                self.document_history.append(document)
+                continue
             candidates = self.get_matching_candidates(document)
 
             # Make prediction using the API
@@ -741,52 +997,56 @@ class MatchingEvaluator:
 
             # Update pairing history with expected matches
             self.update_document_pairings(document_id, document_kind, expected_ids)
-
+            
             # Add document to history AFTER making the prediction
             self.document_history.append(document)
-
-            # Print interim results for this document
-            print(f"Document {i+1} evaluation:")
-            for doc_type, values in document_result["metrics"].items():
-                # Print accuracy results even if there are no matches (since we handle that case now)
-                tp = values.get("true_positives", 0)
-                tn = values.get("true_negatives", 0)
-                fp = values.get("false_positives", 0)
-                fn = values.get("false_negatives", 0)
-                accuracy = values.get("accuracy", 0)
-
-                # Format precision and recall with the same logic as in calculate_precision_recall
-                if (tp + fp) > 0:
-                    precision = tp / (tp + fp)
-                    precision_str = f"{precision:.2f}"
-                else:
-                    precision_str = "1.00" if fn == 0 else "N/A"
-
-                if (tp + fn) > 0:
-                    recall = tp / (tp + fn)
-                    recall_str = f"{recall:.2f}"
-                else:
-                    recall_str = "1.00" if fp == 0 else "N/A"
-
-                print(
-                    f"  {doc_type}: Precision={precision_str}, Recall={recall_str}, Accuracy={accuracy:.2f}"
-                )
-
-        # Calculate final metrics - this will calculate precision and recall for all tested documents combined
+            
+            # Only print per-document evaluation results if verbose mode is enabled
+            if self.verbose:
+                try:
+                    logging.debug(
+                        f"Document {i+1} evaluation:\n"
+                        f"  invoice: Precision={document_result.get('invoice_precision', 1.0):.2f}, "
+                        f"Recall={document_result.get('invoice_recall', 1.0):.2f}, "
+                        f"Accuracy={document_result.get('invoice_accuracy', 1.0):.2f}\n"
+                        f"  delivery: Precision={document_result.get('delivery_precision', 1.0):.2f}, "
+                        f"Recall={document_result.get('delivery_recall', 1.0):.2f}, "
+                        f"Accuracy={document_result.get('delivery_accuracy', 1.0):.2f}\n"
+                        f"  purchase-order: Precision={document_result.get('po_precision', 1.0):.2f}, "
+                        f"Recall={document_result.get('po_recall', 1.0):.2f}, "
+                        f"Accuracy={document_result.get('po_accuracy', 1.0):.2f}"
+                    )
+                except Exception as e:
+                    if self.verbose:
+                        logging.error(f"Error printing document result: {e}")
+        
+        # Calculate final metrics and print results
         final_metrics = self.calculate_precision_recall()
-
-        # Print final results
-        print("\n=== Final Evaluation Results ===")
-
+        self.print_final_results(final_metrics)
+        return True
+        
+    def print_final_results(self, final_metrics):
+        """Print the final evaluation results.
+        
+        Args:
+            final_metrics: Dictionary with final evaluation metrics
+        """
         # Calculate overall document accuracy
         avg_doc_accuracy = (
             sum(self.document_accuracies) / len(self.document_accuracies)
             if self.document_accuracies
             else 0
         )
+        
+        # Print header
+        print("\n=== Final Evaluation Results ===")
         print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
 
+        # Print per-document type metrics
         for doc_type, metrics in final_metrics.items():
+            if doc_type == "overall":
+                continue
+                
             print(f"\n{doc_type.upper()}:")
 
             # Format precision, recall, and F1 for display
@@ -795,14 +1055,10 @@ class MatchingEvaluator:
             f1 = metrics["f1_score"]
             avg_accuracy = metrics["average_accuracy"]
 
-            precision_str = (
-                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
-            )
+            precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
             recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
             f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-            accuracy_str = (
-                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-            )
+            accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
 
             print(f"  Precision: {precision_str}")
             print(f"  Recall: {recall_str}")
@@ -812,26 +1068,51 @@ class MatchingEvaluator:
             print(f"  True Negatives: {metrics['true_negatives']}")
             print(f"  False Positives: {metrics['false_positives']}")
             print(f"  False Negatives: {metrics['false_negatives']}")
-
+        
+        # Print overall metrics
+        print("\nOVERALL:")
+        
+        # Format for display
+        precision = final_metrics["overall"]["precision"]
+        recall = final_metrics["overall"]["recall"]
+        f1 = final_metrics["overall"]["f1_score"]
+        avg_accuracy = final_metrics["overall"]["average_accuracy"]
+        
+        precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
+        recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
+        f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
+        accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+        
+        print(f"  Precision: {precision_str}")
+        print(f"  Recall: {recall_str}")
+        print(f"  F1 Score: {f1_str}")
+        print(f"  Average Accuracy: {accuracy_str}")
+        print(f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}")
+        print(f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}")
+        print(f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}")
+        print(f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}")
+        
         # Save results to file
         output_path = os.path.join(
             os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
         )
+
+        # Create results dictionary for saving
+        results = {
+            "overall_document_accuracy": float(avg_doc_accuracy),
+            "metrics": {k: {kk: vv for kk, vv in v.items() if kk != "accuracies"} for k, v in self.metrics.items()},
+            "precision": final_metrics["overall"]["precision"],
+            "recall": final_metrics["overall"]["recall"],
+            "f1_score": final_metrics["overall"]["f1_score"],
+            "average_accuracy": final_metrics["overall"]["average_accuracy"],
+        }
+
         try:
             with open(output_path, "w") as f:
-                json.dump(
-                    {
-                        "document_results": self.prediction_results,
-                        "final_metrics": final_metrics,
-                    },
-                    f,
-                    indent=2,
-                    cls=UniversalJSONEncoder,
-                )
-            print(f"\nResults saved to {output_path}")
+                json.dump(results, f, cls=UniversalJSONEncoder, indent=4)
+            print(f"Results saved to {output_path}")
         except Exception as e:
             print(f"Error saving results: {e}", file=sys.stderr)
-        return True
 
     def update_document_pairings(
         self, document_id: str, document_kind: str, paired_ids: Dict
@@ -866,22 +1147,30 @@ class MatchingEvaluator:
                     }
                 if document_id not in self.document_pairings[paired_id][document_kind]:
                     self.document_pairings[paired_id][document_kind].add(document_id)
-
-        # Calculate final metrics - this will calculate precision and recall for all tested documents combined
-        final_metrics = self.calculate_precision_recall()
-
-        # Print final results
-        print("\n=== Final Evaluation Results ===")
-
+        return True
+        
+    def print_final_results(self, final_metrics):
+        """Print the final evaluation results.
+        
+        Args:
+            final_metrics: Dictionary with final evaluation metrics
+        """
         # Calculate overall document accuracy
         avg_doc_accuracy = (
             sum(self.document_accuracies) / len(self.document_accuracies)
             if self.document_accuracies
             else 0
         )
+        
+        # Print header
+        print("\n=== Final Evaluation Results ===")
         print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
 
+        # Print per-document type metrics
         for doc_type, metrics in final_metrics.items():
+            if doc_type == "overall":
+                continue
+                
             print(f"\n{doc_type.upper()}:")
 
             # Format precision, recall, and F1 for display
@@ -890,14 +1179,10 @@ class MatchingEvaluator:
             f1 = metrics["f1_score"]
             avg_accuracy = metrics["average_accuracy"]
 
-            precision_str = (
-                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
-            )
+            precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
             recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
             f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-            accuracy_str = (
-                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-            )
+            accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
 
             print(f"  Precision: {precision_str}")
             print(f"  Recall: {recall_str}")
@@ -907,26 +1192,51 @@ class MatchingEvaluator:
             print(f"  True Negatives: {metrics['true_negatives']}")
             print(f"  False Positives: {metrics['false_positives']}")
             print(f"  False Negatives: {metrics['false_negatives']}")
-
-        # Save results to file
-        output_path = os.path.join(
-            os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
-        )
+        
+        # Print overall metrics
+        print("\nOVERALL:")
+        
+        # Format for display
+        precision = final_metrics["overall"]["precision"]
+        recall = final_metrics["overall"]["recall"]
+        f1 = final_metrics["overall"]["f1_score"]
+        avg_accuracy = final_metrics["overall"]["average_accuracy"]
+        
+        precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
         recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
         f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-        accuracy_str = (
-            f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-        )
-
+        accuracy_str = f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
+        
         print(f"  Precision: {precision_str}")
         print(f"  Recall: {recall_str}")
         print(f"  F1 Score: {f1_str}")
         print(f"  Average Accuracy: {accuracy_str}")
-        print(f"  True Positives: {metrics['true_positives']}")
-        print(f"  True Negatives: {metrics['true_negatives']}")
-        print(f"  False Positives: {metrics['false_positives']}")
-        print(f"  False Negatives: {metrics['false_negatives']}")
+        print(f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}")
+        print(f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}")
+        print(f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}")
+        print(f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}")
+        
+        # Save results to file
+        output_path = os.path.join(
+            os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
+        )
 
+        # Create results dictionary for saving
+        results = {
+            "overall_document_accuracy": float(avg_doc_accuracy),
+            "metrics": {k: {kk: vv for kk, vv in v.items() if kk != "accuracies"} for k, v in self.metrics.items()},
+            "precision": final_metrics["overall"]["precision"],
+            "recall": final_metrics["overall"]["recall"],
+            "f1_score": final_metrics["overall"]["f1_score"],
+            "average_accuracy": final_metrics["overall"]["average_accuracy"],
+        }
+
+        try:
+            with open(output_path, "w") as f:
+                json.dump(results, f, cls=UniversalJSONEncoder, indent=4)
+            print(f"Results saved to {output_path}")
+        except Exception as e:
+            print(f"Error saving results: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     import argparse
@@ -938,7 +1248,7 @@ if __name__ == "__main__":
         "--dataset", required=True, help="Path to the pairing_sequential.json file"
     )
     parser.add_argument(
-        "--api-url", default=DEFAULT_URL, help="URL of the matching service endpoint"
+        "--api-url", default=DEFAULT_URL, help="URL of the matching service endpoint. Only used with --use-api-calls"
     )
     parser.add_argument(
         "--max-tested",
@@ -953,16 +1263,38 @@ if __name__ == "__main__":
         help="Portion of documents to use for building history without testing (0.0-1.0)",
     )
     parser.add_argument(
-        "--use-direct-calls",
+        "--use-api-calls",
         action="store_true",
-        help="Use direct method calls to matching_service instead of HTTP",
+        help="Use API calls to matching_service instead of direct method calls",
     )
     parser.add_argument(
         "--model-path",
-        help="Path to the model file (only used with --use-direct-calls)",
+        help="Path to the model file (only used without --use-api-calls)",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output with detailed logs",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging (sets logging level to DEBUG)",
     )
 
     args = parser.parse_args()
+    
+    # Set logging level based on flags
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+    elif not args.verbose:
+        # Silence most logs unless verbose
+        logging.getLogger("matching_service").setLevel(logging.WARNING)
+        logging.getLogger("match_pipeline").setLevel(logging.WARNING)
+        logging.getLogger("itempairing").setLevel(logging.WARNING)
+
+    # We want direct calls if NOT using API calls
+    use_direct_calls = not args.use_api_calls
 
     # Initialize and run evaluator
     evaluator = MatchingEvaluator(
@@ -970,7 +1302,8 @@ if __name__ == "__main__":
         api_url=args.api_url,
         max_tested=args.max_tested,
         skip_portion=args.skip_portion,
-        use_direct_calls=args.use_direct_calls,
+        use_direct_calls=use_direct_calls,
         model_path=args.model_path,
+        verbose=args.verbose,
     )
     evaluator.run_evaluation()
