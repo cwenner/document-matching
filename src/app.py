@@ -5,6 +5,7 @@ from fastapi import Request, Response, FastAPI, HTTPException
 # Import the MatchingService class
 from matching_service import MatchingService
 
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )

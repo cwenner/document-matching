@@ -22,4 +22,5 @@ def lint(session: nox.Session):
     session.install("black")
     session.run("black", ".", "--check")  # Check formatting for all files
 
+
 # @TODO later add ruff and custom code-quality checks.
