@@ -30,7 +30,7 @@ When starting on a new ticket, always:
 Stay focused on the task. Write down requests for improvements to FUTURE_STEPS.md
 
 **Knowledge Persistence:**
-*   **Log:** Bugs/Issues/Prevention (`GOTCHAS.md`), Optimizations (`IMPLEMENTATION_DETAILS.md`), Edge Cases (`GOTCHAS.md`), Arch Insights (`MENTAL_MODEL.md`), Rule Nuances (Relevant Doc). Log immediately.
+*   **Log:** Bugs/Issues/Prevention (`GOTCHAS.md`) (including root cause analysis for test failures *before* any test alteration proposals), Optimizations (`IMPLEMENTATION_DETAILS.md`), Edge Cases (`GOTCHAS.md`), Arch Insights (`MENTAL_MODEL.md`), Rule Nuances (Relevant Doc). Log immediately.
 *   **Memory:** Maintain active session recall of all logged items.
 *   **Pre-Action:** Review logs. Apply history, avoid repeats, build optimizations.
 *   **Post-Action:** Log cause/solution/rationale. Update docs. Add prevention (`GOTCHAS.md`).
@@ -60,7 +60,7 @@ Stay focused on the task. Write down requests for improvements to FUTURE_STEPS.m
 4.  **VALIDATE_BEHAVIOR (Automated BDD):**
     *   **Input:** BDD Specification (`.feature`), Implementation Code.
     *   **Action:** Execute `.feature` file (e.g., `behave`). Mock ALL direct dependencies based *strictly* on their Interface Contracts. Verify SUT produces observable outcomes defined in `Then` steps.
-    *   **Output:** Pass/Fail Result (Specification Conformance).
+    *   **Output:** Pass/Fail Result. **If Fail, primary goal is to fix IMPLEMENTATION (Step 3). Test alteration is a last resort, requiring exhaustive investigation and review of the project.**
 
 5.  **REFACTOR_CODE:**
     *   **Input:** Passing Implementation Code & its VALIDATE test (Step 4).
