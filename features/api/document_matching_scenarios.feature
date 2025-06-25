@@ -1,22 +1,19 @@
-# To be implemented
-# We leave it out for now to make sure everything else is in place.
+@api @core_matching @matching_scenarios
+Feature: Document Matching API - Specific Matching Scenarios
+  As an API Consumer
+  I want the service to handle specific document matching scenarios correctly
+  So that document relationships are accurately identified across various conditions.
 
-# @api @core_matching @matching_scenarios
-# Feature: Document Matching API - Specific Matching Scenarios
-#   As an API Consumer
-#   I want the service to handle specific document matching scenarios correctly
-#   So that document relationships are accurately identified across various conditions.
-#
-#   Background:
-#     Given the matching service is expected to be running at "http://localhost:8000"
-#
-#   @scenario @empty_candidates
-#   Scenario: Empty candidate list
-#     Given I have a primary document defined as "primary_doc_no_candidates.json"
-#     And no candidate documents are provided
-#     When I send a POST request to "/match" with the primary document and an empty list of candidate documents
-#     Then the response status code should be 200
-#     And the response body should indicate no matches were found
+  Background:
+    Given the matching service is expected to be running at "http://localhost:8000"
+
+  @scenario @empty_candidates
+  Scenario: Empty candidate list
+    Given I have a primary document defined as "primary_doc_no_candidates.json"
+    And no candidate documents are provided
+    When I send a POST request to "/" with the primary document and an empty list of candidate documents
+    Then the response status code should be 200
+    And the response body should indicate no matches were found
 #
 #   @scenario @supplier_mismatch
 #   Scenario: Supplier ID mismatch
