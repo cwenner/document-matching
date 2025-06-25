@@ -83,22 +83,23 @@ def _calculate_unit_price_similarity(up1, up2):
 
 
 def _calculate_match_score(item_id_sim, desc_sim, price_sim):
-    is_match = (
+    actual_values = [x for x in [item_id_sim, desc_sim, price_sim] if x is not None]
+    match_score = sum(actual_values) / len(actual_values)
     is_match = match_score >= 0.8
     return match_score , is_match
 
     # @TODO Optimize this against data
     # is_match = (
     #     (item_id_sim >= 0.99)
-        or (item_id_sim > 0.8 and isclose(price_sim, 1.0) and desc_sim > 0.4)
-        or (desc_sim > 0.95 and isclose(price_sim, 1.0) and item_id_sim < 0.5)
-    )
+    #     or (item_id_sim > 0.8 and isclose(price_sim, 1.0) and desc_sim > 0.4)
+    #     or (desc_sim > 0.95 and isclose(price_sim, 1.0) and item_id_sim < 0.5)
+    # )
 
-    w_item_id, w_price, w_desc = 10, 10, 1
-    max_score = w_item_id + w_price + w_desc
-    score = (w_item_id * item_id_sim) + (w_price * price_sim) + (w_desc * desc_sim)
-    normalized_score = score / max_score if max_score > 0 else 0.0
-    return normalized_score, is_match
+    # w_item_id, w_price, w_desc = 10, 10, 1
+    # max_score = w_item_id + w_price + w_desc
+    # score = (w_item_id * item_id_sim) + (w_price * price_sim) + (w_desc * desc_sim)
+    # normalized_score = score / max_score if max_score > 0 else 0.0
+    # return normalized_score, is_match
 
 
 def find_best_item_match(
