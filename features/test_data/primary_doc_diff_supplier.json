@@ -1,0 +1,63 @@
+{
+    "version": "v3",
+    "id": "PD-002",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+        {
+            "name": "supplierId",
+            "value": "S123"
+        },
+        {
+            "name": "invoiceDate",
+            "value": "2025-06-21"
+        },
+        {
+            "name": "invoiceNumber",
+            "value": "INV-2025-0621"
+        },
+        {
+            "name": "incVatAmount",
+            "value": "750.00"
+        },
+        {
+            "name": "currencyCode",
+            "value": "USD"
+        },
+        {
+            "name": "excVatAmount",
+            "value": "600.00"
+        },
+        {
+            "name": "type",
+            "value": "DEBIT"
+        }
+    ],
+    "items": [
+        {
+            "fields": [
+                {
+                    "name": "text",
+                    "value": "Test Product A"
+                },
+                {
+                    "name": "lineNumber",
+                    "value": "1"
+                },
+                {
+                    "name": "debit",
+                    "value": "750.00"
+                },
+                {
+                    "name": "quantity",
+                    "value": "3"
+                },
+                {
+                    "name": "item-id",
+                    "value": "IT-002"
+                }
+            ]
+        }
+    ]
+}
