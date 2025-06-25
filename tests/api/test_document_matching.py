@@ -49,12 +49,13 @@ def context():
     return {}
 
 
-@given(parsers.parse('the matching service is expected to be running at "{url}"'))
-def document_matching_service_url(url, context):
+@given('the document matching service is available')
+def document_matching_service(context):
     """
-    Set the service URL for tests
+    Set up the document matching service for testing
     """
-    context["base_url"] = url
+    # For testing purposes, we assume the service is running locally
+    context["base_url"] = "http://localhost:8000"
 
 
 @given(parsers.parse('I have a primary document defined as "{filename}"'))
@@ -159,25 +160,64 @@ def check_empty_response(context):
             assert False, "Response doesn't indicate no matches found"
 
 
-@then("the response body should contain exactly one match with the shared PO number")
-def check_po_match_response(context):
+# Previous check_po_match_response function removed to avoid duplication
+# Now using check_match_with_po_number for match report verification
+
+
+@then("the response body should contain a match report")
+def check_match_report(context):
     """
-    Check that the response body contains exactly one match based on the shared purchase order number
+    Check that the response body contains a match report
     """
     response_data = context["response"].json()
+    
+    # Verify structure of match report
+    assert isinstance(response_data, dict), "Expected a dictionary response for match report"
+    
+    # Match report should have certain key fields
+    assert "documents" in response_data or "labels" in response_data, "Response missing key match report fields"
 
+
+@then("the response should comply with the API schema")
+def check_schema_compliance(context):
+    """
+    Check that the response complies with the API schema
+    """
+    # This is a more detailed schema validation
+    # For now, we'll do a basic check of required fields
+    response_data = context["response"].json()
+    
+    # Basic schema validation
+    if isinstance(response_data, dict):
+        # Should have key fields for a response
+        assert any(key in response_data for key in ["documents", "labels", "itempairs", "deviations"]), \
+            "Response missing required fields according to schema"
+    elif isinstance(response_data, list):
+        # Empty list is valid for no matches
+        pass
+    else:
+        assert False, "Response is neither an object nor an array as required by schema"
+
+
+@then("the match report should contain exactly one match with the shared PO number")
+def check_match_with_po_number(context):
+    """
+    Check that the match report shows a match between documents with the same PO number
+    """
+    response_data = context["response"].json()
+    
     # Verify that the response indicates a match
     assert "labels" in response_data, "Response should have labels field"
     assert "match" in response_data["labels"], "Expected 'match' in labels"
-
-    # Check that there's exactly one document match
+    
+    # Check that the documents in the match are the ones with the shared PO number
     assert "documents" in response_data, "Response should have documents field"
-    assert (
-        len(response_data["documents"]) == 2
-    ), "Expected exactly two documents (primary and match)"
-    assert sorted([doc["id"] for doc in response_data["documents"]]) == sorted(
-        [
-            context["primary_document"]["id"],
-            context["candidate_documents"][0]["id"],
-        ]
-    )
+    assert len(response_data["documents"]) == 2, "Expected exactly two documents (primary and match)"
+    
+    # Verify that the matched documents have the correct IDs
+    doc_ids = sorted([doc["id"] for doc in response_data["documents"]])
+    expected_ids = sorted([context["primary_document"]["id"], context["candidate_documents"][0]["id"]])
+    assert doc_ids == expected_ids, f"Expected document IDs {expected_ids}, but got {doc_ids}"
+    
+    # We don't check the PO number directly since it's not in the match report
+    # The PO number match is implied by the documents being listed as matched

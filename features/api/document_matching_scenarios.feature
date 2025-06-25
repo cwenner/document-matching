@@ -1,11 +1,11 @@
-@api @core_matching @matching_scenarios
+@api @core_matching @matching_scenarios @story-1.1
 Feature: Document Matching API - Specific Matching Scenarios
   As an API Consumer
   I want the service to handle specific document matching scenarios correctly
   So that document relationships are accurately identified across various conditions.
 
   Background:
-    Given the matching service is expected to be running at "http://localhost:8000"
+    Given the document matching service is available
 
   @scenario @empty_candidates
   Scenario: Empty candidate list
@@ -29,20 +29,22 @@ Feature: Document Matching API - Specific Matching Scenarios
     And I have a list of candidate documents defined as "candidates_shared_po.json"
     When I send a POST request to "/" with the primary document and candidate documents
     Then the response status code should be 200
-    And the response body should contain exactly one match with the shared PO number
-#
-#   @scenario @no_common_fields
-#   Scenario: Documents with no common identifiers
-#     Given I have a primary document defined as "primary_doc_nothing_alike.json"
-#     And I have a list of candidate documents defined as "candidates_nothing_alike.json"
-#     When I send a POST request to "/" with the primary document and candidate documents
-#     Then the response status code should be 200
-#     And the response body should indicate no matches were found
-#
-#   @scenario @item_level_match
-#   Scenario: Match on line items despite differing PO numbers
-#     Given I have a primary document defined as "primary_doc_items.json"
-#     And I have a list of candidate documents defined as "candidates_items_same.json"
-#     When I send a POST request to "/" with the primary document and candidate documents
-#     Then the response status code should be 200
-#     And the response body should contain exactly one match based on item overlap
+    And the response body should contain a match report
+    And the match report should contain exactly one match with the shared PO number
+
+#  @scenario @no_common_fields
+#  Scenario: Documents with no common identifiers
+#    Given I have a primary document defined as "primary_doc_nothing_alike.json"
+#    And I have a list of candidate documents defined as "candidates_nothing_alike.json"
+#    When I send a POST request to "/" with the primary document and candidate documents
+#    Then the response status code should be 200
+#    And the response body should indicate no matches were found
+
+#  @scenario @item_level_match
+#  Scenario: Match on line items despite differing PO numbers
+#    Given I have a primary document defined as "primary_doc_items.json"
+#    And I have a list of candidate documents defined as "candidates_items_same.json"
+#    When I send a POST request to "/" with the primary document and candidate documents
+#    Then the response status code should be 200
+#    And the response body should contain a match report
+#    And the match report should contain exactly one match based on item overlap
