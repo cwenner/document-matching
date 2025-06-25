@@ -1,8 +1,6 @@
 import json
 import logging
 from fastapi import Request, Response, FastAPI, HTTPException
-
-# Import the MatchingService class
 from matching_service import MatchingService
 from match_reporter import DeviationSeverity
 
@@ -26,6 +24,7 @@ async def health_handler(_request: Request):
     return Response("Ready to match\r\n")
 
 
+# Main endpoint for matching - handles all document matching requests
 @app.post("/")
 async def request_handler(request: Request):
     """Handles matching requests."""
