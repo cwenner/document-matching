@@ -14,22 +14,22 @@ Feature: Document Matching API - Specific Matching Scenarios
     When I send a POST request to "/" with the primary document and an empty list of candidate documents
     Then the response status code should be 200
     And the response body should indicate no matches were found
-#
-#   @scenario @supplier_mismatch
-#   Scenario: Supplier ID mismatch
-#     Given I have a primary document defined as "primary_doc_diff_supplier.json"
-#     And I have a list of candidate documents defined as "candidates_diff_supplier.json"
-#     When I send a POST request to "/match" with the primary document and candidate documents
-#     Then the response status code should be 200
-#     And the response body should indicate no matches were found
-#
-#   @scenario @po_match
-#   Scenario: Match on purchase order number
-#     Given I have a primary document defined as "primary_doc_shared_po.json"
-#     And I have a list of candidate documents defined as "candidates_shared_po.json"
-#     When I send a POST request to "/match" with the primary document and candidate documents
-#     Then the response status code should be 200
-#     And the response body should contain exactly one match with the shared PO number
+
+  @scenario @supplier_mismatch
+  Scenario: Supplier ID mismatch
+    Given I have a primary document defined as "primary_doc_diff_supplier.json"
+    And I have a list of candidate documents defined as "candidates_diff_supplier.json"
+    When I send a POST request to "/" with the primary document and candidate documents
+    Then the response status code should be 200
+    And the response body should indicate no matches were found
+
+  @scenario @po_match
+  Scenario: Match on purchase order number
+    Given I have a primary document defined as "primary_doc_shared_po.json"
+    And I have a list of candidate documents defined as "candidates_shared_po.json"
+    When I send a POST request to "/" with the primary document and candidate documents
+    Then the response status code should be 200
+    And the response body should contain exactly one match with the shared PO number
 #
 #   @scenario @no_common_fields
 #   Scenario: Documents with no common identifiers
