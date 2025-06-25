@@ -19,9 +19,9 @@ app = FastAPI()
 logger.info(f"✔ Matching Service API Ready")
 
 
-@app.get("/")
-async def ready_handler(_request: Request):
-    """Readiness probe endpoint."""
+@app.get("/health")
+async def health_handler(_request: Request):
+    """Health/readiness probe endpoint."""
     return Response("Ready to match\r\n")
 
 

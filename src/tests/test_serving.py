@@ -30,8 +30,8 @@ DUMMY_DOC = {
 
 
 def test_readiness_endpoint():
-    """Test the GET / endpoint for readiness."""
-    response = client.get("/")
+    """Test the GET /health endpoint for readiness."""
+    response = client.get("/health")
     assert response.status_code == 200
     assert "Ready to match" in response.text
 
