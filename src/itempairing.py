@@ -118,7 +118,17 @@ def find_best_item_match(
         if target_item.get("matched"):
             continue
 
-        target_desc = target_item.get("description", "")
+        target_desc = target_item.get("description", ""),
+            target_item.get("text", ""),
+            target_item.get("inventory", ""),
+        ]
+        source_descs = [
+            source_item_data.get("description", ""),
+            source_item_data.get("text", ""),
+            source_item_data.get("inventory", ""),
+        ]
+        target_descs = [x for x in target_descs if x]
+        source_descs = [x for x in source_descs if x]
         target_item_id = target_item.get("item-id", "")
         target_price = target_item.get("unit-price")
 
