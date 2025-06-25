@@ -10,7 +10,7 @@ These stories describe the primary interactions an API client will have with the
 *   **So that** I can receive one or more detailed match reports if suitable matches are found, enabling me to understand the relationships and act upon them.
 
     **Acceptance Criteria (ACs):**
-    *   The service accepts a `POST` request to a designated `/match` endpoint.
+    *   The service accepts a `POST` request to a designated `/` endpoint.
     *   The request payload includes a primary document and a list of candidate documents.
     *   If one or more valid matches are identified between the primary document and any of the diverse candidate documents, the service returns an HTTP `200 OK` status.
     *   The response body for a successful match is a JSON array containing one or more match reports, adhering to the V3 report specification.
@@ -30,7 +30,7 @@ These stories describe the primary interactions an API client will have with the
 *   **So that** I know the document could not be paired and can proceed with alternative actions.
 
     **Acceptance Criteria (ACs):**
-    *   When a `POST` request is made to the `/match` endpoint with a primary document and candidates, and no suitable matches are found:
+    *   When a `POST` request is made to the `/` endpoint with a primary document and candidates, and no suitable matches are found:
         *   The service returns an HTTP `200 OK` status.
         *   The response body is a JSON structure (adhering to the V3 report specification) clearly indicating "no-match" (e.g., an empty array of match reports or a specific `status: "no-match"` field).
 
@@ -42,7 +42,7 @@ These stories describe the primary interactions an API client will have with the
 *   **So that** I can understand and correct my requests.
 
     **Acceptance Criteria (ACs):**
-    *   If a `POST` request to the `/match` endpoint has an invalid payload (e.g., missing `document` field, `candidate-documents` field not a list, unsupported document content):
+    *   If a `POST` request to the `/` endpoint has an invalid payload (e.g., missing `document` field, `candidate-documents` field not a list, unsupported document content):
         *   The service returns an appropriate `4xx` client error HTTP status code (e.g., `400`, `415`).
         *   The response body contains a clear, machine-readable error message describing the validation failure (potentially adhering to a common error schema if defined for the API ecosystem, e.g., RFC 7807 Problem Details).
 
