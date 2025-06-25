@@ -17,7 +17,9 @@ except Exception as e:
 
 def _calculate_description_similarity(desc1, desc2):
     if not model:
-        logger.warning("SentenceTransformer model not available. Cannot calculate description similarity.")
+        logger.warning(
+            "SentenceTransformer model not available. Cannot calculate description similarity."
+        )
         return None
     if desc1 is None or desc2 is None:
         return None
@@ -39,7 +41,9 @@ def _calculate_description_similarity(desc1, desc2):
 
 def _calculate_item_id_similarity(id1, id2):
     if not model:
-        logger.warning("SentenceTransformer model not available. Cannot calculate item ID similarity.")
+        logger.warning(
+            "SentenceTransformer model not available. Cannot calculate item ID similarity."
+        )
         return None
     if id1 is None or id2 is None:
         return None
@@ -86,7 +90,7 @@ def _calculate_match_score(item_id_sim, desc_sim, price_sim):
     actual_values = [x for x in [item_id_sim, desc_sim, price_sim] if x is not None]
     match_score = sum(actual_values) / len(actual_values)
     is_match = match_score >= 0.8
-    return match_score , is_match
+    return match_score, is_match
 
     # @TODO Optimize this against data
     # is_match = (
@@ -141,7 +145,7 @@ def find_best_item_match(
             for source_desc in source_descs
             for target_desc in target_descs
         ]
-        desc_sim = max([0.] + [x for x in desc_sims if x is not None])
+        desc_sim = max([0.0] + [x for x in desc_sims if x is not None])
 
         score, is_potential_match = _calculate_match_score(
             item_id_sim, desc_sim, price_sim

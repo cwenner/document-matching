@@ -132,7 +132,11 @@ def generate_match_report(
             {"kind": kind1.value, "id": doc1.get("id")},
             {"kind": kind2.value, "id": doc2.get("id")},
         ],
-        "labels": ["match", "matched-items"] if processed_item_pairs else ["match", "potential-match-no-items"],
+        "labels": (
+            ["match", "matched-items"]
+            if processed_item_pairs
+            else ["match", "potential-match-no-items"]
+        ),
         "metrics": [
             {"name": "certainty", "value": 0.93},
             {

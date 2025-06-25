@@ -6,7 +6,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
 
 # Add the src directory to the Python path
-sys.path.append(str(Path(__file__).parent.parent.parent / 'src'))
+sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
 from app import app
 
 
@@ -27,7 +27,8 @@ def test_supplier_id_mismatch():
 
 
 @scenario(
-    "../../features/api/document_matching_scenarios.feature", "Match on purchase order number"
+    "../../features/api/document_matching_scenarios.feature",
+    "Match on purchase order number",
 )
 def test_po_match():
     """Test that the service correctly matches documents based on shared purchase order number."""
@@ -103,9 +104,7 @@ def send_post_with_primary_and_empty_candidates(client, context):
     context["response"] = response
 
 
-@when(
-    'I send a POST request to "/" with the primary document and candidate documents'
-)
+@when('I send a POST request to "/" with the primary document and candidate documents')
 def send_post_with_primary_and_candidates(client, context):
     """
     Send a POST request to root endpoint with primary document and candidate documents
@@ -173,8 +172,12 @@ def check_po_match_response(context):
 
     # Check that there's exactly one document match
     assert "documents" in response_data, "Response should have documents field"
-    assert len(response_data["documents"]) == 2, "Expected exactly two documents (primary and match)"
-    assert sorted([doc["id"] for doc in response_data["documents"]]) == sorted([
-        context["primary_document"]["id"],
-        context["candidate_documents"][0]["id"],
-    ])
+    assert (
+        len(response_data["documents"]) == 2
+    ), "Expected exactly two documents (primary and match)"
+    assert sorted([doc["id"] for doc in response_data["documents"]]) == sorted(
+        [
+            context["primary_document"]["id"],
+            context["candidate_documents"][0]["id"],
+        ]
+    )
