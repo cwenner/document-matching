@@ -1,7 +1,3 @@
-"""
-Pytest BDD tests for document matching API scenarios
-"""
-
 import json
 import pytest
 from pathlib import Path
@@ -11,18 +7,14 @@ from fastapi.testclient import TestClient
 from app import app
 
 
-# --- Feature: Document Matching API - Specific Matching Scenarios ---
-
-
 @scenario(
     "../../features/api/document_matching_scenarios.feature", "Empty candidate list"
 )
 def test_empty_candidate_list():
     """Test that the service handles empty candidate lists correctly."""
-    # pytest-bdd will handle the test execution based on the scenario
+    pass
 
 
-# Fixtures
 @pytest.fixture
 def client():
     """
@@ -31,7 +23,6 @@ def client():
     return TestClient(app)
 
 
-# Given steps
 @pytest.fixture
 def context():
     """Shared context between steps"""
@@ -66,7 +57,6 @@ def no_candidate_documents(context):
     context["candidate_documents"] = []
 
 
-# When steps
 @when(
     'I send a POST request to "/" with the primary document and an empty list of candidate documents'
 )
@@ -82,7 +72,6 @@ def send_post_with_primary_and_empty_candidates(client, context):
     context["response"] = response
 
 
-# Then steps
 @then(parsers.parse("the response status code should be {status_code:d}"))
 def check_status_code(status_code, context):
     """
