@@ -10,8 +10,8 @@ User stories are organized into the following categories, each in its own Markdo
 
 1.  **`api-consumer-experience.md`**: Describes the primary interactions an API client will have with the matching service.
 2.  **`operational-concerns.md`**: Covers stories crucial for deploying, monitoring, and maintaining the service.
-3.  **`evaluation-framework.md`**: Outlines stories for a supporting tool used to evaluate the performance of the matching service.
-4.  **`developer-test-client.md`**: Details stories for a simple client tool for ad-hoc testing by developers.
+3.  **`evaluation-framework.md`**: Outlines stories for a supporting tool used to evaluate the performance of the matching service by developers, data scientists, and QA engineers.
+4.  **`developer-experience.md`**: Covers features and capabilities aimed at improving the developer experience, including debugging support, testing tools, and code organization.
 
 ## Format
 
