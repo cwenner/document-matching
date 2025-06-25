@@ -1,9 +1,12 @@
 import json
 import pytest
+import sys
 from pathlib import Path
 from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
 
+# Add the src directory to the Python path
+sys.path.append(str(Path(__file__).parent.parent.parent / 'src'))
 from app import app
 
 
@@ -12,6 +15,22 @@ from app import app
 )
 def test_empty_candidate_list():
     """Test that the service handles empty candidate lists correctly."""
+    pass
+
+
+@scenario(
+    "../../features/api/document_matching_scenarios.feature", "Supplier ID mismatch"
+)
+def test_supplier_id_mismatch():
+    """Test that the service handles documents with mismatched supplier IDs correctly."""
+    pass
+
+
+@scenario(
+    "../../features/api/document_matching_scenarios.feature", "Match on purchase order number"
+)
+def test_po_match():
+    """Test that the service correctly matches documents based on shared purchase order number."""
     pass
 
 
@@ -57,12 +76,39 @@ def no_candidate_documents(context):
     context["candidate_documents"] = []
 
 
+@given(parsers.parse('I have a list of candidate documents defined as "{filename}"'))
+def candidate_documents(filename, context):
+    """
+    Load candidate documents from test data
+    """
+    test_data_path = (
+        Path(__file__).parent.parent.parent / "features" / "test_data" / filename
+    )
+    with open(test_data_path, "r") as f:
+        context["candidate_documents"] = json.load(f)
+
+
 @when(
     'I send a POST request to "/" with the primary document and an empty list of candidate documents'
 )
 def send_post_with_primary_and_empty_candidates(client, context):
     """
     Send a POST request to root endpoint with primary document and empty candidates
+    """
+    payload = {
+        "document": context["primary_document"],
+        "candidate-documents": context["candidate_documents"],
+    }
+    response = client.post("/", json=payload)
+    context["response"] = response
+
+
+@when(
+    'I send a POST request to "/" with the primary document and candidate documents'
+)
+def send_post_with_primary_and_candidates(client, context):
+    """
+    Send a POST request to root endpoint with primary document and candidate documents
     """
     payload = {
         "document": context["primary_document"],
@@ -112,3 +158,23 @@ def check_empty_response(context):
         else:
             # If we can't find explicit no-match indicators, fail
             assert False, "Response doesn't indicate no matches found"
+
+
+@then("the response body should contain exactly one match with the shared PO number")
+def check_po_match_response(context):
+    """
+    Check that the response body contains exactly one match based on the shared purchase order number
+    """
+    response_data = context["response"].json()
+
+    # Verify that the response indicates a match
+    assert "labels" in response_data, "Response should have labels field"
+    assert "match" in response_data["labels"], "Expected 'match' in labels"
+
+    # Check that there's exactly one document match
+    assert "documents" in response_data, "Response should have documents field"
+    assert len(response_data["documents"]) == 2, "Expected exactly two documents (primary and match)"
+    assert sorted([doc["id"] for doc in response_data["documents"]]) == sorted([
+        context["primary_document"]["id"],
+        context["candidate_documents"][0]["id"],
+    ])
