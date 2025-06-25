@@ -135,6 +135,12 @@ def find_best_item_match(
         item_id_sim = _calculate_item_id_similarity(source_item_id, target_item_id)
         desc_sim = _calculate_description_similarity(source_desc, target_desc)
         price_sim = _calculate_unit_price_similarity(source_price, target_price)
+        desc_sims = [
+            _calculate_description_similarity(source_desc, target_desc)
+            for source_desc in source_descs
+            for target_desc in target_descs
+        ]
+        desc_sim = max([0.] + [x for x in desc_sims if x is not None])
 
         score, is_potential_match = _calculate_match_score(
             item_id_sim, desc_sim, price_sim
