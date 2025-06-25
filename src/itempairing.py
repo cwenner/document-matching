@@ -19,6 +19,8 @@ def _calculate_description_similarity(desc1, desc2):
     if not model:
         logger.warning("SentenceTransformer model not available. Cannot calculate description similarity.")
         return None
+    if desc1 is None or desc2 is None:
+        return None
     if not desc1 and not desc2:
         return 1.0
     if not desc1 or not desc2:
@@ -39,6 +41,8 @@ def _calculate_item_id_similarity(id1, id2):
     if not model:
         logger.warning("SentenceTransformer model not available. Cannot calculate item ID similarity.")
         return None
+    if id1 is None or id2 is None:
+        return None
     if not id1 and not id2:
         return 1.0
     if not id1 or not id2:
@@ -55,12 +59,12 @@ def _calculate_item_id_similarity(id1, id2):
             f"Error calculating item ID similarity for '{id1}' vs '{id2}': {e}",
             exc_info=False,
         )
-        return 0.0
+        return None
 
 
 def _calculate_unit_price_similarity(up1, up2):
     if up1 is None or up2 is None:
-        return 0.0
+        return None
     try:
         f_up1 = float(up1)
         f_up2 = float(up2)
