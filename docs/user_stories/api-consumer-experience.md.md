@@ -58,3 +58,33 @@ These stories describe the primary interactions an API client will have with the
     *   If a submitted primary document or candidate document contains attachments named `interpreted_data.json` or `interpreted_xml.json`, the service attempts to parse and use their content for matching.
     *   The matching logic can leverage data fields extracted from these interpreted files. (Note: Precedence if both file types are present for the same attachment will be defined in detailed design).
     *   If these files are not present or malformed, the service continues processing gracefully using other available document data.
+
+---
+
+## Story 1.5: Receive Detailed Deviation Information in Match Reports
+*   **As an** API Consumer
+*   **I want to** receive detailed deviation information whenever matches are found with discrepancies between documents
+*   **So that** I can quickly identify and assess issues that require attention, such as price differences, quantity differences, or description mismatches.
+
+    **Acceptance Criteria (ACs):**
+    *   Each match report includes a "deviations" section listing document-level deviations.
+    *   Each item pair in the match report includes an item-level "deviations" section where applicable.
+    *   All deviations include standardized codes (e.g., "AMOUNTS_DIFFER", "QUANTITIES_DIFFER") indicating their type.
+    *   All deviations include a severity level (e.g., "info", "low", "medium", "high").
+    *   All deviations include human-readable messages explaining the discrepancy.
+    *   All deviations include field references and values showing the actual data that differs.
+    *   The overall match report includes a "deviation-severity" metric reflecting the highest deviation severity in the match.
+
+---
+
+## Story 1.6: Receive Match Certainty Metrics
+*   **As an** API Consumer
+*   **I want to** receive confidence metrics for each match and prediction about future matches
+*   **So that** I can make informed decisions about which matches to trust and how to handle documents that might receive future matches.
+
+    **Acceptance Criteria (ACs):**
+    *   Each match report includes a "metrics" section with a "certainty" value indicating the confidence of the match.
+    *   For relevant document types, the metrics include "has-future-match-certainty" values (e.g., "invoice-has-future-match-certainty").
+    *   Item-level pairings include "item_unchanged_certainty" indicating confidence in the item match.
+    *   All certainty metrics are expressed as decimal values between 0 and 1 (or percentage equivalents).
+    *   The certainty metrics can be used to filter or flag matches that may require manual review.
