@@ -21,6 +21,7 @@ These stories describe the primary interactions an API client will have with the
         *   Details of item-level pairings (if applicable, including item IDs and similarity scores).
         *   A list of identified deviations (e.g., differing amounts, quantities, descriptions) with severity levels between the matched documents/items.
     *   The service correctly processes and attempts to match the primary document against different document kinds provided within the `candidate-documents` list.
+    *   The service responds to matching requests with up to 10 candidate documents in under 60 seconds (after service startup).
 
 ---
 
