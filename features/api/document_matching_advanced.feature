@@ -1,0 +1,56 @@
+Feature: Advanced Document Matching Features
+  As an API consumer
+  I want to access advanced document matching capabilities
+  So that I can obtain detailed insights about document relationships
+
+  Background:
+    Given the document matching service is available
+
+  @story-1.1 @advanced @future_match
+  Scenario: Future Match Certainty
+    Given I have a primary invoice document
+    And I have a candidate purchase order document
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match report should include "invoice-has-future-match-certainty" metric
+    And the match report should include "purchase-order-has-future-match-certainty" metric
+    And the match report should include "delivery-receipt-has-future-match-certainty" metric
+
+  @story-1.1 @advanced @attachment_data
+  Scenario: Documents with Attachment Data
+    Given I have a primary invoice document with attachment data
+    And I have a candidate purchase order document with attachment data
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match should utilize the attachment information
+    And the match report should reflect the combined document and attachment matching
+
+  @story-1.1 @advanced @xml_data
+  Scenario: Documents with Original XML Data
+    Given I have a primary invoice document with original XML data
+    And I have a candidate purchase order document
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match should utilize the original XML information
+
+  @story-1.1 @advanced @supplier_matching
+  Scenario: Matching Documents from Same Supplier
+    Given I have a primary invoice document from supplier "ABC Corp"
+    And I have multiple candidate purchase orders from different suppliers
+    When I send a POST request to "/" with the primary document and candidate documents
+    Then the response status code should be 200
+    And the response body should contain match reports
+    And the match report for the same supplier should have higher certainty
+
+  @story-1.1 @advanced @multiple_deviations
+  Scenario: Match Report with Multiple Deviation Types
+    Given I have a primary invoice document
+    And I have a candidate purchase order document with multiple deviations
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match report should contain multiple deviation types
+    And the overall deviation severity should reflect the most severe deviation
