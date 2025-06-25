@@ -15,7 +15,7 @@ logger = logging.getLogger("matching_service")
 
 # Global configuration
 USE_PREDICTION = os.environ.get("DISABLE_MODELS", "false").lower() != "true"
-WHITELISTED_SITES = {"badger-logistics", "falcon-logistics", "christopher-test"}
+WHITELISTED_SITES = {"badger-logistics", "falcon-logistics", "christopher-test", "test-site"}
 
 
 class MatchingService:
