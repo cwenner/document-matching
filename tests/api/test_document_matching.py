@@ -3,12 +3,11 @@ Pytest BDD tests for document matching API scenarios
 """
 import json
 import pytest
-import requests
 from pathlib import Path
 from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
 
-from src.app import app
+from app import app
 
 
 # --- Feature: Document Matching API - Specific Matching Scenarios ---
