@@ -119,7 +119,8 @@ def find_best_item_match(
         if target_item.get("matched"):
             continue
 
-        target_desc = target_item.get("description", ""),
+        target_descs = [
+            target_item.get("description", ""),
             target_item.get("text", ""),
             target_item.get("inventory", ""),
         ]
@@ -134,7 +135,6 @@ def find_best_item_match(
         target_price = target_item.get("unit-price")
 
         item_id_sim = _calculate_item_id_similarity(source_item_id, target_item_id)
-        desc_sim = _calculate_description_similarity(source_desc, target_desc)
         price_sim = _calculate_unit_price_similarity(source_price, target_price)
         desc_sims = [
             _calculate_description_similarity(source_desc, target_desc)
