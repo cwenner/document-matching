@@ -1,0 +1,160 @@
+[
+  {
+    "version": "v3",
+    "id": "CD-002",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "PO-12345"
+      },
+      {
+        "name": "supplierId",
+        "value": "S789"
+      },
+      {
+        "name": "description",
+        "value": "XYZ"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-06-20"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "1000.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "800.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+            {
+                "name": "id",
+                "value": "IT-003"
+            },
+            {
+                "name": "lineNumber",
+                "value": "1"
+            },
+            {
+                "name": "inventory",
+                "value": "E561-13-20"
+            },
+            {
+                "name": "description",
+                "value": "Test Product B"
+            },
+            {
+                "name": "uom",
+                "value": "STYCK"
+            },
+            {
+                "name": "unitAmount",
+                "value": "400.00"
+            },
+            {
+                "name": "quantityOrdered",
+                "value": "2.00"
+            },
+            {
+                "name": "quantityToReceive",
+                "value": "2.00"
+            },
+            {
+                "name": "quantityReceived",
+                "value": "0.00"
+            },
+            {
+                "name": "quantityToInvoice",
+                "value": "2.00"
+            }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "CD-002",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "PO-54321"
+      },
+      {
+        "name": "supplierId",
+        "value": "S789"
+      },
+      {
+        "name": "description",
+        "value": "XYZ"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-06-20"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "1000.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "800.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+            {
+                "name": "id",
+                "value": "IT-003"
+            },
+            {
+                "name": "lineNumber",
+                "value": "1"
+            },
+            {
+                "name": "inventory",
+                "value": "E561-13-21"
+            },
+            {
+                "name": "description",
+                "value": "Test Product C"
+            },
+            {
+                "name": "uom",
+                "value": "STYCK"
+            },
+            {
+                "name": "unitAmount",
+                "value": "400.00"
+            },
+            {
+                "name": "quantityOrdered",
+                "value": "2.00"
+            },
+            {
+                "name": "quantityToReceive",
+                "value": "2.00"
+            },
+            {
+                "name": "quantityReceived",
+                "value": "0.00"
+            },
+            {
+                "name": "quantityToInvoice",
+                "value": "2.00"
+            }
+        ]
+      }
+    ]
+  }
+]
