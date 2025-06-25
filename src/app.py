@@ -160,7 +160,7 @@ def _dummy_match_report(document):
             {"name": "certainty", "value": 0.93},  # Simplified value
             {
                 "name": "deviation-severity",
-                "value": matching_service.DeviationSeverity.HIGH.value,
+                "value": DeviationSeverity.HIGH.value,
             },  # Dummy severity
             {"name": f"{kind}-has-future-match-certainty", "value": 0.98},
             {"name": f"{matched_kind}-has-future-match-certainty", "value": 0.99},
@@ -168,7 +168,7 @@ def _dummy_match_report(document):
         "deviations": [  # Dummy deviation
             {
                 "code": "amounts-differ",
-                "severity": matching_service.DeviationSeverity.HIGH.value,
+                "severity": DeviationSeverity.HIGH.value,
                 "message": "Incl VAT amount differs by 42.75 (dummy)",
                 "field_names": [
                     "headers.incVatAmount",
@@ -181,13 +181,13 @@ def _dummy_match_report(document):
             {
                 "item_indices": [0, 0],  # Dummy indices
                 "match_type": "matched",
-                "deviation_severity": matching_service.DeviationSeverity.MEDIUM.value,
+                "deviation_severity": DeviationSeverity.MEDIUM.value,
                 "item_unchanged_certainty": 0.88,
                 "deviations": [
                     {
                         "field_names": ["fields.quantity", "fields.quantity"],
                         "values": [9, 11],
-                        "severity": matching_service.DeviationSeverity.MEDIUM.value,
+                        "severity": DeviationSeverity.MEDIUM.value,
                         "message": "Quantity differs by 2 (dummy)",
                         "code": "quantity-differs",  # Use consistent code
                     }
