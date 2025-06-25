@@ -1,0 +1,19 @@
+{
+  "id": "PD-001",
+  "kind": "invoice",
+  "supplier_id": "S123",
+  "document_date": "2025-06-20",
+  "document_number": "INV-2025-0620",
+  "amount_total": 500.00,
+  "currency": "USD",
+  "site": "test-site",
+  "line_items": [
+    {
+      "item_id": "IT-001",
+      "description": "Test Product",
+      "quantity": 5,
+      "unit_price": 100.00,
+      "amount": 500.00
+    }
+  ]
+}
