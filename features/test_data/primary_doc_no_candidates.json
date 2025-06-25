@@ -1,19 +1,63 @@
 {
-  "id": "PD-001",
-  "kind": "invoice",
-  "supplier_id": "S123",
-  "document_date": "2025-06-20",
-  "document_number": "INV-2025-0620",
-  "amount_total": 500.00,
-  "currency": "USD",
-  "site": "test-site",
-  "line_items": [
-    {
-      "item_id": "IT-001",
-      "description": "Test Product",
-      "quantity": 5,
-      "unit_price": 100.00,
-      "amount": 500.00
-    }
-  ]
+    "version": "v3",
+    "id": "PD-001",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+        {
+            "name": "supplierId",
+            "value": "S123"
+        },
+        {
+            "name": "invoiceDate",
+            "value": "2025-06-20"
+        },
+        {
+            "name": "invoiceNumber",
+            "value": "INV-2025-0620"
+        },
+        {
+            "name": "incVatAmount",
+            "value": "500.00"
+        },
+        {
+            "name": "currencyCode",
+            "value": "USD"
+        },
+        {
+            "name": "excVatAmount",
+            "value": "400.00"
+        },
+        {
+            "name": "type",
+            "value": "DEBIT"
+        }
+    ],
+    "items": [
+        {
+            "fields": [
+                {
+                    "name": "text",
+                    "value": "Test Product"
+                },
+                {
+                    "name": "lineNumber",
+                    "value": "1"
+                },
+                {
+                    "name": "debit",
+                    "value": "500.00"
+                },
+                {
+                    "name": "quantity",
+                    "value": "5"
+                },
+                {
+                    "name": "item-id",
+                    "value": "IT-001"
+                }
+            ]
+        }
+    ]
 }
