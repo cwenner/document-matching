@@ -121,7 +121,7 @@ def _dummy_no_match_report(document):
             {"name": "certainty", "value": 0.95},  # Simplified value
             {
                 "name": "deviation-severity",
-                "value": DeviationSeverity.NO_SEVERITY.value
+                "value": DeviationSeverity.NO_SEVERITY.value,
             },
             {
                 "name": f"{kind}-has-future-match-certainty",

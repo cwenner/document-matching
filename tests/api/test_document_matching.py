@@ -1,6 +1,7 @@
 """
 Pytest BDD tests for document matching API scenarios
 """
+
 import json
 import pytest
 from pathlib import Path
@@ -12,13 +13,14 @@ from app import app
 
 # --- Feature: Document Matching API - Specific Matching Scenarios ---
 
+
 @scenario(
-    "../../features/api/document_matching_scenarios.feature",
-    "Empty candidate list"
+    "../../features/api/document_matching_scenarios.feature", "Empty candidate list"
 )
 def test_empty_candidate_list():
     """Test that the service handles empty candidate lists correctly."""
     # pytest-bdd will handle the test execution based on the scenario
+
 
 # Fixtures
 @pytest.fixture
@@ -28,11 +30,13 @@ def client():
     """
     return TestClient(app)
 
+
 # Given steps
 @pytest.fixture
 def context():
     """Shared context between steps"""
     return {}
+
 
 @given(parsers.parse('the matching service is expected to be running at "{url}"'))
 def document_matching_service_url(url, context):
@@ -41,44 +45,53 @@ def document_matching_service_url(url, context):
     """
     context["base_url"] = url
 
+
 @given(parsers.parse('I have a primary document defined as "{filename}"'))
 def primary_document(filename, context):
     """
     Load a primary document from test data
     """
-    test_data_path = Path(__file__).parent.parent.parent / "features" / "test_data" / filename
-    with open(test_data_path, 'r') as f:
+    test_data_path = (
+        Path(__file__).parent.parent.parent / "features" / "test_data" / filename
+    )
+    with open(test_data_path, "r") as f:
         context["primary_document"] = json.load(f)
 
-@given('no candidate documents are provided')
+
+@given("no candidate documents are provided")
 def no_candidate_documents(context):
     """
     Set empty list for candidate documents in context
     """
     context["candidate_documents"] = []
 
+
 # When steps
-@when('I send a POST request to "/" with the primary document and an empty list of candidate documents')
+@when(
+    'I send a POST request to "/" with the primary document and an empty list of candidate documents'
+)
 def send_post_with_primary_and_empty_candidates(client, context):
     """
     Send a POST request to root endpoint with primary document and empty candidates
     """
     payload = {
         "document": context["primary_document"],
-        "candidate-documents": context["candidate_documents"]
+        "candidate-documents": context["candidate_documents"],
     }
     response = client.post("/", json=payload)
     context["response"] = response
 
+
 # Then steps
-@then(parsers.parse('the response status code should be {status_code:d}'))
+@then(parsers.parse("the response status code should be {status_code:d}"))
 def check_status_code(status_code, context):
     """
     Check that the response has the expected status code
     """
     assert context["response"].status_code == status_code
 
-@then('the response body should indicate no matches were found')
+
+@then("the response body should indicate no matches were found")
 def check_empty_response(context):
     """
     Check that the response body indicates no matches were found
@@ -89,18 +102,21 @@ def check_empty_response(context):
     # 2. A response with "no-match" in labels
     # 3. A response with empty itempairs
     # 4. A response with no matches field or empty matches array
-    
+
     if isinstance(response_data, list):
         assert len(response_data) == 0, "Expected empty list but got non-empty list"
     else:
         # If it's an object structure, we need to check the specifics of the response
         # Check for labels indicating no matches
         if "labels" in response_data:
-            assert "no-match" in response_data["labels"], \
-                "Expected 'no-match' in labels"
+            assert (
+                "no-match" in response_data["labels"]
+            ), "Expected 'no-match' in labels"
         # Check for empty itempairs
         elif "itempairs" in response_data:
-            assert len(response_data["itempairs"]) == 0, "Expected empty itempairs array"
+            assert (
+                len(response_data["itempairs"]) == 0
+            ), "Expected empty itempairs array"
         # Check for empty matches array if present
         elif "matches" in response_data:
             assert len(response_data["matches"]) == 0, "Expected empty matches array"
