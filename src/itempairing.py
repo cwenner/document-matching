@@ -84,7 +84,12 @@ def _calculate_unit_price_similarity(up1, up2):
 
 def _calculate_match_score(item_id_sim, desc_sim, price_sim):
     is_match = (
-        (item_id_sim >= 0.99)
+    is_match = match_score >= 0.8
+    return match_score , is_match
+
+    # @TODO Optimize this against data
+    # is_match = (
+    #     (item_id_sim >= 0.99)
         or (item_id_sim > 0.8 and isclose(price_sim, 1.0) and desc_sim > 0.4)
         or (desc_sim > 0.95 and isclose(price_sim, 1.0) and item_id_sim < 0.5)
     )
