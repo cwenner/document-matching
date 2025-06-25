@@ -35,7 +35,7 @@ Feature: Document Matching API - Specific Matching Scenarios
 #   Scenario: Documents with no common identifiers
 #     Given I have a primary document defined as "primary_doc_nothing_alike.json"
 #     And I have a list of candidate documents defined as "candidates_nothing_alike.json"
-#     When I send a POST request to "/match" with the primary document and candidate documents
+#     When I send a POST request to "/" with the primary document and candidate documents
 #     Then the response status code should be 200
 #     And the response body should indicate no matches were found
 #
@@ -43,6 +43,6 @@ Feature: Document Matching API - Specific Matching Scenarios
 #   Scenario: Match on line items despite differing PO numbers
 #     Given I have a primary document defined as "primary_doc_items.json"
 #     And I have a list of candidate documents defined as "candidates_items_same.json"
-#     When I send a POST request to "/match" with the primary document and candidate documents
+#     When I send a POST request to "/" with the primary document and candidate documents
 #     Then the response status code should be 200
 #     And the response body should contain exactly one match based on item overlap
