@@ -17,7 +17,8 @@ except Exception as e:
 
 def _calculate_description_similarity(desc1, desc2):
     if not model:
-        return 0.0
+        logger.warning("SentenceTransformer model not available. Cannot calculate description similarity.")
+        return None
     if not desc1 and not desc2:
         return 1.0
     if not desc1 or not desc2:
@@ -36,7 +37,8 @@ def _calculate_description_similarity(desc1, desc2):
 
 def _calculate_item_id_similarity(id1, id2):
     if not model:
-        return 0.0
+        logger.warning("SentenceTransformer model not available. Cannot calculate item ID similarity.")
+        return None
     if not id1 and not id2:
         return 1.0
     if not id1 or not id2:
