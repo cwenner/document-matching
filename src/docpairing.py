@@ -158,8 +158,7 @@ class DocumentPairingPredictor:
 
         # If using reference logic, try that first
         if use_reference_logic:
-            # ref_pred = self._predict_document_by_order_ref(document)
-            ref_pred = {"paired_purchase_order_ids": []}  # temp
+            ref_pred = self._predict_document_by_order_ref(document)
 
             # For invoices with no PO match, try SVM fallback
             # @TODO this should be all documents
