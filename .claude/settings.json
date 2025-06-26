@@ -1,0 +1,21 @@
+{
+  "cleanupPeriodDays": 90,
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": 0,
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+    "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": "grpc"
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(find:*)",
+      "Bash(shopt:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(source:*)",
+      "Bash(PYTHONPATH=src pytest:*)",
+      "Bash(PYTHONPATH=src nox:*)"
+    ],
+    "deny": []
+  }
+}
