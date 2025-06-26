@@ -74,3 +74,10 @@ Feature: Document Matching API - Invalid Input Handling
     And the response body should contain a clear error message
     And the error message should specify which fields have invalid values
     And the error message should be machine-readable
+    
+  @error_handling @invalid_payload
+  Scenario: Handle invalid request payload gracefully
+    Given I have an invalid request payload defined as "payload_invalid_structure.json"
+    When I send a POST request to "/" with the invalid payload
+    Then the response status code should be 400
+    And the response body should contain a clear error message

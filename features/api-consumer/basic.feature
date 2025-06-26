@@ -6,6 +6,22 @@ Feature: Core Document Matching API
   Background:
     Given the document matching service is available
 
+  @performance @response_time @implemented
+  Scenario: Service maintains acceptable response times
+    Given I have a primary document defined as "primary_doc_standard.json"
+    And I have a list of 20 candidate documents defined as "candidates_multiple.json"
+    When I send a POST request to "/" with the primary document and candidate documents
+    Then the response status code should be 200
+    And the service should respond within 2 seconds
+    
+  @po_match @implemented
+  Scenario: Document with matching PO number
+    Given I have a primary document defined as "primary_doc_po_match.json"
+    And I have a list of candidate documents defined as "candidates_po_match.json"
+    When I send a POST request to "/" with the primary document "primary_doc_po_match.json" and candidates "candidates_po_match.json"
+    Then the response status code should be 200
+    And the match report should include document IDs from the candidate documents
+
   @story-1.1 @core @invoice_po_match
   Scenario: Basic Invoice-PO Match
     Given I have a primary invoice document

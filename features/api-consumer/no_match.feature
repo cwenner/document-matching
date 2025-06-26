@@ -7,6 +7,22 @@ Feature: Document Matching API - Clear No-Match Reporting
   Background:
     Given the document matching service is available
 
+  @empty_candidates @implemented
+  Scenario: Empty candidate list
+    Given I have a primary document defined as "primary_doc_no_candidates.json"
+    And no candidate documents are provided
+    When I send a POST request to "/" with the primary document and an empty list of candidate documents
+    Then the response status code should be 200
+    And the response body should indicate no matches were found
+    
+  @supplier_mismatch @implemented
+  Scenario: Supplier ID mismatch
+    Given I have a primary document defined as "primary_doc_diff_supplier.json"
+    And I have a list of candidate documents defined as "candidates_diff_supplier.json"
+    When I send a POST request to "/" with the primary document and candidate documents
+    Then the response status code should be 200
+    And the response body should indicate no matches were found
+
   @no_match_validation
   Scenario: Validate No-Match Report Schema
     Given I have a primary document with unique identifiers
