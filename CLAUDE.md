@@ -104,3 +104,4 @@ Sites that use real ML pipeline: badger-logistics, falcon-logistics, christopher
 - `noxfile.py`: Test and lint session configuration
 - `pytest.ini`: Test markers and warning filters
 - `features/`: BDD scenarios organized by user perspective
+- `CONTRIBUTING.md`: Developer guide for contributing to the project
