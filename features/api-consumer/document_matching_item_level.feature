@@ -16,6 +16,7 @@ Feature: Document Matching at Item Level
     And the match report should contain 3 itempairs with match_type "matched"
     And each itempair should have item_indices for both documents
     And each itempair should have item_unchanged_certainty scores
+    And each itempair should have match_type property as a string with value "matched"
 
   @story-1.1 @item_level @unmatched_primary
   Scenario: Unmatched Items in Primary Document
@@ -28,6 +29,8 @@ Feature: Document Matching at Item Level
     And 3 itempairs should have match_type "matched"
     And 2 itempairs should have match_type "unmatched"
     And the unmatched itempairs should have item_indices [n, null]
+    And the matched itempairs should have match_type property as a string with value "matched"
+    And the unmatched itempairs should have match_type property as a string with value "unmatched"
     And the unmatched itempairs should have deviations with code "item-unmatched"
 
   @story-1.1 @item_level @unmatched_candidate
