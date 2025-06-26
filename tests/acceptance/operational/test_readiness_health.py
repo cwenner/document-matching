@@ -2,8 +2,8 @@ import pytest
 from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
 
-# Import app from correct module
-from src.app import app
+# Import from centralized config module
+from tests.config import get_feature_path
 
 # Import common step definitions
 from tests.acceptance.steps.api_steps import context, client
@@ -19,7 +19,7 @@ def matching_service_base_url(context, base_url):
 
 
 @scenario(
-    "../../../features/operational/readiness_health.feature",
+    str(get_feature_path("operational/readiness_health.feature")),
     "Readiness probe indicates service is ready",
 )
 def test_readiness_probe():
@@ -27,7 +27,7 @@ def test_readiness_probe():
 
 
 @scenario(
-    "../../../features/operational/readiness_health.feature",
+    str(get_feature_path("operational/readiness_health.feature")),
     "Liveness probe indicates service is healthy",
 )
 def test_liveness_probe():
