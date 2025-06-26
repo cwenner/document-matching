@@ -17,6 +17,7 @@ DUMMY_DOC = {
     "items": [],
 }
 
+
 def test_readiness_endpoint():
     """Test the GET /health endpoint for readiness."""
     response = client.get("/health")

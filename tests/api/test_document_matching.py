@@ -10,17 +10,13 @@ sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
 from app import app
 
 
-@scenario(
-    "../../features/api-consumer/no_match.feature", "Empty candidate list"
-)
+@scenario("../../features/api-consumer/no_match.feature", "Empty candidate list")
 def test_empty_candidate_list():
     """Test that the service handles empty candidate lists correctly."""
     pass
 
 
-@scenario(
-    "../../features/api-consumer/no_match.feature", "Supplier ID mismatch"
-)
+@scenario("../../features/api-consumer/no_match.feature", "Supplier ID mismatch")
 def test_supplier_id_mismatch():
     """Test that the service handles documents with mismatched supplier IDs correctly."""
     pass
@@ -262,23 +258,25 @@ def check_document_ids_in_match_report(context):
     Check that the match report includes document IDs from candidate documents
     """
     response_data = context["response"].json()
-    
+
     # Check that there's a documents field
     assert "documents" in response_data, "Response should have documents field"
-    
+
     # Get the document IDs from the response
     response_doc_ids = sorted([doc["id"] for doc in response_data["documents"]])
-    
+
     # Get the expected document IDs (primary + at least one candidate)
     primary_id = context["primary_document"]["id"]
     candidate_ids = [doc["id"] for doc in context["candidate_documents"]]
-    
+
     # Verify at least one candidate document ID is included
     found_candidate = False
     for candidate_id in candidate_ids:
         if candidate_id in response_doc_ids:
             found_candidate = True
             break
-    
+
     assert found_candidate, "No candidate document IDs found in match report"
-    assert primary_id in response_doc_ids, "Primary document ID not found in match report"
+    assert (
+        primary_id in response_doc_ids
+    ), "Primary document ID not found in match report"

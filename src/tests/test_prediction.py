@@ -28,6 +28,7 @@ CANDIDATE_DOCS = [
     }
 ]
 
+
 @pytest.mark.model
 def test_post_whitelisted_site_pipeline():
     """
