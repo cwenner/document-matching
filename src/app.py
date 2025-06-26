@@ -20,8 +20,20 @@ logger.info(f"✔ Matching Service API Ready")
 
 @app.get("/health")
 async def health_handler(_request: Request):
-    """Health/readiness probe endpoint."""
+    """Health probe endpoint."""
     return Response("Ready to match\r\n")
+
+
+@app.get("/health/readiness")
+async def readiness_handler(_request: Request):
+    """Readiness probe endpoint - used to determine if the service is ready to accept requests."""
+    return {"status": "READY"}
+
+
+@app.get("/health/liveness")
+async def liveness_handler(_request: Request):
+    """Liveness probe endpoint - used to determine if the service is running."""
+    return {"status": "HEALTHY"}
 
 
 # Main endpoint for matching - handles all document matching requests
