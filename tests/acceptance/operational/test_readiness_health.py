@@ -41,13 +41,14 @@ def client():
     """Test client for the FastAPI app"""
     return TestClient(app.app)
 
+
 # --- Common When Step ---
 @when(parsers.parse('I send a GET request to "{path}"'))
 def send_get_request(context, client, path):
     # Use dictionary access as context is a dict in the test fixture
     # For testing, we don't need the base_url as the TestClient handles the path directly
     context["response"] = client.get(path)
-    
+
     # Store the path for later assertions if needed
     context["request_path"] = path
 

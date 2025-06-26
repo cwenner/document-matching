@@ -10,22 +10,34 @@ import app
 from tests.config import get_feature_path, get_test_data_path
 
 # Import common step definitions
-from tests.acceptance.steps.api_steps import client, context, document_matching_service, check_status_code
+from tests.acceptance.steps.api_steps import (
+    client,
+    context,
+    document_matching_service,
+    check_status_code,
+)
 
 
-@scenario(str(get_feature_path("api-consumer/no_match.feature")), "Empty candidate list")
+@scenario(
+    str(get_feature_path("api-consumer/no_match.feature")), "Empty candidate list"
+)
 def test_empty_candidate_list():
     """Test that the service handles empty candidate lists correctly."""
     pass
 
 
-@scenario(str(get_feature_path("api-consumer/no_match.feature")), "Supplier ID mismatch")
+@scenario(
+    str(get_feature_path("api-consumer/no_match.feature")), "Supplier ID mismatch"
+)
 def test_supplier_id_mismatch():
     """Test that the service handles documents with mismatched supplier IDs correctly."""
     pass
 
 
-@scenario(str(get_feature_path("api-consumer/basic.feature")), "Document with matching PO number")
+@scenario(
+    str(get_feature_path("api-consumer/basic.feature")),
+    "Document with matching PO number",
+)
 def test_po_match():
     """Test that the service correctly matches documents based on shared purchase order number."""
     pass

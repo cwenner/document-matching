@@ -1,6 +1,7 @@
 """
 Configuration for BDD acceptance tests
 """
+
 import pytest
 import sys
 from pathlib import Path
