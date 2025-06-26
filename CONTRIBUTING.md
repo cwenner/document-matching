@@ -106,3 +106,4 @@ pytest --collect-only -m wip
    - `@wip` for incomplete tests
    - `@not_implemented` for planned but not started tests
    - Remove markers when tests are complete
+6. **Limit file size**: Try to keep every file below 500 lines.
