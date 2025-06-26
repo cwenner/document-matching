@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a document matching service that compares documents (invoices, purchase orders, delivery receipts) to find matches and generate matching reports. The system uses machine learning models and rule-based matching to identify document pairs and analyze deviations.
 
+## Repository Structure
+
+- **src/**: Core source code (FastAPI app, matching service, ML pipeline)
+- **tests/**: Test suite with acceptance (BDD), unit, and integration tests
+- **features/**: BDD feature definitions organized by user perspective
+- **data/**: ML models and test datasets organized by document type
+- **docs/**: API specifications and documentation
+
 ## Key Architecture Components
 
 ### Core Services
@@ -89,6 +97,10 @@ Sites that use real ML pipeline: badger-logistics, falcon-logistics, christopher
 
 ## Key Files to Understand
 - `src/matching_service.py:304`: Whitelist logic determining real vs dummy processing
-- `src/app.py:28`: Main request handler with validation and error handling
+- `src/app.py:40`: Main request handler with validation and error handling
+- `src/match_reporter.py`: V3 match report generation with deviation detection
+- `tests/acceptance/steps/api_steps.py`: BDD step definitions for API testing
+- `tests/config.py`: Test configuration and path management
 - `noxfile.py`: Test and lint session configuration
 - `pytest.ini`: Test markers and warning filters
+- `features/`: BDD scenarios organized by user perspective
