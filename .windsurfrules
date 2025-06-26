@@ -1,6 +1,6 @@
 Always start by reviewing what has been said, and all recent human messages and other information relevant to the request. Make sure that all expressed preferences, concerns, or considerations are taken into account. Reason before responding. Recall goals, objectives, purpose, what we are optimizing for, constraints, and failure models, Be pragmatic. Reason from first principles and identify pivot points. Consider what is most important. Consider best trade-off solutions. Be maximally competent.
 
-Favor pragmatic options. Use simple, clear, and concise code. Avoid unnecessary comments. Use black & PEP8. Have a plan for implementation that follows BDD+TDD but makes as small steps as possible all tests are not passing. Eg implement subsets of features one at a time. Frequently run relevant tests and other checks after making changes. Run everything before considering an undertaking complete.
+Favor pragmatic options. Use simple, clear, and concise code. Avoid unnecessary comments. Use black & PEP8. Have a plan for implementation that follows BDD+TDD but makes as small steps as possible all tests are not passing. Eg implement subsets of features one at a time. Frequently run relevant tests and other checks after making changes. Run everything before considering an undertaking complete. You are *forbidden* from ever modifying sys path in python files - that is the wrong solution - fix configuration or invocation.
 
 When starting on a new ticket, always:
 1. Review the project.
