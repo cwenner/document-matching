@@ -11,7 +11,7 @@ from app import app
 
 
 @scenario(
-    "../../features/api/document_matching_scenarios.feature", "Empty candidate list"
+    "../../features/api-consumer/no_match.feature", "Empty candidate list"
 )
 def test_empty_candidate_list():
     """Test that the service handles empty candidate lists correctly."""
@@ -19,7 +19,7 @@ def test_empty_candidate_list():
 
 
 @scenario(
-    "../../features/api/document_matching_scenarios.feature", "Supplier ID mismatch"
+    "../../features/api-consumer/no_match.feature", "Supplier ID mismatch"
 )
 def test_supplier_id_mismatch():
     """Test that the service handles documents with mismatched supplier IDs correctly."""
@@ -27,8 +27,8 @@ def test_supplier_id_mismatch():
 
 
 @scenario(
-    "../../features/api/document_matching_scenarios.feature",
-    "Match on purchase order number",
+    "../../features/api-consumer/basic.feature",
+    "Document with matching PO number",
 )
 def test_po_match():
     """Test that the service correctly matches documents based on shared purchase order number."""

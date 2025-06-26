@@ -10,7 +10,7 @@ def matching_service_base_url(context, base_url):
 
 
 @scenario(
-    "../../features/api/readiness_health.feature",
+    "../../features/operational/readiness_health.feature",
     "Readiness probe indicates service is ready",
 )
 def test_readiness_probe():
@@ -18,7 +18,7 @@ def test_readiness_probe():
 
 
 @scenario(
-    "../../features/api/readiness_health.feature",
+    "../../features/operational/readiness_health.feature",
     "Liveness probe indicates service is healthy",
 )
 def test_liveness_probe():
