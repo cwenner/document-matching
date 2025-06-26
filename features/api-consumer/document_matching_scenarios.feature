@@ -7,7 +7,7 @@ Feature: Document Matching API - Specific Matching Scenarios
   Background:
     Given the document matching service is available
 
-  @scenario @empty_candidates
+  @empty_candidates
   Scenario: Empty candidate list
     Given I have a primary document defined as "primary_doc_no_candidates.json"
     And no candidate documents are provided
@@ -15,7 +15,7 @@ Feature: Document Matching API - Specific Matching Scenarios
     Then the response status code should be 200
     And the response body should indicate no matches were found
 
-  @scenario @supplier_mismatch
+  @supplier_mismatch
   Scenario: Supplier ID mismatch
     Given I have a primary document defined as "primary_doc_diff_supplier.json"
     And I have a list of candidate documents defined as "candidates_diff_supplier.json"
@@ -23,7 +23,7 @@ Feature: Document Matching API - Specific Matching Scenarios
     Then the response status code should be 200
     And the response body should indicate no matches were found
 
-  @scenario @po_match
+  @po_match
   Scenario: Match on purchase order number
     Given I have a primary document defined as "primary_doc_shared_po.json"
     And I have a list of candidate documents defined as "candidates_shared_po.json"
@@ -32,7 +32,7 @@ Feature: Document Matching API - Specific Matching Scenarios
     And the response body should contain a match report
     And the match report should contain exactly one match between the primary document and a candidate document
 
-#  @scenario @no_common_fields
+#  @no_common_fields
 #  Scenario: Documents with no common identifiers
 #    Given I have a primary document defined as "primary_doc_nothing_alike.json"
 #    And I have a list of candidate documents defined as "candidates_nothing_alike.json"
@@ -40,7 +40,7 @@ Feature: Document Matching API - Specific Matching Scenarios
 #    Then the response status code should be 200
 #    And the response body should indicate no matches were found
 
-#  @scenario @item_level_match
+#  @item_level_match
 #  Scenario: Match on line items despite differing PO numbers
 #    Given I have a primary document defined as "primary_doc_items.json"
 #    And I have a list of candidate documents defined as "candidates_items_same.json"
