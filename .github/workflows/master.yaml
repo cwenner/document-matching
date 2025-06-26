@@ -27,9 +27,9 @@ jobs:
 
 
       - name: Run black
-        run: black --check .
+        run: nox -s lint
       - name: Run tests
-        run: pytest -v src/tests/
+        run: nox -s test
 
       - name: Build and Push Docker image
         run: docker buildx build . --push -q --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
