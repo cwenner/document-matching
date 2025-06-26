@@ -22,7 +22,7 @@ def test(session: nox.Session):
         session.log("Required model file verified")
     except FileNotFoundError as e:
         session.error(str(e))
-        
+
     # Install all dependencies, including dev ones
     session.install("-r", "requirements-dev.txt")
 
@@ -44,28 +44,30 @@ def lint(session: nox.Session):
 def check_model_exists():
     """Check if all required model files exist in their expected locations."""
     missing_models = []
-    
+
     for model_path in MODEL_URLS.keys():
         if not Path(model_path).exists():
             missing_models.append(model_path)
-    
+
     if missing_models:
-        raise FileNotFoundError(f"Required model file(s) not found: {', '.join(missing_models)}")
+        raise FileNotFoundError(
+            f"Required model file(s) not found: {', '.join(missing_models)}"
+        )
     return True
 
 
 def download_model(model_path, url):
     """Download a model file from the specified URL."""
     path = Path(model_path)
-    
+
     # Create directories if they don't exist
     path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     try:
         # Download the file
         with requests.get(url, stream=True) as response:
             response.raise_for_status()  # Raise an error for bad responses
-            with open(path, 'wb') as f:
+            with open(path, "wb") as f:
                 shutil.copyfileobj(response.raw, f)
         return True
     except Exception as e:
@@ -77,7 +79,7 @@ def download_models(session: nox.Session):
     """Download required model files if they don't already exist."""
     # Install requests if not already available
     session.install("requests")
-    
+
     downloaded = False
     for model_path, url in MODEL_URLS.items():
         path = Path(model_path)
@@ -89,14 +91,13 @@ def download_models(session: nox.Session):
                 downloaded = True
             except Exception as e:
                 session.error(f"Failed to download model {model_path}: {str(e)}")
-    
+
     if not downloaded:
         session.log("All model files already exist, no downloads needed.")
-        
+
     # Validate that all required models exist
     try:
         check_model_exists()
         session.log("All required model files verified.")
     except FileNotFoundError as e:
         session.error(str(e))
-
