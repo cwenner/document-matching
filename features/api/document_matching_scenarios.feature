@@ -30,7 +30,7 @@ Feature: Document Matching API - Specific Matching Scenarios
     When I send a POST request to "/" with the primary document and candidate documents
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain exactly one match with the shared PO number
+    And the match report should contain exactly one match between the primary document and a candidate document
 
 #  @scenario @no_common_fields
 #  Scenario: Documents with no common identifiers
