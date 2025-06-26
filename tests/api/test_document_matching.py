@@ -199,8 +199,8 @@ def check_schema_compliance(context):
         assert False, "Response is neither an object nor an array as required by schema"
 
 
-@then("the match report should contain exactly one match with the shared PO number")
-def check_match_with_po_number(context):
+@then("the match report should contain exactly one match between the primary document and a candidate document")
+def check_match_between_documents(context):
     """
     Check that the match report shows a match between documents with the same PO number
     """
