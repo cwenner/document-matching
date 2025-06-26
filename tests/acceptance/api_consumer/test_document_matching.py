@@ -4,8 +4,10 @@ from pathlib import Path
 from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
 
+import app
+
 # Import from centralized config module
-from tests.config import get_feature_path
+from tests.config import get_feature_path, get_test_data_path
 
 # Import common step definitions
 from tests.acceptance.steps.api_steps import client, context, document_matching_service, check_status_code
@@ -34,7 +36,7 @@ def client():
     """
     Test client for the FastAPI app
     """
-    return TestClient(app)
+    return TestClient(app.app)
 
 
 @pytest.fixture
