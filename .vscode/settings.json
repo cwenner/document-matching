@@ -1,7 +1,13 @@
 {
     "python.testing.pytestArgs": [
-        "src", "tests"
+        "--no-header",
+        "--verbose",
+        "-s"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python.envFile": "${workspaceFolder}/.vscode/env",
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+    }
 }

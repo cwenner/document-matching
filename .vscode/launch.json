@@ -32,7 +32,6 @@
       "program": "${workspaceFolder}/src/evaluate_matching.py",
       "args": [
         "--dataset", "${workspaceFolder}/../popoc/data/pairing_sequential.json",
-        "--api-url", "http://localhost:8000"
       ],
       "console": "integratedTerminal"
     }
