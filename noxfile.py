@@ -13,7 +13,7 @@ def test(session: nox.Session):
 
     # Run pytest
     # Pass any arguments from the nox command line to pytest
-    session.run("pytest", *session.posargs, env={"PYTHONPATH": "src"})
+    session.run("pytest", "tests", *session.posargs, env={"PYTHONPATH": "src"})
 
 
 @nox.session(python=["3.12"])
