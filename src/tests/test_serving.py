@@ -4,20 +4,11 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 
-# Adjust import dir for tests
-module_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if module_dir not in sys.path:
-    sys.path.insert(0, module_dir)
-
-
-# --- Setup ---
-# Test client
 from app import app
 
 client = TestClient(app)
 
 
-# --- Sample Data ---
 DUMMY_DOC = {
     "id": "123",
     "kind": "invoice",
@@ -25,9 +16,6 @@ DUMMY_DOC = {
     "stage": "input",
     "items": [],
 }
-
-# --- Tests ---
-
 
 def test_readiness_endpoint():
     """Test the GET /health endpoint for readiness."""

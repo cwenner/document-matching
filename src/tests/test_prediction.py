@@ -4,20 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-# Adjust import dir for tests
-module_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if module_dir not in sys.path:
-    sys.path.insert(0, module_dir)
-
-
 from app import app
 from matching_service import WHITELISTED_SITES
 
-# --- Test Client ---
 client = TestClient(app)
 
-
-# --- Sample Data ---
 
 WHITELISTED_DOC = {
     "id": "whitelisted-doc-1",
@@ -36,9 +27,6 @@ CANDIDATE_DOCS = [
         "items": [{"fields": [{"name": "description", "value": "Item 1 PO"}]}],
     }
 ]
-
-# --- Tests ---
-
 
 @pytest.mark.model
 def test_post_whitelisted_site_pipeline():
