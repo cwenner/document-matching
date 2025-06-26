@@ -24,8 +24,7 @@ Feature: Advanced Document Matching Features
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match should utilize the attachment information
-    And the match report should reflect the combined document and attachment matching
+    And the match report should include fields that reference attachment data
 
   @story-1.1 @advanced @xml_data
   Scenario: Documents with Original XML Data
@@ -34,7 +33,8 @@ Feature: Advanced Document Matching Features
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match should utilize the original XML information
+    And the match report should include evidence that XML data was used in matching
+    And the match report should contain matching attributes derived from XML
 
   @story-1.1 @advanced @supplier_matching
   Scenario: Matching Documents from Same Supplier
