@@ -9,9 +9,6 @@ on:
   workflow_dispatch: {}
 concurrency: singleton
 
-env:
-  DISABLE_MODELS: true
-
 jobs:
   build-publish:
     runs-on: self-hosted
