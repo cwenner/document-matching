@@ -1,29 +1,32 @@
 import json
 import pytest
-import sys
 from pathlib import Path
 from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
 
-# Add the src directory to the Python path
-sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
-from app import app
+# Import app from correct module
+from src.app import app
+
+# Import common step definitions
+from tests.acceptance.steps.api_steps import client, context, document_matching_service, check_status_code
+# Import test data helper
+from tests.acceptance.api_consumer.test_data_helper import get_test_data_path
 
 
-@scenario("../../features/api-consumer/no_match.feature", "Empty candidate list")
+@scenario("../../../features/api-consumer/no_match.feature", "Empty candidate list")
 def test_empty_candidate_list():
     """Test that the service handles empty candidate lists correctly."""
     pass
 
 
-@scenario("../../features/api-consumer/no_match.feature", "Supplier ID mismatch")
+@scenario("../../../features/api-consumer/no_match.feature", "Supplier ID mismatch")
 def test_supplier_id_mismatch():
     """Test that the service handles documents with mismatched supplier IDs correctly."""
     pass
 
 
 @scenario(
-    "../../features/api-consumer/basic.feature",
+    "../../../features/api-consumer/basic.feature",
     "Document with matching PO number",
 )
 def test_po_match():
@@ -59,9 +62,7 @@ def primary_document(filename, context):
     """
     Load a primary document from test data
     """
-    test_data_path = (
-        Path(__file__).parent.parent.parent / "features" / "test_data" / filename
-    )
+    test_data_path = get_test_data_path(filename)
     with open(test_data_path, "r") as f:
         context["primary_document"] = json.load(f)
 
@@ -79,9 +80,7 @@ def candidate_documents(filename, context):
     """
     Load candidate documents from test data
     """
-    test_data_path = (
-        Path(__file__).parent.parent.parent / "features" / "test_data" / filename
-    )
+    test_data_path = get_test_data_path(filename)
     with open(test_data_path, "r") as f:
         context["candidate_documents"] = json.load(f)
 

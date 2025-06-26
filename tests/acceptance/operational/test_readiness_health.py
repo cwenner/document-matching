@@ -1,4 +1,12 @@
+import pytest
 from pytest_bdd import scenario, given, when, then, parsers
+from fastapi.testclient import TestClient
+
+# Import app from correct module
+from src.app import app
+
+# Import common step definitions
+from tests.acceptance.steps.api_steps import context, client
 
 # --- Feature: API Readiness and Health Checks ---
 
@@ -6,11 +14,12 @@ from pytest_bdd import scenario, given, when, then, parsers
 # Background
 @given(parsers.parse('the matching service is expected to be running at "{base_url}"'))
 def matching_service_base_url(context, base_url):
-    context.base_url = base_url
+    # Use dictionary access as context is a dict in the test fixture
+    context["base_url"] = base_url
 
 
 @scenario(
-    "../../features/operational/readiness_health.feature",
+    "../../../features/operational/readiness_health.feature",
     "Readiness probe indicates service is ready",
 )
 def test_readiness_probe():
@@ -18,7 +27,7 @@ def test_readiness_probe():
 
 
 @scenario(
-    "../../features/operational/readiness_health.feature",
+    "../../../features/operational/readiness_health.feature",
     "Liveness probe indicates service is healthy",
 )
 def test_liveness_probe():
@@ -28,7 +37,8 @@ def test_liveness_probe():
 # --- Common When Step ---
 @when(parsers.parse('I send a GET request to "{path}"'))
 def send_get_request(context, mock_http_client, path):
-    full_url = context.base_url + path
+    # Use dictionary access as context is a dict in the test fixture
+    full_url = context["base_url"] + path
 
     # Get the pre-configured mock_response object from the mock_http_client fixture
     response_mock = mock_http_client.get.return_value
@@ -42,13 +52,13 @@ def send_get_request(context, mock_http_client, path):
         # Default or raise error if path not expected for this test file
         response_mock.json.return_value = {}
 
-    context.response = mock_http_client.get(full_url)
+    context["response"] = mock_http_client.get(full_url)
     mock_http_client.get.assert_called_with(full_url)
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
 def response_status_code(context, status_code):
-    assert context.response.status_code == status_code
+    assert context["response"].status_code == status_code
 
 
 @then(
@@ -57,7 +67,7 @@ def response_status_code(context, status_code):
     )
 )
 def json_response_contains_field_value(context, field_name, field_value):
-    response_json = context.response.json()
+    response_json = context["response"].json()
     assert (
         field_name in response_json
     ), f"Field '{field_name}' not in response {response_json}"
