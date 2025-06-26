@@ -13,7 +13,7 @@ Feature: Core Document Matching API
     When I send a POST request to "/" with the primary document and candidate documents
     Then the response status code should be 200
     And the service should respond within 2 seconds
-    
+
   @po_match @implemented
   Scenario: Document with matching PO number
     Given I have a primary document defined as "primary_doc_po_match.json"
