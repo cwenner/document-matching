@@ -7,7 +7,7 @@ Feature: Document Matching - Detailed Deviation Information
   Background:
     Given the document matching service is available
 
-  @deviations @amount_deviation
+  @deviations @amount_deviation @implemented
   Scenario: Match with Amount Deviations
     Given I have a primary invoice document with amount 1500.00
     And I have a candidate purchase order with amount 1450.00
