@@ -24,6 +24,8 @@ jobs:
 
       - name: Run black
         run: nox -s lint
+      - name: Download models
+        run: nox -s download_models
       - name: Run tests
         run: nox -s test
 
