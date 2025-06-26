@@ -1,12 +1,13 @@
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
+import app
 
 # Import from centralized config module
 from tests.config import get_feature_path
 
 # Import common step definitions
-from tests.acceptance.steps.api_steps import context, client
+from tests.acceptance.steps.api_steps import context
 
 # --- Feature: API Readiness and Health Checks ---
 
@@ -34,26 +35,21 @@ def test_liveness_probe():
     pass
 
 
+# FastAPI TestClient fixture
+@pytest.fixture
+def client():
+    """Test client for the FastAPI app"""
+    return TestClient(app.app)
+
 # --- Common When Step ---
 @when(parsers.parse('I send a GET request to "{path}"'))
-def send_get_request(context, mock_http_client, path):
+def send_get_request(context, client, path):
     # Use dictionary access as context is a dict in the test fixture
-    full_url = context["base_url"] + path
-
-    # Get the pre-configured mock_response object from the mock_http_client fixture
-    response_mock = mock_http_client.get.return_value
-    response_mock.status_code = 200  # Ensure status code is 200 for these scenarios
-
-    if path == "/health/readiness":
-        response_mock.json.return_value = {"status": "READY"}
-    elif path == "/health/liveness":
-        response_mock.json.return_value = {"status": "HEALTHY"}
-    else:
-        # Default or raise error if path not expected for this test file
-        response_mock.json.return_value = {}
-
-    context["response"] = mock_http_client.get(full_url)
-    mock_http_client.get.assert_called_with(full_url)
+    # For testing, we don't need the base_url as the TestClient handles the path directly
+    context["response"] = client.get(path)
+    
+    # Store the path for later assertions if needed
+    context["request_path"] = path
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
