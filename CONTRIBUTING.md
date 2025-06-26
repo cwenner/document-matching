@@ -25,6 +25,9 @@
 # Run all tests and linting
 nox
 
+# Download models
+nox -s download_models
+
 # Run just tests
 nox -s test
 
