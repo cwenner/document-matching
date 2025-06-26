@@ -105,8 +105,12 @@ def send_post_with_primary_and_empty_candidates(client, context):
     context["response"] = response
 
 
-@when('I send a POST request to "/" with the primary document and candidate documents')
-def send_post_with_primary_and_candidates(client, context):
+@when(
+    parsers.parse(
+        'I send a POST request to "{endpoint}" with the primary document and candidate documents'
+    )
+)
+def send_post_with_primary_and_candidates(endpoint, client, context):
     """
     Send a POST request to root endpoint with primary document and candidate documents
     """
@@ -114,8 +118,23 @@ def send_post_with_primary_and_candidates(client, context):
         "document": context["primary_document"],
         "candidate-documents": context["candidate_documents"],
     }
-    response = client.post("/", json=payload)
-    context["response"] = response
+    context["response"] = client.post(endpoint, json=payload)
+
+
+@when(
+    parsers.parse(
+        'I send a POST request to "{endpoint}" with the primary document and candidates'
+    )
+)
+def send_post_with_primary_and_candidates_alt(endpoint, client, context):
+    """
+    Alternative phrasing for sending a POST request with primary and candidate documents
+    """
+    payload = {
+        "document": context["primary_document"],
+        "candidate-documents": context["candidate_documents"],
+    }
+    context["response"] = client.post(endpoint, json=payload)
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
@@ -235,3 +254,31 @@ def check_match_between_documents(context):
 
     # We don't check the PO number directly since it's not in the match report
     # The PO number match is implied by the documents being listed as matched
+
+
+@then("the match report should include document IDs from the candidate documents")
+def check_document_ids_in_match_report(context):
+    """
+    Check that the match report includes document IDs from candidate documents
+    """
+    response_data = context["response"].json()
+    
+    # Check that there's a documents field
+    assert "documents" in response_data, "Response should have documents field"
+    
+    # Get the document IDs from the response
+    response_doc_ids = sorted([doc["id"] for doc in response_data["documents"]])
+    
+    # Get the expected document IDs (primary + at least one candidate)
+    primary_id = context["primary_document"]["id"]
+    candidate_ids = [doc["id"] for doc in context["candidate_documents"]]
+    
+    # Verify at least one candidate document ID is included
+    found_candidate = False
+    for candidate_id in candidate_ids:
+        if candidate_id in response_doc_ids:
+            found_candidate = True
+            break
+    
+    assert found_candidate, "No candidate document IDs found in match report"
+    assert primary_id in response_doc_ids, "Primary document ID not found in match report"

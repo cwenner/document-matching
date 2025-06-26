@@ -16,9 +16,9 @@ Feature: Core Document Matching API
 
   @po_match @implemented
   Scenario: Document with matching PO number
-    Given I have a primary document defined as "primary_doc_po_match.json"
-    And I have a list of candidate documents defined as "candidates_po_match.json"
-    When I send a POST request to "/" with the primary document "primary_doc_po_match.json" and candidates "candidates_po_match.json"
+    Given I have a primary document defined as "primary_doc_shared_po.json"
+    And I have a list of candidate documents defined as "candidates_shared_po.json"
+    When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the match report should include document IDs from the candidate documents
 
@@ -26,7 +26,7 @@ Feature: Core Document Matching API
   Scenario: Basic Invoice-PO Match
     Given I have a primary invoice document
     And I have a candidate purchase order document
-    When I send a POST request to "/" with the primary document and candidate document
+    When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the response body should contain a match report in v3 schema
     And the match report should contain "matched" in labels
@@ -38,7 +38,7 @@ Feature: Core Document Matching API
   Scenario: Basic PO-Delivery Receipt Match
     Given I have a primary purchase order document
     And I have a candidate delivery receipt document
-    When I send a POST request to "/" with the primary document and candidate document
+    When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the response body should contain a match report in v3 schema
     And the match report should contain "matched" in labels
@@ -49,9 +49,9 @@ Feature: Core Document Matching API
   @story-1.1 @core @three_way_match
   Scenario: Three-Way Document Matching
     Given I have an invoice document
-    And I have a purchase order document
-    And I have a delivery receipt document
-    When I send a POST request to "/" with all three documents
+    And I have a candidate purchase order document
+    And I have a candidate delivery receipt document
+    When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the response body should contain two match reports
     And one match report should be between invoice and purchase order
@@ -63,7 +63,7 @@ Feature: Core Document Matching API
   Scenario: Match with Multiple Candidate Documents
     Given I have a primary invoice document
     And I have 5 candidate purchase order documents
-    When I send a POST request to "/" with the primary document and all candidate documents
+    When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the response body should contain match reports for each candidate document
     And each match report should follow the v3 schema
@@ -73,7 +73,7 @@ Feature: Core Document Matching API
   Scenario: Performance Requirements with Maximum Candidates
     Given I have a primary invoice document
     And I have 10 candidate purchase order documents
-    When I send a POST request to "/" with the primary document and all candidate documents
+    When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the response body should contain match reports for each candidate document
     And the entire response should complete within 60 seconds
