@@ -18,14 +18,14 @@ Feature: Document Matching - Detailed Deviation Information
     And the match report should include deviation with code "total-amounts-differ"
     And the deviation severity should reflect the percentage difference
 
-  @deviations @quantity_deviation
+  @deviations @quantity_deviation @implemented
   Scenario: Match with Quantity Deviations
     Given I have a primary invoice document with item quantity 10
     And I have a candidate purchase order with item quantity 8
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain deviation with code "quantities-differ"
+    And the match report should contain deviation with code "quantity-differs"
     And the deviation severity should reflect the percentage difference
 
   @deviations @partial_delivery
