@@ -49,7 +49,7 @@ def context():
     return {}
 
 
-@given('the document matching service is available')
+@given("the document matching service is available")
 def document_matching_service(context):
     """
     Set up the document matching service for testing
@@ -170,12 +170,16 @@ def check_match_report(context):
     Check that the response body contains a match report
     """
     response_data = context["response"].json()
-    
+
     # Verify structure of match report
-    assert isinstance(response_data, dict), "Expected a dictionary response for match report"
-    
+    assert isinstance(
+        response_data, dict
+    ), "Expected a dictionary response for match report"
+
     # Match report should have certain key fields
-    assert "documents" in response_data or "labels" in response_data, "Response missing key match report fields"
+    assert (
+        "documents" in response_data or "labels" in response_data
+    ), "Response missing key match report fields"
 
 
 @then("the response should comply with the API schema")
@@ -186,12 +190,14 @@ def check_schema_compliance(context):
     # This is a more detailed schema validation
     # For now, we'll do a basic check of required fields
     response_data = context["response"].json()
-    
+
     # Basic schema validation
     if isinstance(response_data, dict):
         # Should have key fields for a response
-        assert any(key in response_data for key in ["documents", "labels", "itempairs", "deviations"]), \
-            "Response missing required fields according to schema"
+        assert any(
+            key in response_data
+            for key in ["documents", "labels", "itempairs", "deviations"]
+        ), "Response missing required fields according to schema"
     elif isinstance(response_data, list):
         # Empty list is valid for no matches
         pass
@@ -199,25 +205,33 @@ def check_schema_compliance(context):
         assert False, "Response is neither an object nor an array as required by schema"
 
 
-@then("the match report should contain exactly one match between the primary document and a candidate document")
+@then(
+    "the match report should contain exactly one match between the primary document and a candidate document"
+)
 def check_match_between_documents(context):
     """
     Check that the match report shows a match between documents with the same PO number
     """
     response_data = context["response"].json()
-    
+
     # Verify that the response indicates a match
     assert "labels" in response_data, "Response should have labels field"
     assert "match" in response_data["labels"], "Expected 'match' in labels"
-    
+
     # Check that the documents in the match are the ones with the shared PO number
     assert "documents" in response_data, "Response should have documents field"
-    assert len(response_data["documents"]) == 2, "Expected exactly two documents (primary and match)"
-    
+    assert (
+        len(response_data["documents"]) == 2
+    ), "Expected exactly two documents (primary and match)"
+
     # Verify that the matched documents have the correct IDs
     doc_ids = sorted([doc["id"] for doc in response_data["documents"]])
-    expected_ids = sorted([context["primary_document"]["id"], context["candidate_documents"][0]["id"]])
-    assert doc_ids == expected_ids, f"Expected document IDs {expected_ids}, but got {doc_ids}"
-    
+    expected_ids = sorted(
+        [context["primary_document"]["id"], context["candidate_documents"][0]["id"]]
+    )
+    assert (
+        doc_ids == expected_ids
+    ), f"Expected document IDs {expected_ids}, but got {doc_ids}"
+
     # We don't check the PO number directly since it's not in the match report
     # The PO number match is implied by the documents being listed as matched
