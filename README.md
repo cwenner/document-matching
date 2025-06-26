@@ -59,3 +59,19 @@ The evaluation script:
    - Makes predictions using the matching pipeline
    - Evaluates predictions against expected matches
 6. Calculates precision and recall metrics for the entire test set
+
+## Testing
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run all tests and linting
+nox
+
+# Run just tests
+nox -s test
+
+# Run just linting
+nox -s lint
+```
