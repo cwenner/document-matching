@@ -14,8 +14,8 @@ Feature: Document Matching - Detailed Deviation Information
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain "matched" in labels
-    And the match report should include deviation with code "amounts-differ"
+    And the match report should contain "match" in labels
+    And the match report should include deviation with code "total-amounts-differ"
     And the deviation severity should reflect the percentage difference
 
   @deviations @quantity_deviation
