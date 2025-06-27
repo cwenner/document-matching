@@ -61,7 +61,7 @@ RUN     find /usr -name 'EXTERNALLY-MANAGED' -exec rm -f {} +
 
 RUN     --mount=target=/mnt,from=builder \
         --mount=type=cache,target=/root/.cache/pip \
-        python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl nox -r /mnt/whl/requirements.txt
+        python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl -r /mnt/whl/requirements.txt
 
 RUN     python3 -m nox -f /opt/omnicoder/matching/noxfile.py test
 

@@ -3,6 +3,7 @@ dateparser
 fastapi==0.115.12
 httpx
 numpy
+nox
 pandas
 pydantic
 pytest
