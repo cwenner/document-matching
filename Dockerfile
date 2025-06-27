@@ -24,9 +24,7 @@ RUN     apt update && apt install -y \
         ;
 
 COPY    --link requirements.txt /whl/
-COPY    --link noxfile.py /mnt/
 RUN     ls -l /whl && cat /whl/requirements.txt
-RUN     ls -l /mnt && cat /mnt/noxfile.py
 RUN     --mount=type=cache,target=/root/.cache/pip \
         python3 -m pip -vvv wheel --wheel-dir=/whl -r /whl/requirements.txt
 COPY    src /opt/omnicoder/matching
@@ -54,6 +52,7 @@ RUN azcopy copy "https://nuprodsandbox.blob.core.windows.net/models/document-pai
 
 FROM    base AS final
 COPY    src /opt/omnicoder/matching
+COPY    noxfile.py /opt/omnicoder/matching/
 ENV     PYTHONPATH=/opt/omnicoder/matching
 RUN     mkdir -p /opt/omnicoder/data/models
 COPY    --from=fetch /data/document-pairing-svm.pkl /opt/omnicoder/data/models/document-pairing-svm.pkl
@@ -67,7 +66,7 @@ RUN     --mount=target=/mnt,from=builder \
 
 RUN     --mount=target=/mnt,from=builder \
         --mount=type=cache,target=/root/.cache/pip \
-        python3 -m nox -f /mnt/noxfile.py -s test
+        python3 -m nox -f /opt/omnicoder/matching/noxfile.py -s test
 
 # ===========================
 
