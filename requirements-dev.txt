@@ -1,5 +1,4 @@
 -r requirements.txt
-nox
 pytest
 pytest-bdd
 pytest-mock
