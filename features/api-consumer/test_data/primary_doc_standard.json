@@ -1,0 +1,55 @@
+{
+    "version": "v3",
+    "id": "PD-001",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+        {
+            "name": "supplierId",
+            "value": "S123"
+        },
+        {
+            "name": "invoiceDate",
+            "value": "2025-06-22"
+        },
+        {
+            "name": "invoiceNumber",
+            "value": "INV-2025-0001"
+        },
+        {
+            "name": "incVatAmount",
+            "value": "1200.00"
+        },
+        {
+            "name": "currencyCode",
+            "value": "USD"
+        },
+        {
+            "name": "excVatAmount",
+            "value": "1000.00"
+        },
+        {
+            "name": "type",
+            "value": "DEBIT"
+        }
+    ],
+    "items": [
+        {
+            "fields": [
+                {
+                    "name": "text",
+                    "value": "Standard Product A"
+                },
+                {
+                    "name": "lineNumber",
+                    "value": "1"
+                },
+                {
+                    "name": "debit",
+                    "value": "1000.00"
+                }
+            ]
+        }
+    ]
+}

@@ -10,7 +10,11 @@ def get_test_data_path(filename):
     Get the path to a test data file
     """
     # Go up three directory levels from the test file to reach the project root,
-    # then find the test data under features/test_data/
+    # then find the test data under features/api-consumer/test_data/
     return (
-        Path(__file__).parent.parent.parent.parent / "features" / "test_data" / filename
+        Path(__file__).parent.parent.parent.parent
+        / "features"
+        / "api-consumer"
+        / "test_data"
+        / filename
     )

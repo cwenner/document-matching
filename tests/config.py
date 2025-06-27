@@ -9,7 +9,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 FEATURES_DIR = os.environ.get("BDD_FEATURES_DIR", str(PROJECT_ROOT / "features"))
 TEST_DATA_DIR = os.environ.get(
-    "BDD_TEST_DATA_DIR", str(PROJECT_ROOT / "features" / "test_data")
+    "BDD_TEST_DATA_DIR", str(PROJECT_ROOT / "features" / "api-consumer" / "test_data")
 )
 
 
