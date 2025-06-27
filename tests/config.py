@@ -26,14 +26,31 @@ def get_feature_path(feature_file):
     return Path(FEATURES_DIR) / feature_file
 
 
-def get_test_data_path(filename):
+def get_test_data_path(filename, feature_category=None):
     """
-    Get the path to a test data file, respecting environment configuration.
+    Get the path to a test data file, supporting multiple feature categories.
 
     Args:
         filename: The name of the test data file
+        feature_category: Optional category (api-consumer, evaluation, developer, operational)
 
     Returns:
         Path: The full path to the test data file
     """
-    return Path(TEST_DATA_DIR) / filename
+    # If category specified, use it directly
+    if feature_category:
+        return Path(FEATURES_DIR) / feature_category / "test_data" / filename
+    
+    # Check environment variable first for backward compatibility
+    if "BDD_TEST_DATA_DIR" in os.environ:
+        return Path(TEST_DATA_DIR) / filename
+    
+    # Search all feature categories for the file
+    categories = ["api-consumer", "evaluation", "developer", "operational"]
+    for category in categories:
+        path = Path(FEATURES_DIR) / category / "test_data" / filename
+        if path.exists():
+            return path
+    
+    # Fallback to api-consumer for backward compatibility
+    return Path(FEATURES_DIR) / "api-consumer" / "test_data" / filename
