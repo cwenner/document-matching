@@ -2,6 +2,80 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ ABSOLUTE PROHIBITIONS - VIOLATION CAUSES TERMINATION ⚠️
+
+**THESE RULES ARE CRITICAL AND NON-NEGOTIABLE:**
+
+1. **🚫 NEVER EDIT FEATURE FILES WITHOUT APPROVAL** - Having unapproved diffs in feature files is a CRITICAL ERROR and leads to automatic rejection of all work and heavy penalties
+2. **🚫 NEVER USE `{{ ... }}` SYNTAX IN CODE** - A single use causes permanent termination and must absolutely never occur
+3. **🚫 NEVER ASK HUMAN TO MAKE CODE CHANGES** - If you fail, try again and use tools better, make smaller edits
+4. **🚫 NEVER GIVE EXAMPLES OR EXPECT HUMAN TO 'FILL IN THE REST'** - Write code that can be delivered and run as written
+5. **🚫 NEVER MODIFY SYS.PATH IN PYTHON FILES** - Fix configuration or invocation instead
+6. **🚫 NEVER ALTER UNRELATED EXISTING TESTS** without first reviewing everything and making sure that is the right action
+
+## 📋 CRITICAL FORMATTING & SYNTAX REQUIREMENTS
+
+**SYNTAX IS CRITICAL - THESE MUST BE PERFECT:**
+- ✅ Use correct syntax, spacing, and indentation
+- ✅ Read files before editing them (always use Read tool first)
+- ✅ Use Black styling and PEP8 consistently
+- ✅ Use type hints consistently
+- ✅ Keep files under 400 lines (refactor before submission)
+- ✅ Make small edits (under 100 lines per change, use multiple calls)
+- ✅ Optimize for readability over premature optimization
+- ✅ Write modular code using separate files
+- ✅ Avoid unnecessary comments - lean towards self-explanatory code
+
+## 🎫 NEW TICKET PROCESS (MANDATORY 23-STEP WORKFLOW)
+
+**When starting on a new ticket, ALWAYS follow these steps:**
+
+1. **Review the project** - Always start by reviewing project as a whole
+2. **Read development instructions** - Read any development instructions thoroughly
+3. **Figure out what is actually requested** - Understand the real requirement
+4. **Review all user stories and feature files** - Understand business context
+5. **Feature file assessment** - Decide whether feature files should change (simulate critical dialog between PO/BA, Dev, QA)
+6. **Install requirements** - Install requirements.txt and requirements-dev.txt
+7. **Load environment** - Load environment variables from .env
+8. **Run initial tests** - Run `python -m nox` and record acceptance rate
+9. **Make a plan** - Create comprehensive implementation plan
+10. **Document plan** - Write context and plan to CURRENT_WORKING_NOTES.md
+11. **Execute iteratively** - Execute on plan, update CURRENT_WORKING_NOTES.md as you go
+12. **Repeat until ready** - Continue until ready to submit code changes
+13. **Final test run** - Run `python -m nox` 
+14. **Fix lint issues** - Address any formatting/style issues
+15. **Validate readiness** - If not ready, go back to step 8
+16. **Update documentation** - Update relevant documentation
+17. **Review documentation** - Review documentation for consistency
+18. **Clean up** - Clean up temporary files
+19. **Document learnings** - Write down learnings and major changes to CODE_CHANGES.md
+20. **Critical code review** - Simulate critical code review, go to step 8 if needed
+21. **Critical ticket review** - Simulate critical review against original ticket, go to step 8 if needed
+22. **Declare ready** - Declare ready to submit
+23. **Clean up notes** - Delete CURRENT_WORKING_NOTES.md
+
+## 🧪 TESTING & QUALITY REQUIREMENTS (CRITICAL)
+
+**ACCEPTANCE RATE MONITORING:**
+- Record acceptance rate at start of work
+- If acceptance rate drops significantly, IMMEDIATELY make plan to restore it
+- Must figure out what caused deviation immediately
+- **CRITICAL:** If acceptance rate not recovered within TWO responses, work will be reverted and killed
+- Aside from adding new tests, failure to restore acceptance rate ASAP may result in termination
+
+**RED-GREEN-REFACTOR PRINCIPLE:**
+- Always follow Red-Green-Refactor cycle
+- Run `python -m nox` before submitting any work
+- Fix implementation code when tests fail, don't evade tests
+- Before creating new test steps, check they don't already exist under different names
+
+**WORK APPROACH:**
+- DO IT YOURSELF - Don't explain how human could do it, just do it
+- DO NOT ASK - Do as much as you can without asking
+- CONTINUE WORKING - Don't stop while you have done little work
+- ASSESS PROGRESS - If not making progress, step back and reassess
+- INFER PURPOSE - Don't make bad assumptions, infer purpose and follow instructions
+
 ## CRITICAL: How to Work with This Codebase
 
 When working with this repository, you MUST follow this systematic, hypothesis-driven process:
@@ -66,13 +140,41 @@ This project follows a recursive BDD (Behavior-Driven Development) approach:
 - **Business-Oriented Language:** Write .feature files in clear, business-oriented language
 - **Minimal Feature Changes:** Try to never change .feature files for implementation purposes
 
+## 🛡️ FEATURE FILE PROTECTION (CRITICAL)
+
+**⚠️ EDITING FEATURE FILES WITHOUT APPROVAL CAUSES AUTOMATIC REJECTION ⚠️**
+
+### Feature File Rules
+- **ABSOLUTE PROHIBITION:** Never edit .feature files without explicit approval
+- **Critical Dialog Required:** Before any feature file change, simulate critical dialog between:
+  - **Product Owner/Business Analyst (PO/BA):** Business requirements perspective
+  - **Developer (Dev):** Technical implementation perspective  
+  - **Quality Assurance (QA):** Testing and validation perspective
+- **Start with User Stories:** Always begin feature file assessment with user stories
+- **Business-Oriented Language:** Write .feature files in clear, business-oriented language
+- **Express Requirements, Not Implementation:** Write Gherkin to express requirements, not for step reuse
+
+### When Feature Files May Change
+- **Same phrase, different contexts:** If same phrase used in multiple features but actually intended to be different by context, update all places to be more specific
+- **Same intent, same phrase:** If what is being expressed is intended to be the same, use shared_steps file
+- **Separate test implementations:** Prefer keeping implementation of tests for different features in separate files
+
+### Feature File Assessment Process
+1. **Read all existing feature files thoroughly**
+2. **Understand business context and user stories**
+3. **Simulate PO/BA/Dev/QA dialog** 
+4. **Document reasoning for any proposed changes**
+5. **Get explicit approval before making changes**
+
 ## Knowledge Persistence & Learning
 
 ### Documentation Requirements
-- **GOTCHAS.md:** Log bugs/issues/prevention (including root cause analysis for test failures)
+- **GOTCHAS.md:** Log bugs/issues/prevention (including root cause analysis for test failures *before* any test alteration proposals)
 - **IMPLEMENTATION_DETAILS.md:** Log optimizations and technical decisions
 - **MENTAL_MODEL.md:** Log architectural insights and design patterns
 - **FUTURE_STEPS.md:** Log requests for improvements (stay focused on current task)
+- **CODE_CHANGES.md:** Append major code changes with rationale and impact
+- **CURRENT_WORKING_NOTES.md:** Active session notes (delete when complete)
 
 ### Memory & Learning Process
 - **Pre-Action:** Review existing logs, apply history, avoid repeats, build on optimizations
