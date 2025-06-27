@@ -24,6 +24,7 @@ RUN     apt update && apt install -y \
         ;
 
 COPY    --link requirements.txt /whl/
+COPY    --link noxfile.py /whl/
 RUN     ls -l /whl && cat /whl/requirements.txt
 RUN     --mount=type=cache,target=/root/.cache/pip \
         python3 -m pip -vvv wheel --wheel-dir=/whl -r /whl/requirements.txt
@@ -63,7 +64,11 @@ RUN     --mount=target=/mnt,from=builder \
         --mount=type=cache,target=/root/.cache/pip \
         python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl -r /mnt/whl/requirements.txt
 
-RUN     python3 -m nox -f /opt/omnicoder/matching/noxfile.py -s test
+RUN     --mount=target=/mnt,from=builder \
+        --mount=type=cache,target=/root/.cache/pip \
+        python3 -m nox -f /mnt/noxfile.py -s test
+
+# ===========================
 
 EXPOSE  5024
 CMD     ["sh","-xc","uvicorn --log-level=warning --port=5024 --host=0.0.0.0 app:app"]
