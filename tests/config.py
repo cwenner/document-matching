@@ -8,8 +8,6 @@ from pathlib import Path
 # Base paths
 PROJECT_ROOT = Path(__file__).parent.parent
 FEATURES_DIR = os.environ.get("BDD_FEATURES_DIR", str(PROJECT_ROOT / "features"))
-# Legacy: Only used when BDD_TEST_DATA_DIR environment variable is set
-TEST_DATA_DIR = os.environ.get("BDD_TEST_DATA_DIR")
 
 
 def get_feature_path(feature_file):
@@ -40,10 +38,6 @@ def get_test_data_path(filename, feature_category=None):
     if feature_category:
         return Path(FEATURES_DIR) / feature_category / "test_data" / filename
     
-    # Check environment variable first for backward compatibility
-    if TEST_DATA_DIR:
-        return Path(TEST_DATA_DIR) / filename
-    
     # Search all feature categories for the file
     categories = ["api-consumer", "evaluation", "developer", "operational"]
     for category in categories:
@@ -51,5 +45,5 @@ def get_test_data_path(filename, feature_category=None):
         if path.exists():
             return path
     
-    # Fallback to api-consumer for backward compatibility
+    # Fallback to api-consumer
     return Path(FEATURES_DIR) / "api-consumer" / "test_data" / filename
