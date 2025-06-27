@@ -34,7 +34,7 @@ jobs:
       #   run: docker buildx build . --push --progress=plain --build-arg GIT_COMMIT=${{ github.sha }} -t omnimodular.azurecr.io/omnicoder/document-matching:latest | { read CID; echo digest=$CID >> $GITHUB_OUTPUT; }
       #   id: build
 
-      - id: Build and Push Docker image
+      - name: Build and Push Docker image
         if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || github.event_name == 'workflow_dispatch'
         uses: docker/build-push-action@v6
         with:
