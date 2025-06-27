@@ -21,84 +21,76 @@ import tests.acceptance.steps.api_steps  # This imports all step definitions
 from tests.acceptance.steps.api_steps import client, context
 
 
-# Scenarios from invalid_input.feature - all marked as @wip for now
-@pytest.mark.wip
+# Original scenarios from invalid_input.feature - should run by default
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Missing Primary Document"
 )
 def test_missing_primary_document():
-    """Test API response when primary document is missing - WIP."""
+    """Test API response when primary document is missing."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Invalid Document Format"
 )
 def test_invalid_document_format():
-    """Test API response when document format is invalid - WIP."""
+    """Test API response when document format is invalid."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Malformed JSON Payload"
 )
 def test_malformed_json_payload():
-    """Test API response when JSON payload is malformed - WIP."""
+    """Test API response when JSON payload is malformed."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Candidate Documents Not an Array"
 )
 def test_candidates_not_array():
-    """Test API response when candidates are not provided as array - WIP."""
+    """Test API response when candidates are not provided as array."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Unsupported Content Type"
 )
 def test_unsupported_content_type():
-    """Test API response when content type is unsupported - WIP."""
+    """Test API response when content type is unsupported."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Missing Required Document Fields"
 )
 def test_missing_required_fields():
-    """Test API response when required document fields are missing - WIP."""
+    """Test API response when required document fields are missing."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Invalid Field Values"
 )
 def test_invalid_field_values():
-    """Test API response when document field values are invalid - WIP."""
+    """Test API response when document field values are invalid."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")), 
     "Handle invalid request payload gracefully"
 )
 def test_handle_invalid_payload():
-    """Test API graceful handling of invalid request payload - WIP."""
+    """Test API graceful handling of invalid request payload."""
     pass
 
 
