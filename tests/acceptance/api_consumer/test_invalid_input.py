@@ -102,6 +102,56 @@ def test_handle_invalid_payload():
     pass
 
 
+@pytest.mark.wip
+@scenario(
+    str(get_feature_path("api-consumer/invalid_input.feature")), 
+    "Empty Request Body"
+)
+def test_empty_request_body():
+    """Test API response when request body is empty - WIP."""
+    pass
+
+
+@pytest.mark.wip
+@scenario(
+    str(get_feature_path("api-consumer/invalid_input.feature")), 
+    "Wrong HTTP Method"
+)
+def test_wrong_http_method():
+    """Test API response when wrong HTTP method is used - WIP."""
+    pass
+
+
+@pytest.mark.wip
+@scenario(
+    str(get_feature_path("api-consumer/invalid_input.feature")), 
+    "Null Document Field"
+)
+def test_null_document_field():
+    """Test API response when document field is null - WIP."""
+    pass
+
+
+@pytest.mark.wip
+@scenario(
+    str(get_feature_path("api-consumer/invalid_input.feature")), 
+    "Document Field Not an Object"
+)
+def test_document_not_object():
+    """Test API response when document field is not an object - WIP."""
+    pass
+
+
+@pytest.mark.wip
+@scenario(
+    str(get_feature_path("api-consumer/invalid_input.feature")), 
+    "Null Candidate Documents Field"
+)
+def test_null_candidates():
+    """Test API response when candidate documents field is null - WIP."""
+    pass
+
+
 # Common step definitions needed by all scenarios
 @given("the document matching service is available")
 def document_matching_service_available(context):
@@ -192,6 +242,30 @@ def invalid_request_payload(context, filename):
         context["invalid_payload"] = json.load(f)
 
 
+@given("I have an empty request body")
+def empty_request_body(context):
+    """Set context to have an empty request body"""
+    context["empty_body"] = True
+
+
+@given("I have a request with null document field")
+def null_document_field(context):
+    """Set context to have a null document field"""
+    context["null_document"] = True
+
+
+@given("I have a document field as a string")
+def document_as_string(context):
+    """Set context to have document field as a string"""
+    context["document_as_string"] = "this-is-a-string-not-object"
+
+
+@given("I have null candidate documents field")
+def null_candidates_field(context):
+    """Set context to have null candidate documents field"""
+    context["null_candidates"] = True
+
+
 @when('I send a POST request to "/" with a missing primary document and candidate documents')
 def send_post_missing_primary(client, context):
     """Send POST request with missing primary document"""
@@ -246,6 +320,53 @@ def send_post_unsupported_content_type(client, context):
 def send_post_invalid_payload(client, context):
     """Send POST request with invalid payload structure"""
     context["response"] = client.post("/", json=context["invalid_payload"])
+
+
+@when('I send a POST request to "/" with the empty body')
+def send_post_empty_body(client, context):
+    """Send POST request with empty body"""
+    context["response"] = client.post(
+        "/", 
+        data="",
+        headers={"Content-Type": "application/json"}
+    )
+
+
+@when('I send a GET request to "/"')
+def send_get_request(client, context):
+    """Send GET request to root endpoint"""
+    context["response"] = client.get("/")
+
+
+@when('I send a POST request to "/" with the request')
+def send_post_with_request(client, context):
+    """Send POST request with special request types"""
+    if context.get("null_document"):
+        payload = {
+            "document": None,
+            "candidate-documents": context["candidate_documents"]
+        }
+    elif context.get("document_as_string"):
+        payload = {
+            "document": context["document_as_string"],
+            "candidate-documents": context["candidate_documents"]
+        }
+    else:
+        payload = {
+            "document": context["primary_document"],
+            "candidate-documents": context["candidate_documents"]
+        }
+    context["response"] = client.post("/", json=payload)
+
+
+@when('I send a POST request to "/" with the primary document and null candidates')
+def send_post_null_candidates(client, context):
+    """Send POST request with null candidate documents"""
+    payload = {
+        "document": context["primary_document"],
+        "candidate-documents": None
+    }
+    context["response"] = client.post("/", json=payload)
 
 
 @then("the response body should contain a clear error message")
@@ -373,3 +494,15 @@ def error_message_machine_readable(context):
         
     except json.JSONDecodeError:
         pytest.fail("Error response should be valid JSON for machine readability")
+
+
+@then("the error message should indicate method not allowed")
+def error_indicates_method_not_allowed(context):
+    """Check that error message indicates method not allowed"""
+    response_data = context["response"].json()
+    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    method_keywords = ["method", "not", "allowed"]
+    
+    message_lower = error_message.lower()
+    found_keywords = [keyword for keyword in method_keywords if keyword in message_lower]
+    assert len(found_keywords) >= 2, f"Error message should mention method not allowed. Found keywords: {found_keywords}, Message: {error_message}"
