@@ -1,0 +1,88 @@
+[
+    {
+        "version": "v3",
+        "id": "CD-001",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {
+                "name": "supplierId",
+                "value": "S123"
+            },
+            {
+                "name": "orderDate",
+                "value": "2025-06-20"
+            },
+            {
+                "name": "orderNumber",
+                "value": "PO-2025-0001"
+            },
+            {
+                "name": "incVatAmount",
+                "value": "1200.00"
+            },
+            {
+                "name": "currencyCode",
+                "value": "USD"
+            }
+        ],
+        "items": [
+            {
+                "fields": [
+                    {
+                        "name": "text",
+                        "value": "Standard Product A"
+                    },
+                    {
+                        "name": "lineNumber",
+                        "value": "1"
+                    },
+                    {
+                        "name": "credit",
+                        "value": "1000.00"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "version": "v3",
+        "id": "CD-002",
+        "kind": "delivery-receipt",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {
+                "name": "supplierId",
+                "value": "S123"
+            },
+            {
+                "name": "deliveryDate",
+                "value": "2025-06-21"
+            },
+            {
+                "name": "deliveryNumber",
+                "value": "DR-2025-0001"
+            }
+        ],
+        "items": [
+            {
+                "fields": [
+                    {
+                        "name": "text",
+                        "value": "Standard Product A"
+                    },
+                    {
+                        "name": "lineNumber",
+                        "value": "1"
+                    },
+                    {
+                        "name": "quantity",
+                        "value": "1"
+                    }
+                ]
+            }
+        ]
+    }
+]

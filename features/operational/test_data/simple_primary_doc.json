@@ -1,0 +1,39 @@
+{
+  "version": "v3",
+  "id": "OPS-001",
+  "kind": "invoice",
+  "site": "test-site",
+  "stage": "input",
+  "headers": [
+    {
+      "name": "supplierId",
+      "value": "S100"
+    },
+    {
+      "name": "invoiceNumber",
+      "value": "OPS-001"
+    },
+    {
+      "name": "totalAmount",
+      "value": "100.00"
+    }
+  ],
+  "items": [
+    {
+      "fields": [
+        {
+          "name": "text",
+          "value": "Simple operational test item"
+        },
+        {
+          "name": "lineNumber",
+          "value": "1"
+        },
+        {
+          "name": "debit",
+          "value": "100.00"
+        }
+      ]
+    }
+  ]
+}

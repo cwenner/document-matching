@@ -1,0 +1,25 @@
+{
+    "version": "v3",
+    "extracted_fields": [
+        {
+            "name": "document_type",
+            "value": "invoice",
+            "confidence": 0.95
+        },
+        {
+            "name": "total_amount",
+            "value": "1500.00",
+            "confidence": 0.89
+        },
+        {
+            "name": "supplier_name",
+            "value": "Test Supplier Inc",
+            "confidence": 0.92
+        }
+    ],
+    "processing_metadata": {
+        "extraction_method": "ocr",
+        "processed_at": "2025-06-22T10:00:00Z",
+        "quality_score": 0.91
+    }
+}

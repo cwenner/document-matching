@@ -1,0 +1,8 @@
+{
+    "invalid_field": "This payload has incorrect structure",
+    "document": "missing",
+    "candidate-documents": null,
+    "extra_field": {
+        "nested": "should not be here"
+    }
+}
