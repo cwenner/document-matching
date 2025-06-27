@@ -23,8 +23,8 @@ from tests.acceptance.steps.api_steps import client, context
 
 # Original scenarios from invalid_input.feature - should run by default
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Missing Primary Document"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Missing Primary Document",
 )
 def test_missing_primary_document():
     """Test API response when primary document is missing."""
@@ -32,8 +32,8 @@ def test_missing_primary_document():
 
 
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Invalid Document Format"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Invalid Document Format",
 )
 def test_invalid_document_format():
     """Test API response when document format is invalid."""
@@ -41,8 +41,8 @@ def test_invalid_document_format():
 
 
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Malformed JSON Payload"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Malformed JSON Payload",
 )
 def test_malformed_json_payload():
     """Test API response when JSON payload is malformed."""
@@ -50,8 +50,8 @@ def test_malformed_json_payload():
 
 
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Candidate Documents Not an Array"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Candidate Documents Not an Array",
 )
 def test_candidates_not_array():
     """Test API response when candidates are not provided as array."""
@@ -59,8 +59,8 @@ def test_candidates_not_array():
 
 
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Unsupported Content Type"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Unsupported Content Type",
 )
 def test_unsupported_content_type():
     """Test API response when content type is unsupported."""
@@ -68,8 +68,8 @@ def test_unsupported_content_type():
 
 
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Missing Required Document Fields"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Missing Required Document Fields",
 )
 def test_missing_required_fields():
     """Test API response when required document fields are missing."""
@@ -77,8 +77,7 @@ def test_missing_required_fields():
 
 
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Invalid Field Values"
+    str(get_feature_path("api-consumer/invalid_input.feature")), "Invalid Field Values"
 )
 def test_invalid_field_values():
     """Test API response when document field values are invalid."""
@@ -86,8 +85,8 @@ def test_invalid_field_values():
 
 
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Handle invalid request payload gracefully"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Handle invalid request payload gracefully",
 )
 def test_handle_invalid_payload():
     """Test API graceful handling of invalid request payload."""
@@ -96,8 +95,7 @@ def test_handle_invalid_payload():
 
 @pytest.mark.wip
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Empty Request Body"
+    str(get_feature_path("api-consumer/invalid_input.feature")), "Empty Request Body"
 )
 def test_empty_request_body():
     """Test API response when request body is empty - WIP."""
@@ -106,8 +104,7 @@ def test_empty_request_body():
 
 @pytest.mark.wip
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Wrong HTTP Method"
+    str(get_feature_path("api-consumer/invalid_input.feature")), "Wrong HTTP Method"
 )
 def test_wrong_http_method():
     """Test API response when wrong HTTP method is used - WIP."""
@@ -116,8 +113,7 @@ def test_wrong_http_method():
 
 @pytest.mark.wip
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Null Document Field"
+    str(get_feature_path("api-consumer/invalid_input.feature")), "Null Document Field"
 )
 def test_null_document_field():
     """Test API response when document field is null - WIP."""
@@ -126,8 +122,8 @@ def test_null_document_field():
 
 @pytest.mark.wip
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Document Field Not an Object"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Document Field Not an Object",
 )
 def test_document_not_object():
     """Test API response when document field is not an object - WIP."""
@@ -136,8 +132,8 @@ def test_document_not_object():
 
 @pytest.mark.wip
 @scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), 
-    "Null Candidate Documents Field"
+    str(get_feature_path("api-consumer/invalid_input.feature")),
+    "Null Candidate Documents Field",
 )
 def test_null_candidates():
     """Test API response when candidate documents field is null - WIP."""
@@ -199,8 +195,8 @@ def candidates_as_single_object(context):
     """Set candidate documents as a single object instead of array"""
     context["candidate_documents"] = {
         "version": "v3",
-        "id": "CD-001", 
-        "kind": "purchase-order"
+        "id": "CD-001",
+        "kind": "purchase-order",
     }
 
 
@@ -258,12 +254,12 @@ def null_candidates_field(context):
     context["null_candidates"] = True
 
 
-@when('I send a POST request to "/" with a missing primary document and candidate documents')
+@when(
+    'I send a POST request to "/" with a missing primary document and candidate documents'
+)
 def send_post_missing_primary(client, context):
     """Send POST request with missing primary document"""
-    payload = {
-        "candidate-documents": context["candidate_documents"]
-    }
+    payload = {"candidate-documents": context["candidate_documents"]}
     context["response"] = client.post("/", json=payload)
 
 
@@ -272,7 +268,7 @@ def send_post_primary_and_candidates(client, context):
     """Send POST request with primary document and candidates"""
     payload = {
         "document": context["primary_document"],
-        "candidate-documents": context["candidate_documents"]
+        "candidate-documents": context["candidate_documents"],
     }
     context["response"] = client.post("/", json=payload)
 
@@ -282,18 +278,22 @@ def send_post_malformed_payload(client, context):
     """Send POST request with malformed JSON payload"""
     # Send raw malformed JSON string
     context["response"] = client.post(
-        "/", 
+        "/",
         data=context["malformed_payload"],
-        headers={"Content-Type": "application/json"}
+        headers={"Content-Type": "application/json"},
     )
 
 
-@when('I send a POST request to "/" with the primary document and incorrectly formatted candidates')
+@when(
+    'I send a POST request to "/" with the primary document and incorrectly formatted candidates'
+)
 def send_post_invalid_candidates_format(client, context):
     """Send POST request with candidates in wrong format"""
     payload = {
         "document": context["primary_document"],
-        "candidate-documents": context["candidate_documents"]  # This is a single object, not array
+        "candidate-documents": context[
+            "candidate_documents"
+        ],  # This is a single object, not array
     }
     context["response"] = client.post("/", json=payload)
 
@@ -302,9 +302,7 @@ def send_post_invalid_candidates_format(client, context):
 def send_post_unsupported_content_type(client, context):
     """Send POST request with unsupported content type"""
     context["response"] = client.post(
-        "/",
-        data=context["document_data"],
-        headers={"Content-Type": "text/plain"}
+        "/", data=context["document_data"], headers={"Content-Type": "text/plain"}
     )
 
 
@@ -318,9 +316,7 @@ def send_post_invalid_payload(client, context):
 def send_post_empty_body(client, context):
     """Send POST request with empty body"""
     context["response"] = client.post(
-        "/", 
-        data="",
-        headers={"Content-Type": "application/json"}
+        "/", data="", headers={"Content-Type": "application/json"}
     )
 
 
@@ -336,17 +332,17 @@ def send_post_with_request(client, context):
     if context.get("null_document"):
         payload = {
             "document": None,
-            "candidate-documents": context["candidate_documents"]
+            "candidate-documents": context["candidate_documents"],
         }
     elif context.get("document_as_string"):
         payload = {
             "document": context["document_as_string"],
-            "candidate-documents": context["candidate_documents"]
+            "candidate-documents": context["candidate_documents"],
         }
     else:
         payload = {
             "document": context["primary_document"],
-            "candidate-documents": context["candidate_documents"]
+            "candidate-documents": context["candidate_documents"],
         }
     context["response"] = client.post("/", json=payload)
 
@@ -354,10 +350,7 @@ def send_post_with_request(client, context):
 @when('I send a POST request to "/" with the primary document and null candidates')
 def send_post_null_candidates(client, context):
     """Send POST request with null candidate documents"""
-    payload = {
-        "document": context["primary_document"],
-        "candidate-documents": None
-    }
+    payload = {"document": context["primary_document"], "candidate-documents": None}
     context["response"] = client.post("/", json=payload)
 
 
@@ -369,16 +362,22 @@ def response_contains_clear_error(context):
         # Check for error message in various possible fields
         error_fields = ["detail", "message", "error", "errors"]
         has_error_message = any(field in response_data for field in error_fields)
-        assert has_error_message, f"Response should contain error message in one of {error_fields}, got: {response_data}"
-        
+        assert (
+            has_error_message
+        ), f"Response should contain error message in one of {error_fields}, got: {response_data}"
+
         # Ensure error message is not empty
         for field in error_fields:
             if field in response_data:
                 error_value = response_data[field]
                 if isinstance(error_value, str):
-                    assert len(error_value.strip()) > 0, f"Error message in '{field}' should not be empty"
+                    assert (
+                        len(error_value.strip()) > 0
+                    ), f"Error message in '{field}' should not be empty"
                 elif isinstance(error_value, list):
-                    assert len(error_value) > 0, f"Error list in '{field}' should not be empty"
+                    assert (
+                        len(error_value) > 0
+                    ), f"Error list in '{field}' should not be empty"
                 break
     except json.JSONDecodeError:
         # If response is not JSON, check if it contains error text
@@ -390,85 +389,133 @@ def response_contains_clear_error(context):
 def error_indicates_missing_primary(context):
     """Check that error message indicates missing primary document"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     error_keywords = ["primary", "document", "missing", "required"]
-    
+
     # Check if error message contains relevant keywords
     message_lower = error_message.lower()
     found_keywords = [keyword for keyword in error_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 2, f"Error message should mention primary document being missing. Found keywords: {found_keywords}, Message: {error_message}"
+    assert (
+        len(found_keywords) >= 2
+    ), f"Error message should mention primary document being missing. Found keywords: {found_keywords}, Message: {error_message}"
 
 
 @then("the error message should indicate the format issue")
 def error_indicates_format_issue(context):
     """Check that error message indicates format issue"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     format_keywords = ["format", "invalid", "structure", "schema"]
-    
+
     message_lower = error_message.lower()
-    found_keywords = [keyword for keyword in format_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 1, f"Error message should mention format issue. Found keywords: {found_keywords}, Message: {error_message}"
+    found_keywords = [
+        keyword for keyword in format_keywords if keyword in message_lower
+    ]
+    assert (
+        len(found_keywords) >= 1
+    ), f"Error message should mention format issue. Found keywords: {found_keywords}, Message: {error_message}"
 
 
 @then("the error message should indicate the JSON parsing issue")
 def error_indicates_json_parsing_issue(context):
     """Check that error message indicates JSON parsing issue"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     json_keywords = ["json", "parsing", "malformed", "syntax"]
-    
+
     message_lower = error_message.lower()
     found_keywords = [keyword for keyword in json_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 1, f"Error message should mention JSON parsing issue. Found keywords: {found_keywords}, Message: {error_message}"
+    assert (
+        len(found_keywords) >= 1
+    ), f"Error message should mention JSON parsing issue. Found keywords: {found_keywords}, Message: {error_message}"
 
 
 @then("the error message should indicate that candidates must be an array")
 def error_indicates_candidates_array_requirement(context):
     """Check that error message indicates candidates must be an array"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     array_keywords = ["array", "list", "candidates", "must be"]
-    
+
     message_lower = error_message.lower()
     found_keywords = [keyword for keyword in array_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 2, f"Error message should mention candidates must be array. Found keywords: {found_keywords}, Message: {error_message}"
+    assert (
+        len(found_keywords) >= 2
+    ), f"Error message should mention candidates must be array. Found keywords: {found_keywords}, Message: {error_message}"
 
 
 @then("the error message should indicate the unsupported content type")
 def error_indicates_unsupported_content_type(context):
     """Check that error message indicates unsupported content type"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     content_type_keywords = ["content", "type", "unsupported", "media"]
-    
+
     message_lower = error_message.lower()
-    found_keywords = [keyword for keyword in content_type_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 2, f"Error message should mention unsupported content type. Found keywords: {found_keywords}, Message: {error_message}"
+    found_keywords = [
+        keyword for keyword in content_type_keywords if keyword in message_lower
+    ]
+    assert (
+        len(found_keywords) >= 2
+    ), f"Error message should mention unsupported content type. Found keywords: {found_keywords}, Message: {error_message}"
 
 
 @then("the error message should specify which required fields are missing")
 def error_specifies_missing_fields(context):
     """Check that error message specifies which required fields are missing"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     field_keywords = ["field", "required", "missing", "id", "kind"]
-    
+
     message_lower = error_message.lower()
     found_keywords = [keyword for keyword in field_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 2, f"Error message should specify missing required fields. Found keywords: {found_keywords}, Message: {error_message}"
+    assert (
+        len(found_keywords) >= 2
+    ), f"Error message should specify missing required fields. Found keywords: {found_keywords}, Message: {error_message}"
 
 
 @then("the error message should specify which fields have invalid values")
 def error_specifies_invalid_field_values(context):
     """Check that error message specifies which fields have invalid values"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     validation_keywords = ["invalid", "value", "field", "validation"]
-    
+
     message_lower = error_message.lower()
-    found_keywords = [keyword for keyword in validation_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 2, f"Error message should specify invalid field values. Found keywords: {found_keywords}, Message: {error_message}"
+    found_keywords = [
+        keyword for keyword in validation_keywords if keyword in message_lower
+    ]
+    assert (
+        len(found_keywords) >= 2
+    ), f"Error message should specify invalid field values. Found keywords: {found_keywords}, Message: {error_message}"
 
 
 @then("the error message should be machine-readable")
@@ -478,12 +525,14 @@ def error_message_machine_readable(context):
         response_data = context["response"].json()
         # Check that response is valid JSON with structured error information
         assert isinstance(response_data, dict), "Error response should be a JSON object"
-        
+
         # Should have at least one standard error field
         standard_fields = ["detail", "message", "error", "errors", "type"]
         has_standard_field = any(field in response_data for field in standard_fields)
-        assert has_standard_field, f"Error response should have at least one standard error field from {standard_fields}"
-        
+        assert (
+            has_standard_field
+        ), f"Error response should have at least one standard error field from {standard_fields}"
+
     except json.JSONDecodeError:
         pytest.fail("Error response should be valid JSON for machine readability")
 
@@ -492,9 +541,17 @@ def error_message_machine_readable(context):
 def error_indicates_method_not_allowed(context):
     """Check that error message indicates method not allowed"""
     response_data = context["response"].json()
-    error_message = str(response_data.get("detail", response_data.get("message", response_data.get("error", ""))))
+    error_message = str(
+        response_data.get(
+            "detail", response_data.get("message", response_data.get("error", ""))
+        )
+    )
     method_keywords = ["method", "not", "allowed"]
-    
+
     message_lower = error_message.lower()
-    found_keywords = [keyword for keyword in method_keywords if keyword in message_lower]
-    assert len(found_keywords) >= 2, f"Error message should mention method not allowed. Found keywords: {found_keywords}, Message: {error_message}"
+    found_keywords = [
+        keyword for keyword in method_keywords if keyword in message_lower
+    ]
+    assert (
+        len(found_keywords) >= 2
+    ), f"Error message should mention method not allowed. Found keywords: {found_keywords}, Message: {error_message}"
