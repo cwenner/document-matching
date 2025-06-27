@@ -24,9 +24,9 @@ RUN     apt update && apt install -y \
         ;
 
 COPY    --link requirements.txt /whl/
-RUN     ls -l /whl && cat /whl/requirements.txt
+COPY    --link requirements-dev.txt /whl/
 RUN     --mount=type=cache,target=/root/.cache/pip \
-        python3 -m pip -vvv wheel --wheel-dir=/whl -r /whl/requirements.txt
+        python3 -m pip -vvv wheel --wheel-dir=/whl -r /whl/requirements-dev.txt
 COPY    src /opt/omnicoder/matching
 
 # ===========================
@@ -51,22 +51,21 @@ RUN azcopy copy "https://nuprodsandbox.blob.core.windows.net/models/document-pai
 # ===========================
 
 FROM    base AS final
-COPY    src /opt/omnicoder/matching
-COPY    noxfile.py /opt/omnicoder/matching/
-ENV     PYTHONPATH=/opt/omnicoder/matching
-RUN     mkdir -p /opt/omnicoder/data/models
-COPY    --from=fetch /data/document-pairing-svm.pkl /opt/omnicoder/data/models/document-pairing-svm.pkl
+WORKDIR /opt/omnicoder/matching
+COPY    . .
+ENV     PYTHONPATH=/opt/omnicoder/matching/src
+RUN     mkdir -p ./models
+COPY    --from=fetch /data/document-pairing-svm.pkl ./data/models/document-pairing-svm.pkl
 
 # Kill PEP668
 RUN     find /usr -name 'EXTERNALLY-MANAGED' -exec rm -f {} +
 
 RUN     --mount=target=/mnt,from=builder \
         --mount=type=cache,target=/root/.cache/pip \
-        python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl -r /mnt/whl/requirements.txt
+        python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl -r requirements.txt
 
-RUN     --mount=target=/mnt,from=builder \
-        --mount=type=cache,target=/root/.cache/pip \
-        python3 -m nox -f /opt/omnicoder/matching/noxfile.py -s test
+RUN     --mount=type=cache,target=/root/.cache/pip \
+        python3 -m nox -f noxfile.py -s test
 
 # ===========================
 
