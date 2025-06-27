@@ -1,9 +1,9 @@
-data/
+./data/
 
 **/.git
 **/.venv
 **/.nox
-**/.pytest_cache
+**/.pytest_cache/
 **/*.pyc
 **/*.pyo
 **/__pycache__/
