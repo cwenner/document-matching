@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL: How to Work with This Codebase
+
+When working with this repository, you MUST follow this process:
+
+1. **Read ALL documentation first** - Before any exploration, read every .md file in the root directory completely
+2. **Follow the provided roadmap** - If documentation specifies key files to understand, read those files first in the specified order
+3. **Use the specified commands** - If documentation provides testing/development commands, use those exact commands
+4. **Work systematically through the documentation's guidance** - Don't invent your own exploration approach when explicit guidance exists
+
+Random exploration when structured guidance exists is prohibited. This documentation is your mandatory roadmap - follow it systematically.
+
 ## Project Overview
 
 This is a document matching service that compares documents (invoices, purchase orders, delivery receipts) to find matches and generate matching reports. The system uses machine learning models and rule-based matching to identify document pairs and analyze deviations.
