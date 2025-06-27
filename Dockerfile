@@ -24,8 +24,9 @@ RUN     apt update && apt install -y \
         ;
 
 COPY    --link requirements.txt /whl/
-COPY    --link noxfile.py /whl/
+COPY    --link noxfile.py /mnt/
 RUN     ls -l /whl && cat /whl/requirements.txt
+RUN     ls -l /mnt && cat /mnt/noxfile.py
 RUN     --mount=type=cache,target=/root/.cache/pip \
         python3 -m pip -vvv wheel --wheel-dir=/whl -r /whl/requirements.txt
 COPY    src /opt/omnicoder/matching
