@@ -9,6 +9,8 @@
     "defaultMode": "acceptEdits",
     "allow": [
       "Bash(find:*)",
+      "Bash(gh pr*)",
+      "Bash(gh run view*)",
       "Bash(shopt:*)",
       "Bash(ls:*)",
       "Bash(tree:*)",
