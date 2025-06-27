@@ -37,13 +37,13 @@ def get_test_data_path(filename, feature_category=None):
     # If category specified, use it directly
     if feature_category:
         return Path(FEATURES_DIR) / feature_category / "test_data" / filename
-    
+
     # Search all feature categories for the file
     categories = ["api-consumer", "evaluation", "developer", "operational"]
     for category in categories:
         path = Path(FEATURES_DIR) / category / "test_data" / filename
         if path.exists():
             return path
-    
+
     # Fallback to api-consumer
     return Path(FEATURES_DIR) / "api-consumer" / "test_data" / filename
