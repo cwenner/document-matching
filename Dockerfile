@@ -63,7 +63,7 @@ RUN     --mount=target=/mnt,from=builder \
         --mount=type=cache,target=/root/.cache/pip \
         python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl -r /mnt/whl/requirements.txt
 
-RUN     python3 -m nox -f /opt/omnicoder/matching/noxfile.py test
+RUN     python3 -m nox -f /opt/omnicoder/matching/noxfile.py -s test
 
 EXPOSE  5024
 CMD     ["sh","-xc","uvicorn --log-level=warning --port=5024 --host=0.0.0.0 app:app"]
