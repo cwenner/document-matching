@@ -97,11 +97,11 @@ pytest --collect-only -m wip
 - **Feature files**: `features/` - Gherkin scenarios organized by user perspective
 - **Step definitions**: `tests/acceptance/steps/` - Reusable step implementations
 - **Test files**: `tests/acceptance/*/` - pytest-bdd scenario runners
-- **Test data**: `features/api-consumer/test_data/` - Sample documents for testing
+- **Test data**: `features/*/test_data/` - Sample documents for testing (organized by feature category)
 
 ### Best Practices
 
-1. **Use real test data**: Base tests on actual document formats from `features/api-consumer/test_data/`
+1. **Use real test data**: Base tests on actual document formats from `features/*/test_data/`
 2. **Test real pipeline**: Use whitelisted sites ("test-site") to test ML pipeline, not dummy logic
 3. **Validate actual API behavior**: Update BDD scenarios to match real system responses
 4. **Reuse step definitions**: Check existing steps in `tests/acceptance/steps/api_steps.py`
