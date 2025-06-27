@@ -1,0 +1,64 @@
+{
+  "version": "v3",
+  "id": "r-match-dev-001",
+  "kind": "match-report",
+  "site": "test-site",
+  "stage": "output",
+  "headers": [
+    {
+      "name": "document1.id",
+      "value": "DEV-001"
+    },
+    {
+      "name": "document1.kind",
+      "value": "invoice"
+    },
+    {
+      "name": "document2.id",
+      "value": "DEV-CAND-001"
+    },
+    {
+      "name": "document2.kind",
+      "value": "purchase-order"
+    }
+  ],
+  "documents": [
+    {
+      "kind": "invoice",
+      "id": "DEV-001"
+    },
+    {
+      "kind": "purchase-order", 
+      "id": "DEV-CAND-001"
+    }
+  ],
+  "deviations": [],
+  "itempairs": [
+    {
+      "primary": {
+        "text": "Sample Item for Development",
+        "lineNumber": "1",
+        "debit": "1250.00"
+      },
+      "candidate": {
+        "text": "Sample Item for Development", 
+        "lineNumber": "1",
+        "credit": "1250.00"
+      },
+      "confidence": 0.95
+    }
+  ],
+  "metrics": [
+    {
+      "name": "certainty",
+      "value": 0.95
+    },
+    {
+      "name": "candidate-documents",
+      "value": 2
+    }
+  ],
+  "labels": [
+    "match"
+  ]
+}

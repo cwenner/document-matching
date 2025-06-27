@@ -1,0 +1,51 @@
+{
+  "version": "v3",
+  "id": "DEV-001",
+  "kind": "invoice",
+  "site": "test-site",
+  "stage": "input",
+  "headers": [
+    {
+      "name": "supplierId",
+      "value": "S999"
+    },
+    {
+      "name": "invoiceDate",
+      "value": "2025-06-27"
+    },
+    {
+      "name": "invoiceNumber",
+      "value": "DEV-SAMPLE-001"
+    },
+    {
+      "name": "incVatAmount",
+      "value": "1500.00"
+    },
+    {
+      "name": "currencyCode",
+      "value": "USD"
+    },
+    {
+      "name": "description",
+      "value": "Developer testing sample document"
+    }
+  ],
+  "items": [
+    {
+      "fields": [
+        {
+          "name": "text",
+          "value": "Sample Item for Development"
+        },
+        {
+          "name": "lineNumber",
+          "value": "1"
+        },
+        {
+          "name": "debit",
+          "value": "1250.00"
+        }
+      ]
+    }
+  ]
+}

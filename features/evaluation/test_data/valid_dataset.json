@@ -1,0 +1,60 @@
+[
+  {
+    "primary_document": {
+      "id": "INV-001",
+      "kind": "invoice",
+      "site": "test-site",
+      "headers": [
+        {"name": "supplierId", "value": "S123"},
+        {"name": "invoiceNumber", "value": "INV-001"},
+        {"name": "totalAmount", "value": "1000.00"}
+      ]
+    },
+    "candidate_documents": [
+      {
+        "id": "PO-001",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "headers": [
+          {"name": "supplierId", "value": "S123"},
+          {"name": "orderNumber", "value": "PO-001"},
+          {"name": "totalAmount", "value": "1000.00"}
+        ]
+      }
+    ],
+    "ground_truth": {
+      "is_match": true,
+      "confidence": 0.95,
+      "match_reason": "matching_supplier_and_amount"
+    }
+  },
+  {
+    "primary_document": {
+      "id": "INV-002",
+      "kind": "invoice",
+      "site": "test-site",
+      "headers": [
+        {"name": "supplierId", "value": "S456"},
+        {"name": "invoiceNumber", "value": "INV-002"},
+        {"name": "totalAmount", "value": "500.00"}
+      ]
+    },
+    "candidate_documents": [
+      {
+        "id": "PO-002",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "headers": [
+          {"name": "supplierId", "value": "S789"},
+          {"name": "orderNumber", "value": "PO-002"},
+          {"name": "totalAmount", "value": "500.00"}
+        ]
+      }
+    ],
+    "ground_truth": {
+      "is_match": false,
+      "confidence": 0.1,
+      "match_reason": "different_supplier"
+    }
+  }
+]
