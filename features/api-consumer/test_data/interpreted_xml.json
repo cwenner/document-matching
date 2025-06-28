@@ -1,0 +1,32 @@
+{
+    "version": "v3",
+    "source_format": "xml",
+    "extracted_fields": [
+        {
+            "name": "document_type",
+            "value": "purchase-order",
+            "confidence": 0.97
+        },
+        {
+            "name": "order_number",
+            "value": "PO-ATT-001",
+            "confidence": 0.99
+        },
+        {
+            "name": "total_amount",
+            "value": "1500.00",
+            "confidence": 0.93
+        },
+        {
+            "name": "currency",
+            "value": "USD",
+            "confidence": 0.99
+        }
+    ],
+    "processing_metadata": {
+        "extraction_method": "xml_parser",
+        "processed_at": "2025-06-22T10:00:00Z",
+        "quality_score": 0.97,
+        "xml_schema_validated": true
+    }
+}

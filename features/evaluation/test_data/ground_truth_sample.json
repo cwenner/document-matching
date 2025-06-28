@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "evaluation_metadata": {
+    "created_date": "2025-06-27",
+    "dataset_size": 100,
+    "evaluation_type": "document_pairing"
+  },
+  "ground_truth_pairs": [
+    {
+      "primary_id": "INV-001",
+      "candidate_id": "PO-001", 
+      "is_match": true,
+      "confidence": 0.95,
+      "match_criteria": ["supplier_id", "amount_match", "date_proximity"]
+    },
+    {
+      "primary_id": "INV-002",
+      "candidate_id": "PO-002",
+      "is_match": false, 
+      "confidence": 0.1,
+      "mismatch_reason": "different_supplier"
+    },
+    {
+      "primary_id": "INV-003",
+      "candidate_id": "PO-003",
+      "is_match": true,
+      "confidence": 0.88,
+      "match_criteria": ["supplier_id", "partial_amount_match"]
+    }
+  ]
+}

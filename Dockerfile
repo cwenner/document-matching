@@ -25,8 +25,10 @@ RUN     apt update && apt install -y \
 
 COPY    --link requirements.txt /whl/
 COPY    --link requirements-dev.txt /whl/
+COPY    --link constraints-cpu.txt /whl/
 RUN     --mount=type=cache,target=/root/.cache/pip \
-        python3 -m pip -vvv wheel --wheel-dir=/whl -r /whl/requirements-dev.txt
+        python3 -m pip -vvv wheel --wheel-dir=/whl \
+        -r /whl/requirements-dev.txt -c /whl/constraints-cpu.txt
 COPY    src /opt/omnicoder/matching
 
 # ===========================
@@ -62,7 +64,8 @@ RUN     find /usr -name 'EXTERNALLY-MANAGED' -exec rm -f {} +
 
 RUN     --mount=target=/mnt,from=builder \
         --mount=type=cache,target=/root/.cache/pip \
-        python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl -r requirements.txt
+        python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl \
+        -r requirements.txt -c constraints-cpu.txt
 
 RUN     --mount=type=cache,target=/root/.cache/pip \
         python3 -m nox -f noxfile.py -s test

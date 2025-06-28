@@ -1,0 +1,92 @@
+[
+  {
+    "version": "v3",
+    "id": "DEV-CAND-001",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "DEV-PO-001"
+      },
+      {
+        "name": "supplierId",
+        "value": "S999"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-06-25"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "1500.00"
+      },
+      {
+        "name": "description",
+        "value": "Developer sample candidate document"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "text",
+            "value": "Sample Item for Development"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "credit",
+            "value": "1250.00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DEV-CAND-002",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DEV-DR-001"
+      },
+      {
+        "name": "supplierId",
+        "value": "S999"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-06-26"
+      },
+      {
+        "name": "description",
+        "value": "Developer sample delivery receipt"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "text",
+            "value": "Sample Item for Development"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "quantity",
+            "value": "1"
+          }
+        ]
+      }
+    ]
+  }
+]

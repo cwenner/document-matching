@@ -1,6 +1,0 @@
-{
-    "invalid_field": "this is not the expected structure",
-    "missing_required_fields": true,
-    "document": null,
-    "candidates": "this should be an array"
-}

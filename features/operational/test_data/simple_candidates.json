@@ -1,0 +1,41 @@
+[
+  {
+    "version": "v3",
+    "id": "OPS-CAND-001",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "OPS-PO-001"
+      },
+      {
+        "name": "supplierId",
+        "value": "S100"
+      },
+      {
+        "name": "totalAmount",
+        "value": "100.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "text",
+            "value": "Simple operational test item"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "credit",
+            "value": "100.00"
+          }
+        ]
+      }
+    ]
+  }
+]

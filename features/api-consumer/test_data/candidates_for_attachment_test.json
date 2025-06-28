@@ -1,0 +1,56 @@
+[
+    {
+        "version": "v3",
+        "id": "CD-ATT-001",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {
+                "name": "supplierId",
+                "value": "S456"
+            },
+            {
+                "name": "orderDate",
+                "value": "2025-06-20"
+            },
+            {
+                "name": "orderNumber",
+                "value": "PO-ATT-001"
+            },
+            {
+                "name": "incVatAmount",
+                "value": "1500.00"
+            },
+            {
+                "name": "currencyCode",
+                "value": "USD"
+            }
+        ],
+        "items": [
+            {
+                "fields": [
+                    {
+                        "name": "text",
+                        "value": "Product with Attachment"
+                    },
+                    {
+                        "name": "lineNumber",
+                        "value": "1"
+                    },
+                    {
+                        "name": "credit",
+                        "value": "1250.00"
+                    }
+                ]
+            }
+        ],
+        "attachments": [
+            {
+                "name": "interpreted_xml.json",
+                "type": "application/json",
+                "size": 2048
+            }
+        ]
+    }
+]

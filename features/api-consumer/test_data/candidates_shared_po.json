@@ -80,7 +80,7 @@
   },
   {
     "version": "v3",
-    "id": "CD-002",
+    "id": "CD-003",
     "kind": "purchase-order",
     "site": "test-site",
     "stage": "final",
@@ -115,7 +115,7 @@
         "fields": [
             {
                 "name": "id",
-                "value": "IT-003"
+                "value": "IT-004"
             },
             {
                 "name": "lineNumber",

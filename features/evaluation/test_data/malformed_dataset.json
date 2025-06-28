@@ -1,0 +1,9 @@
+{
+  "invalid_structure": "This dataset has incorrect format",
+  "missing_required_fields": true,
+  "primary_document": {
+    "id": "missing_kind_field"
+  },
+  "candidate_documents": "should_be_array_not_string",
+  "ground_truth": null
+}

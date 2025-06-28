@@ -1,0 +1,71 @@
+[
+  {
+    "primary_document": {
+      "id": "PERF-001",
+      "kind": "invoice",
+      "site": "test-site",
+      "headers": [
+        {"name": "supplierId", "value": "S001"},
+        {"name": "invoiceNumber", "value": "PERF-001"},
+        {"name": "totalAmount", "value": "1000.00"}
+      ]
+    },
+    "candidate_documents": [
+      {
+        "id": "PO-PERF-001",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "headers": [
+          {"name": "supplierId", "value": "S001"},
+          {"name": "orderNumber", "value": "PO-PERF-001"},
+          {"name": "totalAmount", "value": "1000.00"}
+        ]
+      },
+      {
+        "id": "PO-PERF-002",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "headers": [
+          {"name": "supplierId", "value": "S002"},
+          {"name": "orderNumber", "value": "PO-PERF-002"},
+          {"name": "totalAmount", "value": "2000.00"}
+        ]
+      },
+      {
+        "id": "PO-PERF-003",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "headers": [
+          {"name": "supplierId", "value": "S003"},
+          {"name": "orderNumber", "value": "PO-PERF-003"},
+          {"name": "totalAmount", "value": "3000.00"}
+        ]
+      },
+      {
+        "id": "PO-PERF-004",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "headers": [
+          {"name": "supplierId", "value": "S004"},
+          {"name": "orderNumber", "value": "PO-PERF-004"},
+          {"name": "totalAmount", "value": "4000.00"}
+        ]
+      },
+      {
+        "id": "PO-PERF-005",
+        "kind": "purchase-order",
+        "site": "test-site",
+        "headers": [
+          {"name": "supplierId", "value": "S005"},
+          {"name": "orderNumber", "value": "PO-PERF-005"},
+          {"name": "totalAmount", "value": "5000.00"}
+        ]
+      }
+    ],
+    "ground_truth": {
+      "is_match": true,
+      "confidence": 0.95,
+      "matched_candidate_id": "PO-PERF-001"
+    }
+  }
+]
