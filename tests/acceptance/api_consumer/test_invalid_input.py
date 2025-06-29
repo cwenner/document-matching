@@ -1,5 +1,5 @@
 """
-Simple BDD tests for invalid input handling - using existing step definitions
+BDD tests for invalid input handling - covering original feature scenarios
 """
 
 import json
@@ -16,7 +16,7 @@ from tests.acceptance.steps.api_steps import client, context
 import tests.acceptance.steps.api_steps
 
 
-# Test only the original scenarios from the feature file
+# Original 8 scenarios from the feature file
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")),
     "Missing Primary Document",
@@ -45,7 +45,6 @@ def test_malformed_json_payload():
     pass
 
 
-# Add remaining scenarios from the feature file
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")),
     "Candidate Documents Not an Array",
@@ -91,54 +90,6 @@ def test_invalid_field_values():
 )
 def test_handle_invalid_payload():
     """Test API graceful handling of invalid request payload."""
-    pass
-
-
-# Mark new scenarios as WIP
-@pytest.mark.wip
-@scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), "Empty Request Body"
-)
-def test_empty_request_body():
-    """Test API response when request body is empty - WIP."""
-    pass
-
-
-@pytest.mark.wip
-@scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), "Wrong HTTP Method"
-)
-def test_wrong_http_method():
-    """Test API response when wrong HTTP method is used - WIP."""
-    pass
-
-
-@pytest.mark.wip
-@scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")), "Null Document Field"
-)
-def test_null_document_field():
-    """Test API response when document field is null - WIP."""
-    pass
-
-
-@pytest.mark.wip
-@scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")),
-    "Document Field Not an Object",
-)
-def test_document_not_object():
-    """Test API response when document field is not an object - WIP."""
-    pass
-
-
-@pytest.mark.wip
-@scenario(
-    str(get_feature_path("api-consumer/invalid_input.feature")),
-    "Null Candidate Documents Field",
-)
-def test_null_candidates():
-    """Test API response when candidate documents field is null - WIP."""
     pass
 
 
