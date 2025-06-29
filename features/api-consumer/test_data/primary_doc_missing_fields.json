@@ -1,0 +1,12 @@
+{
+    "version": "v3",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+        {
+            "name": "supplierId",
+            "value": "S789"
+        }
+    ],
+    "items": []
+}

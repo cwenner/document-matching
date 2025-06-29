@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 6. **🚫 NEVER ALTER UNRELATED EXISTING TESTS** without first reviewing everything and making sure that is the right action
 7. **📝 ALWAYS IDENTIFY YOURSELF IN PR COMMENTS** - Begin every PR comment with "Claude here." to clearly indicate the message is from Claude
 
+=======
 ## 🧠 MANDATORY PLANNING PROCESS FOR ALL NON-TRIVIAL TASKS
 
 **BEFORE taking any action on complex requests, you MUST:**

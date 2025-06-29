@@ -1,0 +1,10 @@
+{
+    "invalid_structure": true,
+    "missing_required_fields": {
+        "no_id": true,
+        "no_kind": true,
+        "no_version": true
+    },
+    "headers": "this should be an array",
+    "items": "this should also be an array"
+}
