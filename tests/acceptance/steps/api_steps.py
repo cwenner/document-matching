@@ -6,20 +6,14 @@ import json
 import pytest
 from pytest_bdd import given, when, then, parsers
 from fastapi.testclient import TestClient
-import sys
-from pathlib import Path
-
-# Add the src directory to the Python path
-sys.path.append(str(Path(__file__).parent.parent.parent.parent / "src"))
-from app import app
-
-
 @pytest.fixture
 def client():
     """
     Test client for the FastAPI app
     """
-    return TestClient(app)
+    # Import app only when the fixture is used, not at module level
+    import app
+    return TestClient(app.app)
 
 
 @pytest.fixture
