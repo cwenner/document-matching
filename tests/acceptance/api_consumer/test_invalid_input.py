@@ -9,8 +9,9 @@ from pytest_bdd import scenario, given, when, then, parsers
 # Import from centralized config module
 from tests.config import get_feature_path, get_test_data_path
 
-# Import existing step definitions and fixtures 
+# Import existing step definitions and fixtures
 from tests.acceptance.steps.api_steps import client, context
+
 # Import the module to register all step definitions
 import tests.acceptance.steps.api_steps
 
@@ -161,7 +162,9 @@ def valid_candidate_documents(context):
 @given("I have a primary document with invalid format")
 def primary_document_invalid_format(context):
     """Load a primary document with invalid format from test data"""
-    test_data_path = get_test_data_path("primary_doc_invalid_format.json", "api-consumer")
+    test_data_path = get_test_data_path(
+        "primary_doc_invalid_format.json", "api-consumer"
+    )
     with open(test_data_path, "r") as f:
         context["primary_document"] = json.load(f)
 
@@ -172,7 +175,9 @@ def malformed_json_payload(context):
     context["malformed_payload"] = '{"document": {"id": "test", "incomplete": }'
 
 
-@when('I send a POST request to "/" with a missing primary document and candidate documents')
+@when(
+    'I send a POST request to "/" with a missing primary document and candidate documents'
+)
 def send_post_missing_primary(client, context):
     """Send POST request with missing primary document"""
     payload = {"candidate-documents": context["candidate_documents"]}
@@ -321,7 +326,9 @@ def unsupported_format_documents(context):
 @given("I have a primary document missing required fields")
 def primary_document_missing_fields(context):
     """Load a primary document missing required fields from test data"""
-    test_data_path = get_test_data_path("primary_doc_missing_fields.json", "api-consumer")
+    test_data_path = get_test_data_path(
+        "primary_doc_missing_fields.json", "api-consumer"
+    )
     with open(test_data_path, "r") as f:
         context["primary_document"] = json.load(f)
 
@@ -329,7 +336,9 @@ def primary_document_missing_fields(context):
 @given("I have a primary document with invalid field values")
 def primary_document_invalid_values(context):
     """Load a primary document with invalid field values from test data"""
-    test_data_path = get_test_data_path("primary_doc_invalid_values.json", "api-consumer")
+    test_data_path = get_test_data_path(
+        "primary_doc_invalid_values.json", "api-consumer"
+    )
     with open(test_data_path, "r") as f:
         context["primary_document"] = json.load(f)
 
@@ -342,12 +351,16 @@ def invalid_request_payload(context, filename):
         context["invalid_payload"] = json.load(f)
 
 
-@when('I send a POST request to "/" with the primary document and incorrectly formatted candidates')
+@when(
+    'I send a POST request to "/" with the primary document and incorrectly formatted candidates'
+)
 def send_post_invalid_candidates_format(client, context):
     """Send POST request with candidates in wrong format"""
     payload = {
         "document": context["primary_document"],
-        "candidate-documents": context["candidate_documents"],  # This is a single object, not array
+        "candidate-documents": context[
+            "candidate_documents"
+        ],  # This is a single object, not array
     }
     context["response"] = client.post("/", json=payload)
 
