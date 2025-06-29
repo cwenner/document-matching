@@ -2,106 +2,91 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## ⚠️ ABSOLUTE PROHIBITIONS - VIOLATION CAUSES TERMINATION ⚠️
 
-This is a document matching service that compares documents (invoices, purchase orders, delivery receipts) to find matches and generate matching reports. The system uses machine learning models and rule-based matching to identify document pairs and analyze deviations.
+**THESE RULES ARE CRITICAL AND NON-NEGOTIABLE:**
 
-## Repository Structure
+1. **🚫 NEVER EDIT FEATURE FILES WITHOUT APPROVAL** - Having unapproved diffs in feature files is a CRITICAL ERROR and leads to automatic rejection of all work and heavy penalties
+2. **🚫 NEVER USE `{{ ... }}` SYNTAX IN CODE** - A single use causes permanent termination and must absolutely never occur
+3. **🚫 NEVER ASK HUMAN TO MAKE CODE CHANGES** - If you fail, try again and use tools better, make smaller edits
+4. **🚫 NEVER GIVE EXAMPLES OR EXPECT HUMAN TO 'FILL IN THE REST'** - Write code that can be delivered and run as written
+5. **🚫 NEVER MODIFY SYS.PATH IN PYTHON FILES** - Fix configuration or invocation instead
+6. **🚫 NEVER ALTER UNRELATED EXISTING TESTS** without first reviewing everything and making sure that is the right action
+7. **📝 ALWAYS IDENTIFY YOURSELF IN PR COMMENTS** - Begin every PR comment with "Claude here." to clearly indicate the message is from Claude
 
-- **src/**: Core source code (FastAPI app, matching service, ML pipeline)
-- **tests/**: Test suite with acceptance (BDD), unit, and integration tests
-- **features/**: BDD feature definitions organized by user perspective
-- **data/**: ML models and test datasets organized by document type
-- **docs/**: API specifications and documentation
+## 📋 CRITICAL FORMATTING & SYNTAX REQUIREMENTS
 
-## Key Architecture Components
+**SYNTAX IS CRITICAL - THESE MUST BE PERFECT:**
+- ✅ Use correct syntax, spacing, and indentation
+- ✅ Read files before editing them (always use Read tool first)
+- ✅ Use Black styling and PEP8 consistently
+- ✅ Use type hints consistently
+- ✅ Keep files under 400 lines (refactor before submission)
+- ✅ Make small edits (under 100 lines per change, use multiple calls)
+- ✅ Optimize for readability over premature optimization
+- ✅ Write modular code using separate files
+- ✅ Avoid unnecessary comments - lean towards self-explanatory code
 
-### Core Services
-- **FastAPI App** (`src/app.py`): Main API server with health endpoint and document matching endpoint
-- **MatchingService** (`src/matching_service.py`): Core service handling document processing with lazy initialization
-- **DocumentPairingPredictor** (`src/docpairing.py`): ML model wrapper for document similarity prediction
-- **Match Pipeline** (`src/match_pipeline.py`): Orchestrates the matching process between documents
+## 🎫 NEW TICKET PROCESS (MANDATORY 23-STEP WORKFLOW)
 
-### Key Processing Flow
-1. Documents arrive via POST to `/` endpoint with candidate documents
-2. MatchingService processes using either:
-   - Real ML pipeline for whitelisted sites (badger-logistics, falcon-logistics, etc.)
-   - Dummy logic for non-whitelisted sites
-3. Results are formatted as v3 match reports with deviations and item pairs
+**When starting on a new ticket, ALWAYS follow these steps:**
 
-### Data Structure
-- Test data in `data/converted-shared-data/` organized by document type and supplier
-- ML model stored in `data/models/document-pairing-svm.pkl`
-- Feature files in `features/` directory using Gherkin BDD format
+1. **Review the project** - Always start by reviewing project as a whole
+2. **Read development instructions** - Read any development instructions thoroughly
+3. **Figure out what is actually requested** - Understand the real requirement
+4. **Review all user stories and feature files** - Understand business context
+5. **Feature file assessment** - Decide whether feature files should change (simulate critical dialog between PO/BA, Dev, QA)
+6. **Install requirements** - Install requirements.txt and requirements-dev.txt
+7. **Load environment** - Load environment variables from .env
+8. **Run initial tests** - Run `python -m nox` and record acceptance rate
+9. **Make a plan** - Create comprehensive implementation plan
+10. **Document plan** - Write context and plan to CURRENT_WORKING_NOTES.md
+11. **Execute iteratively** - Execute on plan, update CURRENT_WORKING_NOTES.md as you go
+12. **Repeat until ready** - Continue until ready to submit code changes
+13. **Final test run** - Run `python -m nox` 
+14. **Fix lint issues** - Address any formatting/style issues
+15. **Validate readiness** - If not ready, go back to step 8
+16. **Update documentation** - Update relevant documentation
+17. **Review documentation** - Review documentation for consistency
+18. **Clean up** - Clean up temporary files
+19. **Document learnings** - Write down learnings and major changes to CODE_CHANGES.md
+20. **Critical code review** - Simulate critical code review, go to step 8 if needed
+21. **Critical ticket review** - Simulate critical review against original ticket, go to step 8 if needed
+22. **Declare ready** - Declare ready to submit
+23. **Clean up notes** - Delete CURRENT_WORKING_NOTES.md
 
-## Common Development Commands
+## 🧪 TESTING & QUALITY REQUIREMENTS (CRITICAL)
 
-### Environment Setup
-```bash
-source .venv/bin/activate
-```
+**ACCEPTANCE RATE MONITORING:**
+- Record acceptance rate at start of work
+- If acceptance rate drops significantly, IMMEDIATELY make plan to restore it
+- Must figure out what caused deviation immediately
+- **CRITICAL:** If acceptance rate not recovered within TWO responses, work will be reverted and killed
+- Aside from adding new tests, failure to restore acceptance rate ASAP may result in termination
 
-### Running the Service
-```bash
-PYTHONPATH=src uvicorn app:app
-```
+**RED-GREEN-REFACTOR PRINCIPLE:**
+- Always follow Red-Green-Refactor cycle
+- Run `python -m nox` before submitting any work
+- Fix implementation code when tests fail, don't evade tests
+- Before creating new test steps, check they don't already exist under different names
 
-### Testing the Service
-```bash
-# Send test request to running server
-PYTHONPATH=src python -m try_client
+**WORK APPROACH:**
+- DO IT YOURSELF - Don't explain how human could do it, just do it
+- DO NOT ASK - Do as much as you can without asking
+- CONTINUE WORKING - Don't stop while you have done little work
+- ASSESS PROGRESS - If not making progress, step back and reassess
+- INFER PURPOSE - Don't make bad assumptions, infer purpose and follow instructions
 
-# Run all tests and linting
-nox
+## Memory & Learning Process
 
-# Run just tests
-nox -s test
-
-# Run just linting (black formatting check)
-nox -s lint
-
-# Run specific test markers
-pytest -m api
-pytest -m smoke
-pytest -m core_matching
-```
-
-### Running Evaluations
-```bash
-# Direct function calls (recommended)
-PYTHONPATH=src python -m evaluate_matching --dataset ../popoc/data/pairing_sequential.json --max-tested 100 --skip-portion 0.5
-
-# Using API calls (requires running server)
-PYTHONPATH=src python -m evaluate_matching --dataset ../popoc/data/pairing_sequential.json --max-tested 100 --skip-portion 0.5 --use-api
-```
-
-### Code Formatting
-```bash
-black src/ tests/
-```
-
-## Important Configuration
-
-### Environment Variables
-- `DISABLE_MODELS=true`: Disables ML model loading, uses dummy logic only
-- `DOCPAIR_MODEL_PATH`: Custom path to ML model file
-
-### Whitelisted Sites
-Sites that use real ML pipeline: badger-logistics, falcon-logistics, christopher-test, test-site
-
-### Test Structure
-- BDD tests in `features/` with step definitions in `tests/acceptance/steps/`
-- Unit tests in `tests/unit/`
-- Integration tests in `tests/integration/`
-- API tests in `tests/api/`
-
-## Key Files to Understand
-- `src/matching_service.py:304`: Whitelist logic determining real vs dummy processing
-- `src/app.py:40`: Main request handler with validation and error handling
-- `src/match_reporter.py`: V3 match report generation with deviation detection
-- `tests/acceptance/steps/api_steps.py`: BDD step definitions for API testing
-- `tests/config.py`: Test configuration and path management
-- `noxfile.py`: Test and lint session configuration
-- `pytest.ini`: Test markers and warning filters
-- `features/`: BDD scenarios organized by user perspective
-- `CONTRIBUTING.md`: Developer guide for contributing to the project
+### Critical Learning Guidelines
+- **Continue until you are Done Done with a task.** A PR is not considered done until:
+  - All task requirements are satisfied
+  - All checks/builds are passing
+  - All critical feedback has been addressed
+- At the beginning of a new task given by a human, write down the task verbatim in a dedicated file
+- Consider all feedback from humans critical
+- Apply your own judgement on feedback from other LLMs - they may be wrong
+- Make sure that you have a checklist for when you consider yourself to be DONE DONE and review it
+- Do not stop unless asked to or DONE DONE
+- If a PR is undergoing checks/builds, sleep until they are done; it may take up to several minutes so multiple cycles may be necessary
