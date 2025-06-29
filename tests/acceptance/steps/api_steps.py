@@ -6,6 +6,8 @@ import json
 import pytest
 from pytest_bdd import given, when, then, parsers
 from fastapi.testclient import TestClient
+
+
 @pytest.fixture
 def client():
     """
@@ -13,6 +15,7 @@ def client():
     """
     # Import app only when the fixture is used, not at module level
     import app
+
     return TestClient(app.app)
 
 
