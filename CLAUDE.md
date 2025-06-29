@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 4. **🚫 NEVER GIVE EXAMPLES OR EXPECT HUMAN TO 'FILL IN THE REST'** - Write code that can be delivered and run as written
 5. **🚫 NEVER MODIFY SYS.PATH IN PYTHON FILES** - Fix configuration or invocation instead
 6. **🚫 NEVER ALTER UNRELATED EXISTING TESTS** without first reviewing everything and making sure that is the right action
+7. **📝 ALWAYS IDENTIFY YOURSELF IN PR COMMENTS** - Begin every PR comment with "Claude here." to clearly indicate the message is from Claude
 
 ## 📋 CRITICAL FORMATTING & SYNTAX REQUIREMENTS
 
