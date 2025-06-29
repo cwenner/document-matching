@@ -14,6 +14,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 6. **🚫 NEVER ALTER UNRELATED EXISTING TESTS** without first reviewing everything and making sure that is the right action
 7. **📝 ALWAYS IDENTIFY YOURSELF IN PR COMMENTS** - Begin every PR comment with "Claude here." to clearly indicate the message is from Claude
 
+## 🧠 MANDATORY PLANNING PROCESS FOR ALL NON-TRIVIAL TASKS
+
+**BEFORE taking any action on complex requests, you MUST:**
+
+1. **State your understanding**: "I understand you want me to [specific interpretation of request]"
+
+2. **Draft explicit plan**: List specific actions you will take, in order
+
+3. **Perform critical self-review**: Ask and answer these questions:
+   - What assumptions am I making?
+   - Does this plan do exactly what was requested, no more, no less?
+   - What files/systems will be affected beyond what was mentioned?
+   - What could go wrong or have unintended consequences?
+   - Is there a simpler approach that achieves the same goal?
+
+4. **Revise plan if needed**: Based on critical review, adjust approach
+
+5. **Present final plan**: Show user the plan before executing
+
+6. **Execute only after plan review**: Proceed step by step
+
+**This process is MANDATORY for any task that:**
+- Affects multiple files or systems
+- Could have unintended side effects
+- Involves git operations beyond simple status checks
+- Requires interpretation of ambiguous instructions
+- Could impact more than explicitly requested
+
+**Skip this only for truly trivial tasks** (reading single files, simple status checks, basic calculations).
+
 ## 📋 CRITICAL FORMATTING & SYNTAX REQUIREMENTS
 
 **SYNTAX IS CRITICAL - THESE MUST BE PERFECT:**
