@@ -184,7 +184,7 @@ class MatchingService:
 
         # Generate a fake partner document ID and report ID
         matched_id = (
-            f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}"  # Dummy matched ID
+            f"matched-doc-{hash(str(doc_id) + '-match') & 0xfff:03x}"  # Dummy matched ID
         )
         report_id = f"r-match-{hash(str(doc_id)) & 0xfff:03x}"
         partner_kind = "purchase-order" if doc_kind == "invoice" else "invoice"

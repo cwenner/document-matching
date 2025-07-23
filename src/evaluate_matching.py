@@ -923,7 +923,7 @@ class MatchingEvaluator:
         print(f"Total documents: {total_documents}")
         print(f"First {skip_count} documents will only build history (not tested)")
         print(
-            f"Will test {test_count} documents (indices {test_start_idx}-{test_end_idx-1})"
+            f"Will test {test_count} documents (indices {test_start_idx}-{test_end_idx - 1})"
         )
 
         # First, build history without testing for the skip portion
@@ -935,7 +935,7 @@ class MatchingEvaluator:
 
             if self.verbose:
                 print(
-                    f"\nAdding document {i+1}/{skip_count} to history (not testing): {document_id}"
+                    f"\nAdding document {i + 1}/{skip_count} to history (not testing): {document_id}"
                 )
 
             # Record expected pairings from the target
@@ -1013,7 +1013,7 @@ class MatchingEvaluator:
             if self.verbose:
                 try:
                     logging.debug(
-                        f"Document {i+1} evaluation:\n"
+                        f"Document {i + 1} evaluation:\n"
                         f"  invoice: Precision={document_result.get('invoice_precision', 1.0):.2f}, "
                         f"Recall={document_result.get('invoice_recall', 1.0):.2f}, "
                         f"Accuracy={document_result.get('invoice_accuracy', 1.0):.2f}\n"

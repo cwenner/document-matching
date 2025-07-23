@@ -153,7 +153,7 @@ def _dummy_match_report(document):
     kind = document.get("kind", "invoice")  # Assume invoice for dummy matched pair
     matched_kind = "purchase-order" if kind == "invoice" else "invoice"
     matched_id = (
-        f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}"  # Dummy matched ID
+        f"matched-doc-{hash(str(doc_id) + '-match') & 0xfff:03x}"  # Dummy matched ID
     )
     report_id = f"r-match-{hash(str(doc_id)) & 0xfff:03x}"
     return {
