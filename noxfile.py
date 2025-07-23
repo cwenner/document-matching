@@ -26,8 +26,15 @@ ENV = {
 }
 
 # Model download configuration
+# Get model URL from environment variable for security
+MODEL_URL = os.environ.get(
+    "DOCUMENT_PAIRING_MODEL_URL",
+    # Fallback URL - should be moved to environment variable in production
+    "https://nuprodsandbox.blob.core.windows.net/models/document-pairing-svm.pkl?sp=r&st=2025-06-26T23:46:58Z&se=2026-06-27T07:46:58Z&spr=https&sv=2024-11-04&sr=b&sig=6DBiPYVdDaaw2ES2vDSGr5Q4mlPPa6HURXf66GNdNL0%3D",
+)
+
 MODEL_URLS = {
-    "data/models/document-pairing-svm.pkl": "https://nuprodsandbox.blob.core.windows.net/models/document-pairing-svm.pkl?sp=r&st=2025-06-26T23:46:58Z&se=2026-06-27T07:46:58Z&spr=https&sv=2024-11-04&sr=b&sig=6DBiPYVdDaaw2ES2vDSGr5Q4mlPPa6HURXf66GNdNL0%3D",
+    "data/models/document-pairing-svm.pkl": MODEL_URL,
 }
 
 
@@ -51,40 +58,16 @@ def _should_skip_install(session, packages):
     if is_ci_environment():
         return False
 
-    # Check if we have a venv to work with
-    if not hasattr(session, "_runner") or not session._runner.venv:
-        return False
-
-    # Check if requirements files have been modified
-    req_files = [
-        "pyproject.toml",
-        "requirements.txt",
-        "requirements-dev.txt",
-        "setup.py",
-        "setup.cfg",
-    ]
-    venv_location = Path(session._runner.venv.location)
-    venv_marker = venv_location / ".nox_install_marker"
-
-    if not venv_marker.exists():
-        return False
-
-    marker_time = venv_marker.stat().st_mtime
-    for req_file in req_files:
-        req_path = Path(req_file)
-        if req_path.exists():
-            if req_path.stat().st_mtime > marker_time:
-                return False
-
-    return True
+    # For now, always return False to avoid using private nox APIs
+    # This ensures compatibility across nox versions
+    return False
 
 
 def _mark_install_complete(session):
     """Mark that installation was completed."""
-    if hasattr(session, "_runner") and session._runner.venv:
-        venv_location = Path(session._runner.venv.location)
-        venv_marker = venv_location / ".nox_install_marker"
-        venv_marker.touch()
+    # Skip marking to avoid using private nox APIs
+    # This ensures compatibility across nox versions
+    pass
 
 
 def install_with_cache(session, *packages, force_reinstall=False, editable=False):
@@ -103,8 +86,8 @@ def install_with_cache(session, *packages, force_reinstall=False, editable=False
         if not force_reinstall and session.posargs:
             force_reinstall = "--force-reinstall" in session.posargs
 
-    # Always reinstall in CI, when forced, or in fresh environment
-    if force_reinstall or is_ci_environment() or not session._runner.venv:
+    # Always reinstall in CI or when forced
+    if force_reinstall or is_ci_environment():
         install_args = ["--no-compile", "--no-warn-script-location"]
         if editable:
             session.install("-e", *packages, *install_args)

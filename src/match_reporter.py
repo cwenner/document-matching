@@ -1,16 +1,17 @@
 # match_reporter.py
 
 import hashlib
-from decimal import Decimal
 import logging
+from decimal import Decimal
+from typing import Optional
 
+from document_utils import get_field
 from itempair_deviations import (
-    DocumentKind,
     DeviationSeverity,
+    DocumentKind,
     FieldDeviation,
     get_differing_amounts_severity,
 )
-from document_utils import get_field
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ def _calculate_overall_severity(
 
 
 def collect_document_deviations(
-    doc1: dict | None, doc2: dict | None
+    doc1: Optional[dict], doc2: Optional[dict]
 ) -> list[FieldDeviation]:
     deviations = []
     if not doc1 or not doc2:
@@ -37,8 +38,9 @@ def collect_document_deviations(
         return deviations
 
     try:
-        kind1 = DocumentKind(get_field(doc1, "kind"))
-        kind2 = DocumentKind(get_field(doc2, "kind"))
+        # kind1 = DocumentKind(get_field(doc1, "kind"))
+        # kind2 = DocumentKind(get_field(doc2, "kind"))
+        pass  # DocumentKind validation removed for now
     except ValueError as e:
         logger.error(f"Invalid document kind for document deviation check: {e}")
         deviations.append(

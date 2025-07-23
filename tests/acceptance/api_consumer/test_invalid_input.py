@@ -3,17 +3,15 @@ BDD tests for invalid input handling - covering original feature scenarios
 """
 
 import json
+
 import pytest
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import given, parsers, scenario, then, when
+
+# Import existing step definitions and fixtures
+from tests.acceptance.steps.api_steps import client, context  # noqa: F401
 
 # Import from centralized config module
 from tests.config import get_feature_path, get_test_data_path
-
-# Import existing step definitions and fixtures
-from tests.acceptance.steps.api_steps import client, context
-
-# Import the module to register all step definitions
-import tests.acceptance.steps.api_steps
 
 
 # Original 8 scenarios from the feature file
@@ -95,19 +93,19 @@ def test_handle_invalid_payload():
 
 # Step definitions for invalid input scenarios
 @given("the document matching service is available")
-def document_matching_service_available(context):
+def document_matching_service_available(context):  # noqa: F811
     """Set up the document matching service for testing"""
     context["base_url"] = "http://localhost:8000"
 
 
 @given("I have no primary document")
-def no_primary_document(context):
+def no_primary_document(context):  # noqa: F811
     """Set context to have no primary document"""
     context["primary_document"] = None
 
 
 @given("I have a list of valid candidate documents")
-def valid_candidate_documents(context):
+def valid_candidate_documents(context):  # noqa: F811
     """Load valid candidate documents from test data"""
     test_data_path = get_test_data_path("candidates_valid.json", "api-consumer")
     with open(test_data_path, "r") as f:
@@ -115,7 +113,7 @@ def valid_candidate_documents(context):
 
 
 @given("I have a primary document with invalid format")
-def primary_document_invalid_format(context):
+def primary_document_invalid_format(context):  # noqa: F811
     """Load a primary document with invalid format from test data"""
     test_data_path = get_test_data_path(
         "primary_doc_invalid_format.json", "api-consumer"
@@ -125,7 +123,7 @@ def primary_document_invalid_format(context):
 
 
 @given("I have a malformed JSON payload")
-def malformed_json_payload(context):
+def malformed_json_payload(context):  # noqa: F811
     """Set up a malformed JSON payload"""
     context["malformed_payload"] = '{"document": {"id": "test", "incomplete": }'
 
@@ -133,14 +131,14 @@ def malformed_json_payload(context):
 @when(
     'I send a POST request to "/" with a missing primary document and candidate documents'
 )
-def send_post_missing_primary(client, context):
+def send_post_missing_primary(client, context):  # noqa: F811
     """Send POST request with missing primary document"""
     payload = {"candidate-documents": context["candidate_documents"]}
     context["response"] = client.post("/", json=payload)
 
 
 @when('I send a POST request to "/" with the primary document and candidate documents')
-def send_post_primary_and_candidates(client, context):
+def send_post_primary_and_candidates(client, context):  # noqa: F811
     """Send POST request with primary document and candidates"""
     payload = {
         "document": context["primary_document"],
@@ -150,7 +148,7 @@ def send_post_primary_and_candidates(client, context):
 
 
 @when('I send a POST request to "/" with the malformed payload')
-def send_post_malformed_payload(client, context):
+def send_post_malformed_payload(client, context):  # noqa: F811
     """Send POST request with malformed JSON payload"""
     # Send raw malformed JSON string
     context["response"] = client.post(
@@ -161,7 +159,7 @@ def send_post_malformed_payload(client, context):
 
 
 @then("the response body should contain a clear error message")
-def response_contains_clear_error(context):
+def response_contains_clear_error(context):  # noqa: F811
     """Check that response contains a clear error message"""
     try:
         response_data = context["response"].json()
@@ -178,7 +176,7 @@ def response_contains_clear_error(context):
 
 
 @then("the error message should indicate the missing primary document")
-def error_indicates_missing_primary(context):
+def error_indicates_missing_primary(context):  # noqa: F811
     """Check that error message indicates missing primary document"""
     response_data = context["response"].json()
     error_message = str(
@@ -195,7 +193,7 @@ def error_indicates_missing_primary(context):
 
 
 @then("the error message should indicate the format issue")
-def error_indicates_format_issue(context):
+def error_indicates_format_issue(context):  # noqa: F811
     """Check that error message indicates format issue"""
     response_data = context["response"].json()
     error_message = str(
@@ -214,7 +212,7 @@ def error_indicates_format_issue(context):
 
 
 @then("the error message should indicate the JSON parsing issue")
-def error_indicates_json_parsing_issue(context):
+def error_indicates_json_parsing_issue(context):  # noqa: F811
     """Check that error message indicates JSON parsing issue"""
     response_data = context["response"].json()
     error_message = str(
@@ -231,7 +229,7 @@ def error_indicates_json_parsing_issue(context):
 
 
 @then("the error message should be machine-readable")
-def error_message_machine_readable(context):
+def error_message_machine_readable(context):  # noqa: F811
     """Check that error message is machine-readable (structured JSON)"""
     try:
         response_data = context["response"].json()
@@ -248,14 +246,14 @@ def error_message_machine_readable(context):
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
-def check_response_status_code(status_code, context):
+def check_response_status_code(status_code, context):  # noqa: F811
     """Check that the response has the expected status code"""
     assert context["response"].status_code == status_code
 
 
 # Additional step definitions for remaining scenarios
 @given("I have a valid primary document")
-def valid_primary_document(context):
+def valid_primary_document(context):  # noqa: F811
     """Load a valid primary document from test data"""
     test_data_path = get_test_data_path("primary_doc_shared_po.json", "api-consumer")
     with open(test_data_path, "r") as f:
@@ -263,7 +261,7 @@ def valid_primary_document(context):
 
 
 @given("I have candidate documents incorrectly formatted as a single object")
-def candidates_as_single_object(context):
+def candidates_as_single_object(context):  # noqa: F811
     """Set candidate documents as a single object instead of array"""
     context["candidate_documents"] = {
         "version": "v3",
@@ -273,13 +271,13 @@ def candidates_as_single_object(context):
 
 
 @given("I have documents in an unsupported format")
-def unsupported_format_documents(context):
+def unsupported_format_documents(context):  # noqa: F811
     """Set up documents for unsupported content type test"""
     context["document_data"] = "plain text document content"
 
 
 @given("I have a primary document missing required fields")
-def primary_document_missing_fields(context):
+def primary_document_missing_fields(context):  # noqa: F811
     """Load a primary document missing required fields from test data"""
     test_data_path = get_test_data_path(
         "primary_doc_missing_fields.json", "api-consumer"
@@ -289,7 +287,7 @@ def primary_document_missing_fields(context):
 
 
 @given("I have a primary document with invalid field values")
-def primary_document_invalid_values(context):
+def primary_document_invalid_values(context):  # noqa: F811
     """Load a primary document with invalid field values from test data"""
     test_data_path = get_test_data_path(
         "primary_doc_invalid_values.json", "api-consumer"
@@ -299,7 +297,7 @@ def primary_document_invalid_values(context):
 
 
 @given(parsers.parse('I have an invalid request payload defined as "{filename}"'))
-def invalid_request_payload(context, filename):
+def invalid_request_payload(context, filename):  # noqa: F811
     """Load an invalid request payload from test data"""
     test_data_path = get_test_data_path(filename, "api-consumer")
     with open(test_data_path, "r") as f:
@@ -309,7 +307,7 @@ def invalid_request_payload(context, filename):
 @when(
     'I send a POST request to "/" with the primary document and incorrectly formatted candidates'
 )
-def send_post_invalid_candidates_format(client, context):
+def send_post_invalid_candidates_format(client, context):  # noqa: F811
     """Send POST request with candidates in wrong format"""
     payload = {
         "document": context["primary_document"],
@@ -321,7 +319,7 @@ def send_post_invalid_candidates_format(client, context):
 
 
 @when('I send a POST request to "/" with an unsupported Content-Type header')
-def send_post_unsupported_content_type(client, context):
+def send_post_unsupported_content_type(client, context):  # noqa: F811
     """Send POST request with unsupported content type"""
     context["response"] = client.post(
         "/", data=context["document_data"], headers={"Content-Type": "text/plain"}
@@ -329,13 +327,13 @@ def send_post_unsupported_content_type(client, context):
 
 
 @when('I send a POST request to "/" with the invalid payload')
-def send_post_invalid_payload(client, context):
+def send_post_invalid_payload(client, context):  # noqa: F811
     """Send POST request with invalid payload structure"""
     context["response"] = client.post("/", json=context["invalid_payload"])
 
 
 @then("the error message should indicate that candidates must be an array")
-def error_indicates_candidates_array_requirement(context):
+def error_indicates_candidates_array_requirement(context):  # noqa: F811
     """Check that error message indicates candidates must be an array"""
     response_data = context["response"].json()
     error_message = str(
@@ -352,7 +350,7 @@ def error_indicates_candidates_array_requirement(context):
 
 
 @then("the error message should indicate the unsupported content type")
-def error_indicates_unsupported_content_type(context):
+def error_indicates_unsupported_content_type(context):  # noqa: F811
     """Check that error message indicates unsupported content type"""
     response_data = context["response"].json()
     error_message = str(
@@ -371,7 +369,7 @@ def error_indicates_unsupported_content_type(context):
 
 
 @then("the error message should specify which required fields are missing")
-def error_specifies_missing_fields(context):
+def error_specifies_missing_fields(context):  # noqa: F811
     """Check that error message specifies which required fields are missing"""
     response_data = context["response"].json()
     error_message = str(
@@ -388,7 +386,7 @@ def error_specifies_missing_fields(context):
 
 
 @then("the error message should specify which fields have invalid values")
-def error_specifies_invalid_field_values(context):
+def error_specifies_invalid_field_values(context):  # noqa: F811
     """Check that error message specifies which fields have invalid values"""
     response_data = context["response"].json()
     error_message = str(

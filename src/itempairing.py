@@ -1,8 +1,9 @@
+import logging
+from math import isclose
+from typing import Optional
+
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from math import isclose
-import logging
-
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 # @TODO we should initialize this in a class rather than at import
 try:
     model = SentenceTransformer("all-MiniLM-L6-v2")
-except Exception as e:
+except Exception:
     logger.exception("Failed to initialize SentenceTransformer model.")
     model = None
 
@@ -108,11 +109,11 @@ def _calculate_match_score(item_id_sim, desc_sim, price_sim):
 
 def find_best_item_match(
     source_item_data: dict, target_items_data: list[dict]
-) -> dict | None:
+) -> Optional[dict]:
     if not target_items_data or not model:
         return None
 
-    source_desc = source_item_data.get("description", "")
+    # source_desc = source_item_data.get("description", "")  # Not used directly, included in source_descs
     source_item_id = source_item_data.get("item-id", "")
     source_price = source_item_data.get(
         "unit-price-adjusted", source_item_data.get("unit-price")

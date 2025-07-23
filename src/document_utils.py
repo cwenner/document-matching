@@ -1,7 +1,7 @@
-from enum import StrEnum
+from enum import Enum
 
 
-class DocumentKind(StrEnum):
+class DocumentKind(str, Enum):
     INVOICE = "invoice"
     PURCHASE_ORDER = "purchase-order"
     DELIVERY_RECEIPT = "delivery-receipt"

@@ -1,6 +1,6 @@
 import pytest
-from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
+from pytest_bdd import given, parsers, scenario, then, when
 
 import app
 from tests.config import get_feature_path

@@ -2,7 +2,7 @@
 Global pytest configuration for the document matching project.
 """
 
-import pytest
+import pytest  # noqa: F401 - used in pytest hooks below
 
 
 def pytest_addoption(parser):

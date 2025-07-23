@@ -1,9 +1,10 @@
 import json
 import logging
-from fastapi import Request, Response, FastAPI, HTTPException
-from matching_service import MatchingService
-from match_reporter import DeviationSeverity
 
+from fastapi import FastAPI, HTTPException, Request, Response
+
+from match_reporter import DeviationSeverity
+from matching_service import MatchingService
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -15,7 +16,7 @@ matching_service = MatchingService()
 
 # --- FastAPI App ---
 app = FastAPI()
-logger.info(f"✔ Matching Service API Ready")
+logger.info("✔ Matching Service API Ready")
 
 
 @app.get("/health")

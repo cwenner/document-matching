@@ -1,21 +1,24 @@
 import json
+
 import pytest
-from pathlib import Path
-from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
+from pytest_bdd import given, parsers, scenario, then, when
 
 import app
 
-# Import from centralized config module
-from tests.config import get_feature_path, get_test_data_path
-
 # Import common step definitions
 from tests.acceptance.steps.api_steps import (
+    check_status_code,
     client,
     context,
     document_matching_service,
-    check_status_code,
 )
+
+# Explicitly reference the imported step definitions to avoid F811 warnings
+__all__ = ["check_status_code", "client", "context", "document_matching_service"]
+
+# Import from centralized config module
+from tests.config import get_feature_path, get_test_data_path
 
 
 @scenario(
@@ -44,7 +47,7 @@ def test_po_match():
 
 
 @pytest.fixture
-def client():
+def client():  # noqa: F811
     """
     Test client for the FastAPI app
     """
@@ -52,13 +55,13 @@ def client():
 
 
 @pytest.fixture
-def context():
+def context():  # noqa: F811
     """Shared context between steps"""
     return {}
 
 
 @given("the document matching service is available")
-def document_matching_service(context):
+def document_matching_service(context):  # noqa: F811
     """
     Set up the document matching service for testing
     """
@@ -142,7 +145,7 @@ def send_post_with_primary_and_candidates_alt(endpoint, client, context):
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
-def check_status_code(status_code, context):
+def check_status_code(status_code, context):  # noqa: F811
     """
     Check that the response has the expected status code
     """
