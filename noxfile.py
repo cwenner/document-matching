@@ -118,12 +118,16 @@ def test(session: nox.Session) -> None:
     # In CI, create dummy model file to avoid test failures
     # The real model will be downloaded during Docker build
     if is_ci_environment():
+        import pickle
+
         for model_path in MODEL_URLS.keys():
             path = Path(model_path)
             if not path.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
-                # Create a dummy file for CI
-                path.write_text("CI dummy model")
+                # Create a dummy pickle file for CI
+                # This is just a placeholder - real model is in Docker build
+                with open(path, "wb") as f:
+                    pickle.dump({"dummy": "model"}, f)
                 session.log(f"Created dummy model file for CI: {model_path}")
 
     # Validate model existence before running tests
