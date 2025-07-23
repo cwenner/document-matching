@@ -294,7 +294,7 @@ def check_model_exists():
 def download_model(model_path, url):
     """Download a model file from the specified URL."""
     import requests
-    
+
     path = Path(model_path)
 
     # Create directories if they don't exist
