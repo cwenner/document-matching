@@ -27,11 +27,7 @@ ENV = {
 
 # Model download configuration
 # Get model URL from environment variable for security
-MODEL_URL = os.environ.get(
-    "DOCUMENT_PAIRING_MODEL_URL",
-    # Fallback URL - should be moved to environment variable in production
-    "https://nuprodsandbox.blob.core.windows.net/models/document-pairing-svm.pkl?sp=r&st=2025-06-26T23:46:58Z&se=2026-06-27T07:46:58Z&spr=https&sv=2024-11-04&sr=b&sig=6DBiPYVdDaaw2ES2vDSGr5Q4mlPPa6HURXf66GNdNL0%3D",
-)
+MODEL_URL = os.environ.get("DOCUMENT_PAIRING_MODEL_URL")
 
 MODEL_URLS = {
     "data/models/document-pairing-svm.pkl": MODEL_URL,
@@ -320,6 +316,12 @@ def download_models(session: nox.Session) -> None:
     for model_path, url in MODEL_URLS.items():
         path = Path(model_path)
         if not path.exists():
+            if url is None:
+                session.error(
+                    f"Model {model_path} is missing and no download URL is configured. "
+                    "Please set DOCUMENT_PAIRING_MODEL_URL environment variable."
+                )
+                continue
             try:
                 session.log(f"Downloading model: {model_path}")
                 download_model(model_path, url)
