@@ -125,7 +125,7 @@ def test(session: nox.Session) -> None:
                 # Create a dummy file for CI
                 path.write_text("CI dummy model")
                 session.log(f"Created dummy model file for CI: {model_path}")
-    
+
     # Validate model existence before running tests
     try:
         check_model_exists()
