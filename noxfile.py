@@ -5,7 +5,6 @@ import shutil
 from pathlib import Path
 
 import nox
-import requests
 
 # Default sessions to run when called without arguments
 nox.options.sessions = ["test", "lint", "type_check", "format"]
@@ -294,6 +293,8 @@ def check_model_exists():
 
 def download_model(model_path, url):
     """Download a model file from the specified URL."""
+    import requests
+    
     path = Path(model_path)
 
     # Create directories if they don't exist
