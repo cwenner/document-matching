@@ -141,9 +141,7 @@ def send_request(url: str, payload: dict):
 
     except requests.exceptions.ConnectionError as e:
         print(f"\nError: Could not connect to the server at {url}.", file=sys.stderr)
-        print(
-            "Ensure the matching service ('serving.py') is running.", file=sys.stderr
-        )
+        print("Ensure the matching service ('serving.py') is running.", file=sys.stderr)
         print(f"Details: {e}", file=sys.stderr)
     except requests.exceptions.Timeout:
         print("\nError: Request timed out after 60 seconds.", file=sys.stderr)

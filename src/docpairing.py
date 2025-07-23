@@ -602,7 +602,7 @@ class DocumentPairingPredictor:
                     parsed_date = dateparser.parse(date_str)
                     if parsed_date is not None:
                         return parsed_date
-            
+
             if document["kind"] == "invoice":
                 date_str = self._get_header(document, "creationTime")
                 if date_str:
@@ -623,7 +623,7 @@ class DocumentPairingPredictor:
                         return parsed_date
         except Exception:
             pass
-        
+
         # Default to current date if parsing fails
         return datetime.datetime.now()
 
