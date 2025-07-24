@@ -605,10 +605,10 @@ class DocumentPairingPredictor:
 
             date_field = {
                 "invoice": "creationTime",
-                "delivery-receipt": "date", 
-                "purchase-order": "creationTime"
+                "delivery-receipt": "date",
+                "purchase-order": "creationTime",
             }.get(document["kind"])
-            
+
             if date_field:
                 date_str = self._get_header(document, date_field)
                 if date_str:
