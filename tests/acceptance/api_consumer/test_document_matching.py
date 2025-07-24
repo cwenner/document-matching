@@ -61,7 +61,7 @@ def context():  # noqa: F811
 
 
 @given("the document matching service is available")
-def document_matching_service(context):
+def document_matching_service(context):  # noqa: F811
     """
     Set up the document matching service for testing
     """
@@ -145,7 +145,7 @@ def send_post_with_primary_and_candidates_alt(endpoint, client, context):
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
-def check_status_code(status_code, context):
+def check_status_code(status_code, context):  # noqa: F811
     """
     Check that the response has the expected status code
     """
