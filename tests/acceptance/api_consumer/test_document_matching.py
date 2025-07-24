@@ -60,13 +60,7 @@ def context():  # noqa: F811
     return {}
 
 
-@given("the document matching service is available")
-def document_matching_service(context):  # noqa: F811
-    """
-    Set up the document matching service for testing
-    """
-    # For testing purposes, we assume the service is running locally
-    context["base_url"] = "http://localhost:8000"
+# Note: document_matching_service is imported from api_steps
 
 
 @given(parsers.parse('I have a primary document defined as "{filename}"'))
@@ -144,12 +138,7 @@ def send_post_with_primary_and_candidates_alt(endpoint, client, context):
     context["response"] = client.post(endpoint, json=payload)
 
 
-@then(parsers.parse("the response status code should be {status_code:d}"))
-def check_status_code(status_code, context):  # noqa: F811
-    """
-    Check that the response has the expected status code
-    """
-    assert context["response"].status_code == status_code
+# Note: check_status_code is imported from api_steps
 
 
 @then("the response body should indicate no matches were found")

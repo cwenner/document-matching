@@ -379,11 +379,11 @@ class MatchingEvaluator:
                 "candidate-documents": candidates,
             }
 
-            # print(
-            #     f"[HTTP] Predicting for document {document_id} with {len(candidates)} candidates"
-            # )
+            print(
+                f"[HTTP] Predicting for document {document_id} with {len(candidates)} candidates"
+            )
 
-            # start_time = time.time()
+            start_time = time.time()
 
             try:
                 headers = {
@@ -394,8 +394,8 @@ class MatchingEvaluator:
                     self.api_url, headers=headers, json=payload, timeout=60
                 )
 
-                # elapsed = time.time() - start_time
-                # print(f"API request completed in {elapsed:.2f} seconds")
+                elapsed = time.time() - start_time
+                print(f"API request completed in {elapsed:.2f} seconds")
 
                 if response.ok:
                     return response.json()

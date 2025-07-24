@@ -38,9 +38,8 @@ def collect_document_deviations(
         return deviations
 
     try:
-        # kind1 = DocumentKind(get_field(doc1, "kind"))
-        # kind2 = DocumentKind(get_field(doc2, "kind"))
-        pass  # DocumentKind validation removed for now
+        kind1 = DocumentKind(get_field(doc1, "kind"))
+        kind2 = DocumentKind(get_field(doc2, "kind"))
     except ValueError as e:
         logger.error(f"Invalid document kind for document deviation check: {e}")
         deviations.append(

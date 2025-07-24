@@ -66,8 +66,9 @@ def run_matching_pipeline(
             predictor.record_document(doc)
             recorded_count += 1
         # Also record the input document itself for feature generation etc.
-        predictor.record_document(input_document)
-        recorded_count += 1
+        if isinstance(input_document, dict):
+            predictor.record_document(input_document)
+            recorded_count += 1
         logger.info(f"Recorded {recorded_count} documents in predictor for this run.")
         # Re-populate id2document map AFTER recording, as record_document might modify/store them
         id2doc = predictor.id2document.copy()

@@ -8,7 +8,12 @@ import pytest
 from pytest_bdd import given, parsers, scenario, then, when
 
 # Import existing step definitions and fixtures
-from tests.acceptance.steps.api_steps import client, context  # noqa: F401
+from tests.acceptance.steps.api_steps import (  # noqa: F401
+    check_status_code,
+    client,
+    context,
+    document_matching_service,
+)
 
 # Import from centralized config module
 from tests.config import get_feature_path, get_test_data_path
@@ -92,10 +97,7 @@ def test_handle_invalid_payload():
 
 
 # Step definitions for invalid input scenarios
-@given("the document matching service is available")
-def document_matching_service_available(context):  # noqa: F811
-    """Set up the document matching service for testing"""
-    context["base_url"] = "http://localhost:8000"
+# Note: "the document matching service is available" step is imported from api_steps
 
 
 @given("I have no primary document")
@@ -245,10 +247,7 @@ def error_message_machine_readable(context):  # noqa: F811
         pytest.fail("Error response should be valid JSON for machine readability")
 
 
-@then(parsers.parse("the response status code should be {status_code:d}"))
-def check_response_status_code(status_code, context):  # noqa: F811
-    """Check that the response has the expected status code"""
-    assert context["response"].status_code == status_code
+# Note: "the response status code should be X" step is imported from api_steps
 
 
 # Additional step definitions for remaining scenarios
