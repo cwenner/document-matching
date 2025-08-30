@@ -603,20 +603,14 @@ class DocumentPairingPredictor:
                     if parsed_date is not None:
                         return parsed_date
 
-            if document["kind"] == "invoice":
-                date_str = self._get_header(document, "creationTime")
-                if date_str:
-                    parsed_date = dateparser.parse(date_str)
-                    if parsed_date is not None:
-                        return parsed_date
-            elif document["kind"] == "delivery-receipt":
-                date_str = self._get_header(document, "date")
-                if date_str:
-                    parsed_date = dateparser.parse(date_str)
-                    if parsed_date is not None:
-                        return parsed_date
-            elif document["kind"] == "purchase-order":
-                date_str = self._get_header(document, "creationTime")
+            date_field = {
+                "invoice": "creationTime",
+                "delivery-receipt": "date",
+                "purchase-order": "creationTime",
+            }.get(document["kind"])
+
+            if date_field:
+                date_str = self._get_header(document, date_field)
                 if date_str:
                     parsed_date = dateparser.parse(date_str)
                     if parsed_date is not None:

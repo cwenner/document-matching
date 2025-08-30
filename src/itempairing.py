@@ -1,6 +1,5 @@
 import logging
 from math import isclose
-from typing import Optional
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -109,7 +108,7 @@ def _calculate_match_score(item_id_sim, desc_sim, price_sim):
 
 def find_best_item_match(
     source_item_data: dict, target_items_data: list[dict]
-) -> Optional[dict]:
+) -> dict | None:
     if not target_items_data or not model:
         return None
 

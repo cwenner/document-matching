@@ -77,8 +77,8 @@ class FieldDeviation(BaseModel):
 
 
 def get_differing_amounts_severity(
-    amount1: Union[Decimal, float], amount2: Union[Decimal, float]
-) -> Optional[DeviationSeverity]:
+    amount1: Decimal | float, amount2: Decimal | float
+) -> DeviationSeverity | None:
     try:
         d_amount1 = Decimal(str(amount1))
         d_amount2 = Decimal(str(amount2))
@@ -177,7 +177,7 @@ def getkv_value(kvs: Optional[List[dict]], name: str) -> Optional[Any]:
     if not isinstance(kvs, list):
         return None
     for kv in kvs:
-        if kv.get("name") == name:
+        if isinstance(kv, dict) and kv.get("name") == name:
             return kv.get("value")
     return None
 

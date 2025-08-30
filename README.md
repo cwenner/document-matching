@@ -69,7 +69,9 @@ source .venv/bin/activate
 # Run all tests and linting
 nox
 
-# Download models
+# Download models (requires DOCUMENT_PAIRING_MODEL_URL environment variable)
+# Contact repository maintainers for the model URL
+export DOCUMENT_PAIRING_MODEL_URL="<model-url>"
 nox -s download_models
 
 # Run just tests
@@ -78,3 +80,13 @@ nox -s test
 # Run just linting
 nox -s lint
 ```
+
+## Model Download
+
+The document matching service requires a pre-trained SVM model. To download the model:
+
+1. Contact the repository maintainers to obtain the model download URL
+2. Set the environment variable: `export DOCUMENT_PAIRING_MODEL_URL="<model-url>"`
+3. Run: `nox -s download_models`
+
+Note: In CI/CD environments, the model is downloaded during the Docker build process.

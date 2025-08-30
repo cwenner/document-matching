@@ -8,7 +8,15 @@ import pytest
 from pytest_bdd import given, parsers, scenario, then, when
 
 # Import existing step definitions and fixtures
-from tests.acceptance.steps.api_steps import client, context  # noqa: F401
+from tests.acceptance.steps.api_steps import (
+    check_status_code,
+    client,
+    context,
+    document_matching_service,
+)
+
+# Ensure imported step definitions are available for pytest-bdd
+__all__ = ["check_status_code", "client", "context", "document_matching_service"]
 
 # Import from centralized config module
 from tests.config import get_feature_path, get_test_data_path
