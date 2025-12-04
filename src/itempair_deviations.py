@@ -1,6 +1,7 @@
 # itempair_deviations.py
 
 import logging
+import re
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any, Type
@@ -306,8 +307,6 @@ def _normalize_for_comparison(text: str | None) -> str:
     """Normalize text for casing/whitespace comparison."""
     if text is None:
         return ""
-    import re
-
     return re.sub(r"\s+", "", text.lower())
 
 
