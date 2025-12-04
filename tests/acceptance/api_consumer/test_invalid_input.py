@@ -102,6 +102,7 @@ def test_handle_invalid_payload():
 # Note: document_matching_service step is imported from api_steps.py
 # Local step definitions only for scenarios specific to invalid input testing
 
+
 @given("I have no primary document")
 def no_primary_document(context):
     """Set context to have no primary document"""
@@ -250,6 +251,7 @@ def error_message_machine_readable(context):
 
 
 # Note: check_status_code step is imported from api_steps.py
+
 
 # Additional step definitions for remaining scenarios
 @given("I have a valid primary document")
