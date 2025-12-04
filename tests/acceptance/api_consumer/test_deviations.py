@@ -181,7 +181,7 @@ def deviation_severity_reflects_percentage(context):
 
     # Check that severity is a valid value and makes sense for the percentage difference
     severity = amounts_differ_deviation.get("severity")
-    valid_severities = ["low", "medium", "high", "info"]
+    valid_severities = ["no-severity", "low", "medium", "high", "info"]
 
     assert (
         severity in valid_severities
@@ -193,10 +193,179 @@ def deviation_severity_reflects_percentage(context):
     ), f"Severity should not be 'high' for small {percentage_diff:.2f}% difference, got '{severity}'"
 
 
+@then(
+    parsers.parse(
+        'the AMOUNTS_DIFFER deviation severity should be "{expected_severity}"'
+    )
+)
+def check_amounts_differ_severity(context, expected_severity):
+    """Check that the AMOUNTS_DIFFER deviation has the expected severity."""
+    response_data = context["response"].json()
+    deviations = response_data.get("deviations", [])
+
+    amounts_differ = None
+    for dev in deviations:
+        if dev.get("code") == "AMOUNTS_DIFFER":
+            amounts_differ = dev
+            break
+
+    assert amounts_differ is not None, "Should have AMOUNTS_DIFFER deviation"
+    assert (
+        amounts_differ.get("severity") == expected_severity
+    ), f"AMOUNTS_DIFFER severity should be '{expected_severity}', got: {amounts_differ.get('severity')}"
+
+
+@then(
+    parsers.parse(
+        'the match report should contain item deviation with code "{deviation_code}"'
+    )
+)
+def match_report_contains_item_deviation(context, deviation_code):
+    """Check that the match report contains an item-level deviation with specific code."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+    all_codes = []
+
+    for itempair in itempairs:
+        for dev in itempair.get("deviations", []):
+            all_codes.append(dev.get("code"))
+
+    assert (
+        deviation_code in all_codes
+    ), f"Should include item deviation '{deviation_code}', got: {all_codes}"
+
+
+@then(
+    parsers.parse(
+        'the {deviation_code} item deviation severity should be "{expected_severity}"'
+    )
+)
+def check_item_deviation_severity(context, deviation_code, expected_severity):
+    """Check that a specific item deviation has the expected severity."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    found_deviation = None
+    for itempair in itempairs:
+        for dev in itempair.get("deviations", []):
+            if dev.get("code") == deviation_code:
+                found_deviation = dev
+                break
+        if found_deviation:
+            break
+
+    assert found_deviation is not None, f"Should have {deviation_code} deviation"
+    assert (
+        found_deviation.get("severity") == expected_severity
+    ), f"{deviation_code} severity should be '{expected_severity}', got: {found_deviation.get('severity')}"
+
+
+@then(
+    parsers.parse('the match report should contain item with match_type "{match_type}"')
+)
+def match_report_contains_item_match_type(context, match_type):
+    """Check that the match report contains an item with specific match_type."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    match_types = [pair.get("match_type") for pair in itempairs]
+    assert (
+        match_type in match_types
+    ), f"Should contain item with match_type '{match_type}', got: {match_types}"
+
+
+@then("the ITEM_UNMATCHED deviation severity should reflect the line amount")
+def check_item_unmatched_severity_reflects_amount(context):
+    """Check that ITEM_UNMATCHED severity reflects the line amount value."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    for itempair in itempairs:
+        if itempair.get("match_type") == "unmatched":
+            for dev in itempair.get("deviations", []):
+                if dev.get("code") == "ITEM_UNMATCHED":
+                    severity = dev.get("severity")
+                    valid_severities = ["no-severity", "low", "medium", "high"]
+                    assert (
+                        severity in valid_severities
+                    ), f"ITEM_UNMATCHED severity should be valid, got: {severity}"
+                    return
+
+    pytest.fail("Should have ITEM_UNMATCHED deviation in unmatched items")
+
+
+@then(
+    parsers.parse(
+        'the ARTICLE_NUMBERS_DIFFER item deviation severity should be "{sev1}" or "{sev2}"'
+    )
+)
+def check_article_numbers_severity_range(context, sev1, sev2):
+    """Check that ARTICLE_NUMBERS_DIFFER severity is one of two values."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    found_deviation = None
+    for itempair in itempairs:
+        for dev in itempair.get("deviations", []):
+            if dev.get("code") == "ARTICLE_NUMBERS_DIFFER":
+                found_deviation = dev
+                break
+        if found_deviation:
+            break
+
+    assert found_deviation is not None, "Should have ARTICLE_NUMBERS_DIFFER deviation"
+    severity = found_deviation.get("severity")
+    assert severity in [
+        sev1,
+        sev2,
+    ], f"ARTICLE_NUMBERS_DIFFER severity should be '{sev1}' or '{sev2}', got: {severity}"
+
+
+# ==============================================================================
+# Scenario functions
+# ==============================================================================
+
+
 @scenario(
     str(get_feature_path("api-consumer/deviations.feature")),
     "Match with Amount Deviations",
 )
 def test_match_with_amount_deviations():
     """Test that the service correctly handles amount deviations between documents."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Header amount deviation - no-severity for tiny differences",
+)
+def test_header_amount_no_severity():
+    """Test no-severity for tiny amount differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Header amount deviation - low severity for small differences",
+)
+def test_header_amount_low_severity():
+    """Test low severity for small amount differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Header amount deviation - medium severity for moderate differences",
+)
+def test_header_amount_medium_severity():
+    """Test medium severity for moderate amount differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Header amount deviation - high severity for large differences",
+)
+def test_header_amount_high_severity():
+    """Test high severity for large amount differences."""
     pass

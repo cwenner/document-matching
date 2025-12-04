@@ -9,7 +9,7 @@ from itempair_deviations import (
     DeviationSeverity,
     DocumentKind,
     FieldDeviation,
-    get_differing_amounts_severity,
+    get_header_amount_severity,
 )
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ def collect_document_deviations(
         try:
             amount1 = Decimal(str(amount1_str))
             amount2 = Decimal(str(amount2_str))
-            severity = get_differing_amounts_severity(amount1, amount2)
+            severity = get_header_amount_severity(amount1, amount2)
 
             if severity:
                 diff = abs(amount1 - amount2)
@@ -159,36 +159,70 @@ def generate_match_report(
         item1_data = pair_data.get("item1")
         item2_data = pair_data.get("item2")
         item_deviations = pair_data.get("deviations", [])
+        match_type = pair_data.get("match_type", "matched")
 
-        if not item1_data or not item2_data:
-            logger.warning(
-                f"Skipping item pair in report due to missing item data: {pair_data}"
+        if match_type == "unmatched":
+            item_data = item1_data or item2_data
+            if not item_data:
+                logger.warning(
+                    f"Skipping unmatched item in report due to missing data: {pair_data}"
+                )
+                continue
+
+            pair_severity = _calculate_overall_severity(
+                [dev.severity for dev in item_deviations]
             )
-            continue
+            all_report_severities.append(pair_severity)
 
-        pair_severity = _calculate_overall_severity(
-            [dev.severity for dev in item_deviations]
-        )
-        all_report_severities.append(pair_severity)
+            item_index_1 = item1_data.get("item_index") if item1_data else None
+            item_index_2 = item2_data.get("item_index") if item2_data else None
 
-        item_pair_report = {
-            "item_indices": [
-                item1_data.get("item_index"),
-                item2_data.get("item_index"),
-            ],
-            "match_type": "matched",
-            "match_score": pair_data.get("score"),
-            "deviation_severity": pair_severity.value,
-            "item_unchanged_certainty": 0.95,
-            "deviations": [dev.model_dump() for dev in item_deviations],
-        }
-        report["itempairs"].append(item_pair_report)
+            item_pair_report = {
+                "item_indices": [item_index_1, item_index_2],
+                "match_type": "unmatched",
+                "match_score": None,
+                "deviation_severity": pair_severity.value,
+                "item_unchanged_certainty": 0.95,
+                "deviations": [dev.model_dump() for dev in item_deviations],
+            }
+            report["itempairs"].append(item_pair_report)
+        else:
+            if not item1_data or not item2_data:
+                logger.warning(
+                    f"Skipping item pair in report due to missing item data: {pair_data}"
+                )
+                continue
+
+            pair_severity = _calculate_overall_severity(
+                [dev.severity for dev in item_deviations]
+            )
+            all_report_severities.append(pair_severity)
+
+            item_pair_report = {
+                "item_indices": [
+                    item1_data.get("item_index"),
+                    item2_data.get("item_index"),
+                ],
+                "match_type": "matched",
+                "match_score": pair_data.get("score"),
+                "deviation_severity": pair_severity.value,
+                "item_unchanged_certainty": 0.95,
+                "deviations": [dev.model_dump() for dev in item_deviations],
+            }
+            report["itempairs"].append(item_pair_report)
 
     overall_report_severity = _calculate_overall_severity(all_report_severities)
     for metric in report["metrics"]:
         if metric["name"] == "deviation-severity":
             metric["value"] = overall_report_severity.value
             break
+
+    has_partial_delivery = any(
+        any(dev.get("code") == "PARTIAL_DELIVERY" for dev in pair.get("deviations", []))
+        for pair in report["itempairs"]
+    )
+    if has_partial_delivery and "partial-delivery" not in report["labels"]:
+        report["labels"].append("partial-delivery")
 
     return report
 

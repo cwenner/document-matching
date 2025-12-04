@@ -203,10 +203,90 @@ def deviation_severity_reflects_percentage(context):
     ), f"Severity should not be 'low' for significant {percentage_diff:.2f}% difference, got '{severity}'"
 
 
+@then(
+    parsers.parse(
+        'the match report should contain item deviation with code "{deviation_code}"'
+    )
+)
+def match_report_contains_item_deviation(context, deviation_code):
+    """Check that the match report contains an item-level deviation with specific code."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+    all_codes = []
+
+    for itempair in itempairs:
+        for dev in itempair.get("deviations", []):
+            all_codes.append(dev.get("code"))
+
+    assert (
+        deviation_code in all_codes
+    ), f"Should include item deviation '{deviation_code}', got: {all_codes}"
+
+
+@then(
+    parsers.parse(
+        'the {deviation_code} item deviation severity should be "{expected_severity}"'
+    )
+)
+def check_item_deviation_severity(context, deviation_code, expected_severity):
+    """Check that a specific item deviation has the expected severity."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    found_deviation = None
+    for itempair in itempairs:
+        for dev in itempair.get("deviations", []):
+            if dev.get("code") == deviation_code:
+                found_deviation = dev
+                break
+        if found_deviation:
+            break
+
+    assert found_deviation is not None, f"Should have {deviation_code} deviation"
+    assert (
+        found_deviation.get("severity") == expected_severity
+    ), f"{deviation_code} severity should be '{expected_severity}', got: {found_deviation.get('severity')}"
+
+
+@then(parsers.parse('the match report should contain "{label}" in labels'))
+def match_report_contains_label(context, label):
+    """Check that the match report contains a specific label."""
+    response_data = context["response"].json()
+    labels = response_data.get("labels", [])
+    assert label in labels, f"Should contain '{label}' in labels, got: {labels}"
+
+
 @scenario(
     str(get_feature_path("api-consumer/deviations.feature")),
     "Match with Quantity Deviations",
 )
 def test_match_with_quantity_deviations():
     """Test that the service correctly handles quantity deviations between documents."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Quantity deviation - low severity for small excess",
+)
+def test_quantity_low_severity():
+    """Test low severity for small quantity excess."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Quantity deviation - high severity for large excess",
+)
+def test_quantity_high_severity():
+    """Test high severity for large quantity excess."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Match with Partial Delivery",
+)
+def test_partial_delivery():
+    """Test PARTIAL_DELIVERY deviation when qty < PO qty."""
     pass

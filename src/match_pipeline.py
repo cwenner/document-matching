@@ -4,7 +4,11 @@ import os
 
 # Keep existing imports
 from docpairing import DocumentPairingPredictor
-from itempair_deviations import FieldDeviation, collect_itempair_deviations
+from itempair_deviations import (
+    FieldDeviation,
+    collect_itempair_deviations,
+    create_item_unmatched_deviation,
+)
 from itempairing import pair_document_items
 from match_reporter import DeviationSeverity  # Import DeviationSeverity for adaptation
 from match_reporter import (
@@ -213,7 +217,9 @@ def run_matching_pipeline(
                         else:
                             try:
                                 item_deviations = collect_itempair_deviations(
-                                    doc_kinds, [item1_fields, item2_fields]
+                                    doc_kinds,
+                                    [item1_fields, item2_fields],
+                                    raw_pair.get("similarities"),
                                 )
                                 logger.debug(
                                     f"  Pair {item1_data.get('item_index')}/{item2_data.get('item_index')} (Score: {raw_pair.get('score', 0):.3f}): Found {len(item_deviations)} deviations."
@@ -245,6 +251,52 @@ def run_matching_pipeline(
                     logger.info(
                         f"Finished collecting deviations for {len(processed_item_pairs)} item pairs."
                     )
+
+                    for item in doc1_items:
+                        if not item.get("matched"):
+                            doc_kind = item.get("document_kind")
+                            if doc_kind:
+                                unmatched_deviation = create_item_unmatched_deviation(
+                                    item, doc_kind
+                                )
+                                processed_item_pairs.append(
+                                    {
+                                        "item1": item,
+                                        "item2": None,
+                                        "score": None,
+                                        "similarities": None,
+                                        "deviations": [unmatched_deviation],
+                                        "match_type": "unmatched",
+                                    }
+                                )
+
+                    for item in doc2_items:
+                        if not item.get("matched"):
+                            doc_kind = item.get("document_kind")
+                            if doc_kind:
+                                unmatched_deviation = create_item_unmatched_deviation(
+                                    item, doc_kind
+                                )
+                                processed_item_pairs.append(
+                                    {
+                                        "item1": None,
+                                        "item2": item,
+                                        "score": None,
+                                        "similarities": None,
+                                        "deviations": [unmatched_deviation],
+                                        "match_type": "unmatched",
+                                    }
+                                )
+
+                    unmatched_count = len(
+                        [
+                            p
+                            for p in processed_item_pairs
+                            if p.get("match_type") == "unmatched"
+                        ]
+                    )
+                    if unmatched_count > 0:
+                        logger.info(f"Found {unmatched_count} unmatched items.")
 
                 except Exception as e_item_processing:
                     logger.exception(
