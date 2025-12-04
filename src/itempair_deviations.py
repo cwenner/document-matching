@@ -1,6 +1,7 @@
 # itempair_deviations.py
 
 import logging
+import re
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any, Type
@@ -271,6 +272,42 @@ def get_quantity_severity(
         return DeviationSeverity.MEDIUM
 
     return DeviationSeverity.HIGH
+
+
+def get_description_deviation_severity(
+    similarity: float | None,
+) -> DeviationSeverity:
+    """
+    Severity for description differences based on semantic similarity.
+
+    Thresholds (spec):
+    - no-severity: sim >= 0.98 (only minor tokenization differences)
+    - info: sim >= 0.90 (reordered terms, e.g., "M8 hex screw 10mm" vs "Hex screw M8x10")
+    - low: sim >= 0.75 (wording differences, maybe extra adjectives)
+    - medium: sim >= 0.50 (overlapping topic but not clearly identical)
+    - high: sim < 0.50 (likely wrong item)
+
+    Returns HIGH if similarity is None (indicates missing data).
+    """
+    if similarity is None:
+        return DeviationSeverity.HIGH
+
+    if similarity >= 0.98:
+        return DeviationSeverity.NO_SEVERITY
+    if similarity >= 0.90:
+        return DeviationSeverity.INFO
+    if similarity >= 0.75:
+        return DeviationSeverity.LOW
+    if similarity >= 0.50:
+        return DeviationSeverity.MEDIUM
+    return DeviationSeverity.HIGH
+
+
+def _normalize_for_comparison(text: str | None) -> str:
+    """Normalize text for casing/whitespace comparison."""
+    if text is None:
+        return ""
+    return re.sub(r"\s+", "", text.lower())
 
 
 def get_differing_amounts_severity(
@@ -677,6 +714,85 @@ def check_article_numbers_differ(
     )
 
 
+def check_description_deviation(
+    document_kinds: list[DocumentKind],
+    document_item_fields: list[list[dict] | None],
+    description_similarity: float | None = None,
+) -> FieldDeviation | None:
+    """
+    Check for description differences with similarity-based severity.
+
+    Edge cases:
+    - Both empty → no deviation
+    - One empty, other non-empty → HIGH severity
+    - Only casing/whitespace differs → no deviation
+    - Otherwise use similarity for severity thresholds
+    """
+    field_name_map = {
+        DocumentKind.INVOICE: "text",
+        DocumentKind.PURCHASE_ORDER: "description",
+        DocumentKind.DELIVERY_RECEIPT: "description",
+    }
+
+    values = []
+    field_names_used = []
+
+    for i, doc_kind in enumerate(document_kinds):
+        item_fields = document_item_fields[i] if i < len(document_item_fields) else None
+        field_name = field_name_map.get(doc_kind)
+        field_names_used.append(field_name)
+
+        if not field_name or item_fields is None:
+            values.append(None)
+            continue
+
+        value = getkv_value(item_fields, field_name)
+        values.append(str(value) if value is not None else None)
+
+    # Get non-None values for comparison
+    actual_values = [v for v in values if v is not None]
+    if len(actual_values) < 2:
+        return None
+
+    # Check for both empty - no deviation
+    non_empty_values = [v for v in actual_values if v.strip()]
+    if len(non_empty_values) == 0:
+        return None
+
+    # Check for one empty, other non-empty → HIGH severity
+    if len(non_empty_values) == 1:
+        return FieldDeviation(
+            code="DESCRIPTIONS_DIFFER",
+            severity=DeviationSeverity.HIGH,
+            message=f"One description is empty ({actual_values[0]!r} vs {actual_values[1]!r})",
+            field_names=field_names_used,
+            field_values=[v if v is not None else None for v in values],
+        )
+
+    # All descriptions are non-empty
+    first_value = non_empty_values[0]
+
+    # Check if all are identical
+    if all(v == first_value for v in non_empty_values):
+        return None
+
+    # Check for casing/whitespace only difference
+    normalized = [_normalize_for_comparison(v) for v in non_empty_values]
+    if all(n == normalized[0] for n in normalized):
+        return None
+
+    # Use similarity-based severity
+    severity = get_description_deviation_severity(description_similarity)
+
+    return FieldDeviation(
+        code="DESCRIPTIONS_DIFFER",
+        severity=severity,
+        message=f"Descriptions differ ({' vs '.join(repr(v) for v in non_empty_values)})",
+        field_names=field_names_used,
+        field_values=[v if v is not None else None for v in values],
+    )
+
+
 def check_itempair_comparison(
     comparison: FieldComparison,
     document_kinds: list[DocumentKind],
@@ -821,6 +937,13 @@ def collect_itempair_deviations(
     if article_deviation:
         deviations.append(article_deviation)
 
+    # Check description deviation with similarity-based severity
+    description_deviation = check_description_deviation(
+        document_kinds, document_item_fields, desc_sim
+    )
+    if description_deviation:
+        deviations.append(description_deviation)
+
     items_differ = check_items_differ(similarities)
     if items_differ:
         deviations.append(items_differ)
@@ -830,6 +953,8 @@ def collect_itempair_deviations(
             if comparison.code == "QUANTITIES_DIFFER" and has_po:
                 continue
             if comparison.code == "ARTICLE_NUMBERS_DIFFER":
+                continue
+            if comparison.code == "DESCRIPTIONS_DIFFER":
                 continue
             deviation = check_itempair_comparison(
                 comparison, document_kinds, document_item_fields

@@ -369,3 +369,277 @@ def test_header_amount_medium_severity():
 def test_header_amount_high_severity():
     """Test high severity for large amount differences."""
     pass
+
+
+# ==============================================================================
+# DESCRIPTIONS_DIFFER step definitions (#27)
+# ==============================================================================
+
+
+@given(
+    parsers.re(r'I have a primary invoice with item description "(?P<description>.*)"')
+)
+def primary_invoice_with_item_description(context, description):
+    """Create a primary invoice document with specific item description."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-DESC-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": "100.00"},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": "80.00"},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": description},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": "80.00"},
+                ]
+            }
+        ],
+    }
+
+
+@given(
+    parsers.re(
+        r'I have a candidate purchase order with item description "(?P<description>.*)"'
+    )
+)
+def candidate_po_with_item_description(context, description):
+    """Create a candidate purchase order with specific item description."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-DESC-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": "100.00"},
+                {"name": "excVatAmount", "value": "80.00"},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-DESC-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": "INV-001"},
+                        {"name": "description", "value": description},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": "80.00"},
+                        {"name": "quantityOrdered", "value": "1"},
+                        {"name": "quantityToReceive", "value": "1"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "1"},
+                    ]
+                }
+            ],
+        }
+    ]
+
+
+@given(
+    parsers.re(
+        r'I have a primary invoice with item and article number "(?P<article_number>.+)" and description "(?P<description>.*)"'
+    )
+)
+def primary_invoice_with_article_and_description(context, article_number, description):
+    """Create a primary invoice with article number and description."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-DESC-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": "100.00"},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": "80.00"},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": description},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "inventory", "value": article_number},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": "80.00"},
+                ]
+            }
+        ],
+    }
+
+
+@given(
+    parsers.re(
+        r'I have a candidate purchase order with item and article number "(?P<article_number>.+)" and description "(?P<description>.*)"'
+    )
+)
+def candidate_po_with_article_and_description(context, article_number, description):
+    """Create a candidate purchase order with article number and description."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-DESC-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": "100.00"},
+                {"name": "excVatAmount", "value": "80.00"},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-DESC-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": article_number},
+                        {"name": "description", "value": description},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": "80.00"},
+                        {"name": "quantityOrdered", "value": "1"},
+                        {"name": "quantityToReceive", "value": "1"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "1"},
+                    ]
+                }
+            ],
+        }
+    ]
+
+
+@then("the deviation severity should reflect the textual similarity")
+def deviation_severity_reflects_similarity(context):
+    """Check that the deviation severity reflects textual similarity."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    found_deviation = None
+    for itempair in itempairs:
+        for dev in itempair.get("deviations", []):
+            if dev.get("code") == "DESCRIPTIONS_DIFFER":
+                found_deviation = dev
+                break
+        if found_deviation:
+            break
+
+    assert found_deviation is not None, "Should have DESCRIPTIONS_DIFFER deviation"
+    severity = found_deviation.get("severity")
+    valid_severities = ["no-severity", "info", "low", "medium", "high"]
+    assert (
+        severity in valid_severities
+    ), f"Severity should be one of {valid_severities}, got: {severity}"
+
+
+@then("there should be no DESCRIPTIONS_DIFFER deviation")
+def no_descriptions_differ_deviation(context):
+    """Check that there is no DESCRIPTIONS_DIFFER deviation."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    for itempair in itempairs:
+        for dev in itempair.get("deviations", []):
+            if dev.get("code") == "DESCRIPTIONS_DIFFER":
+                pytest.fail(
+                    f"Should NOT have DESCRIPTIONS_DIFFER deviation, but found: {dev}"
+                )
+
+
+# ==============================================================================
+# DESCRIPTIONS_DIFFER scenario functions (#27)
+# ==============================================================================
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Match with Different Item Descriptions",
+)
+def test_match_with_different_descriptions():
+    """Test that the service correctly handles description differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Description deviation - no-severity for nearly identical descriptions",
+)
+def test_description_no_severity_nearly_identical():
+    """Test no-severity for nearly identical descriptions."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Description deviation - no-severity for casing differences only",
+)
+def test_description_no_severity_casing():
+    """Test no-severity for casing differences only."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Description deviation - no-severity for whitespace differences only",
+)
+def test_description_no_severity_whitespace():
+    """Test no-severity for whitespace differences only."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Description deviation - info severity for reordered terms",
+)
+def test_description_info_severity():
+    """Test info severity for reordered terms."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Description deviation - low severity for wording differences",
+)
+def test_description_low_severity():
+    """Test low severity for wording differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Description deviation - medium severity for overlapping topic",
+)
+def test_description_medium_severity():
+    """Test medium severity for overlapping topic."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Description deviation - no deviation when both descriptions are empty",
+)
+def test_description_no_deviation_both_empty():
+    """Test no deviation when both descriptions are empty."""
+    pass
