@@ -96,6 +96,11 @@ PYTHONPATH=src python -m try_client
 # Run all tests and linting
 nox
 
+# Download models (requires DOCUMENT_PAIRING_MODEL_URL environment variable)
+# Contact repository maintainers for the model URL
+export DOCUMENT_PAIRING_MODEL_URL="<model-url>"
+nox -s download_models
+
 # Run only tests
 nox -s test
 
@@ -109,6 +114,16 @@ pytest -m core_matching    # Core matching functionality
 pytest -m implemented      # Only implemented features
 pytest -m "not wip"        # Skip work-in-progress tests
 ```
+
+## Model Download
+
+The document matching service requires a pre-trained SVM model. To download the model:
+
+1. Contact the repository maintainers to obtain the model download URL
+2. Set the environment variable: `export DOCUMENT_PAIRING_MODEL_URL="<model-url>"`
+3. Run: `nox -s download_models`
+
+Note: In CI/CD environments, the model is downloaded during the Docker build process.
 
 ### Available Test Markers
 

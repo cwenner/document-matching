@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 
-from document_utils import get_field, DocumentKind
+from document_utils import DocumentKind, get_field
 
 # @TODO Move customer specific field naming here
 

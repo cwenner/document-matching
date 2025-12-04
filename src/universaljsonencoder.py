@@ -1,8 +1,9 @@
-import json
 import datetime
-import uuid
 import decimal
+import json
+import uuid
 from enum import Enum
+
 from pydantic import BaseModel as PydanticBaseModel
 
 
@@ -21,35 +22,35 @@ class UniversalJSONEncoder(json.JSONEncoder):
     - Pydantic V2 BaseModels
     """
 
-    def default(self, obj):
-        if isinstance(obj, PydanticBaseModel):
+    def default(self, o):
+        if isinstance(o, PydanticBaseModel):
             try:
-                return obj.model_dump(mode="json")
+                return o.model_dump(mode="json")
             except Exception as e:
-                print(f"Warning: Failed to dump Pydantic model {type(obj)}: {e}")
+                print(f"Warning: Failed to dump Pydantic model {type(o)}: {e}")
                 pass  # Fall through to super().default()
-        elif isinstance(obj, datetime.datetime):
-            if obj.tzinfo:
-                return obj.isoformat()
+        elif isinstance(o, datetime.datetime):
+            if o.tzinfo:
+                return o.isoformat()
             else:
                 # Assume timezone?
-                # return obj.replace(tzinfo=datetime.timezone.utc).isoformat()
-                return obj.isoformat()
-        elif isinstance(obj, datetime.date):
-            return obj.isoformat()
-        elif isinstance(obj, uuid.UUID):
-            return str(obj)
-        elif isinstance(obj, decimal.Decimal):
-            return str(obj)
-        elif isinstance(obj, Enum):
+                # return o.replace(tzinfo=datetime.timezone.utc).isoformat()
+                return o.isoformat()
+        elif isinstance(o, datetime.date):
+            return o.isoformat()
+        elif isinstance(o, uuid.UUID):
+            return str(o)
+        elif isinstance(o, decimal.Decimal):
+            return str(o)
+        elif isinstance(o, Enum):
             # Use the enum's value
-            return obj.value
-        elif isinstance(obj, bytes):
+            return o.value
+        elif isinstance(o, bytes):
             # Represent bytes as base64 encoded string
             import base64
 
-            return base64.b64encode(obj).decode("ascii")
-        elif isinstance(obj, set):
-            return list(obj)
+            return base64.b64encode(o).decode("ascii")
+        elif isinstance(o, set):
+            return list(o)
         # Let the base class default method raise
-        return super().default(obj)
+        return super().default(o)

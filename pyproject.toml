@@ -1,0 +1,130 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "document-matching"
+version = "0.1.0"
+description = "Document matching and pairing service"
+readme = "README.md"
+authors = [
+    { name = "Omnimodular Team", email = "team@omnimodular.com" }
+]
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "dateparser",
+    "fastapi==0.115.12",
+    "httpx",
+    "numpy",
+    "pandas",
+    "pydantic",
+    "requests",
+    "scikit-learn",
+    "sentence-transformers",
+    "uvicorn[standard]",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-bdd",
+    "pytest-mock",
+    "pytest-cov",
+    "black",
+    "isort",
+    "flake8",
+    "pyright",
+    "twine",
+    "build",
+    "nox",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/omnimodular/document-matching"
+"Bug Reports" = "https://github.com/omnimodular/document-matching/issues"
+"Source" = "https://github.com/omnimodular/document-matching"
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["src"]
+skip_gitignore = true
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+pythonPlatform = "All"
+venvPath = "."
+venv = ".venv-wsl"
+reportUnknownVariableType = "none"
+reportUnknownMemberType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+reportUnknownLambdaType = "none"
+reportMissingTypeStubs = "none"
+reportGeneralTypeIssues = "error"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=src --cov-report=term-missing --cov-report=xml"
+bdd_features_base_dir = "features"
+markers = [
+    "unit: Unit tests",
+    "acceptance: Acceptance tests using BDD",
+    "slow: Tests that take a long time to run",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+    "*/.venv-wsl/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if False:",
+    "pass",
+]
+show_missing = true
+skip_covered = false

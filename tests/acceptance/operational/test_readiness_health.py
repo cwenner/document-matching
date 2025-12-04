@@ -1,13 +1,14 @@
 import pytest
-from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
+from pytest_bdd import given, parsers, scenario, then, when
+
 import app
+
+# Import common step definitions
+from tests.acceptance.steps.api_steps import context  # noqa: F401
 
 # Import from centralized config module
 from tests.config import get_feature_path
-
-# Import common step definitions
-from tests.acceptance.steps.api_steps import context
 
 # --- Feature: API Readiness and Health Checks ---
 

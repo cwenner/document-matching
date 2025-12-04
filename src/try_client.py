@@ -1,10 +1,9 @@
-import requests
-import json
 import argparse
+import json
 import sys
-import os
 import uuid
 
+import requests
 
 # Script that sends an API requests to the matching service
 
@@ -123,7 +122,7 @@ def send_request(url: str, payload: dict):
             url, headers=headers, json=payload, timeout=60
         )  # Add timeout
 
-        print(f"--- Response ---")
+        print("--- Response ---")
         print(f"Status Code: {response.status_code}")
 
         if response.ok:
@@ -142,12 +141,10 @@ def send_request(url: str, payload: dict):
 
     except requests.exceptions.ConnectionError as e:
         print(f"\nError: Could not connect to the server at {url}.", file=sys.stderr)
-        print(
-            f"Ensure the matching service ('serving.py') is running.", file=sys.stderr
-        )
+        print("Ensure the matching service ('serving.py') is running.", file=sys.stderr)
         print(f"Details: {e}", file=sys.stderr)
     except requests.exceptions.Timeout:
-        print(f"\nError: Request timed out after 60 seconds.", file=sys.stderr)
+        print("\nError: Request timed out after 60 seconds.", file=sys.stderr)
     except requests.exceptions.RequestException as e:
         print(f"\nError during request: {e}", file=sys.stderr)
 

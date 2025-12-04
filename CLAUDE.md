@@ -121,3 +121,130 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Make sure that you have a checklist for when you consider yourself to be DONE DONE and review it
 - Do not stop unless asked to or DONE DONE
 - If a PR is undergoing checks/builds, sleep until they are done; it may take up to several minutes so multiple cycles may be necessary
+
+## Development Environment Setup (from parse-eda best practices)
+
+### Virtual Environment and Testing
+
+This project uses **nox** for testing and **.venv-wsl** for the virtual environment.
+
+### Commands to run tests:
+```bash
+# Activate virtual environment
+python -m venv .venv-wsl
+source .venv-wsl/bin/activate
+pip install -r requirements-dev.txt
+
+# Run tests with nox
+nox -s test
+
+# Run specific test
+nox -s test -- tests/test_specific.py::test_function
+
+# Run tests with coverage
+nox -s test -- --cov=src --cov-report=xml
+```
+
+### Python path setup:
+```bash
+# Set PYTHONPATH for imports
+export PYTHONPATH=/path/to/project/src
+
+# Or run with inline path
+PYTHONPATH=src python -m pytest tests/
+```
+
+## Nox Sessions Reference
+
+| Command                   | Purpose                                            |
+| ------------------------- | -------------------------------------------------- |
+| `nox -s test`             | Run the test suite with coverage                   |
+| `nox -s lint`             | Run linting checks (isort, black, flake8)          |
+| `nox -s type_check`       | Run type checking with pyright                     |
+| `nox -s format`           | Format code with black and isort                   |
+| `nox -s checks`           | Run all quality checks sequentially                |
+| `nox -s dev`              | Start the development server                       |
+| `nox -s build`            | Build the package                                  |
+| `nox -s clean`            | Clean up build artifacts and cache                 |
+| `nox -s download_models`  | Download required model files                      |
+| `nox`                     | Run default sessions (test, lint, type_check, format) |
+
+## Code Quality Standards
+
+### Black (Formatting)
+- Line length: 88
+- Target Python 3.9+
+- Automatically handled by `nox -s format`
+
+### isort (Import Sorting)
+- Profile: "black" (compatible with black)
+- Line length: 88
+- Automatically handled by `nox -s format`
+
+### Flake8 (Linting)
+- Max line length: 88
+- Configuration in `.flake8`
+- Run with `nox -s lint`
+
+### Pyright (Type Checking)
+- Type checking mode: "standard"
+- Configuration in `pyproject.toml`
+- Run with `nox -s type_check`
+
+## Testing Best Practices
+
+### Test Structure
+- Unit tests in `tests/unit/`
+- Acceptance tests in `tests/acceptance/`
+- BDD features in `features/`
+- Shared fixtures in `conftest.py`
+
+### Test Isolation
+- All tests use temporary directories
+- Never modify actual disk data
+- Use dependency injection over mocking
+
+### Running Tests
+```bash
+# Run all tests
+nox -s test
+
+# Run with specific markers
+nox -s test -- -m unit
+nox -s test -- -m acceptance
+
+# Run with verbose output
+nox -s test -- -v
+
+# Run and stop on first failure
+nox -s test -- -x
+```
+
+## CI/CD Integration
+
+All quality checks run automatically in CI:
+1. Linting (black, isort, flake8)
+2. Type checking (pyright)
+3. Tests with coverage
+4. Model download verification
+
+## Best Practices Summary
+
+1. **Always run quality checks before committing**
+   ```bash
+   nox -s checks
+   ```
+
+2. **Keep dependencies up to date**
+   - Runtime dependencies in `requirements.txt`
+   - Dev dependencies in `requirements-dev.txt`
+   - Tool configurations in `pyproject.toml`
+
+3. **Use intelligent caching**
+   - Nox sessions use smart caching to speed up local development
+   - Force reinstall with `NOX_FORCE_REINSTALL=1` if needed
+
+4. **Follow the engineering playbook**
+   - See `CHECKLIST.md` for the complete workflow
+   - Always create spec documents before coding
+   - Write tests before implementation

@@ -1,19 +1,18 @@
 import json
-import os
 import logging
+import os
 
 # Keep existing imports
 from docpairing import DocumentPairingPredictor
-from wfields import get_document_items, unpack_attachments
+from itempair_deviations import FieldDeviation, collect_itempair_deviations
 from itempairing import pair_document_items
-from itempair_deviations import collect_itempair_deviations, FieldDeviation
+from match_reporter import DeviationSeverity  # Import DeviationSeverity for adaptation
 from match_reporter import (
+    collect_document_deviations,
     generate_match_report,
     generate_no_match_report,
-    collect_document_deviations,
-    DeviationSeverity,  # Import DeviationSeverity for adaptation
 )
-
+from wfields import get_document_items, unpack_attachments
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -107,7 +106,7 @@ def run_matching_pipeline(
                 logger.info(f"  {pairing_id}: {pairing_conf:.4f}")
         else:
             logger.info("  No suitable document pairings predicted.")
-    except Exception as e:
+    except Exception:
         logger.exception("Error occurred during document pairing prediction.")
         pairings = []
 
@@ -312,7 +311,7 @@ def run_matching_pipeline(
 
 
 # Helper for __main__ test
-def get_sample_data():
+def get_sample_data() -> dict:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     default_data_root = os.path.join(script_dir, "..", "data", "converted-shared-data")
     data_root = os.environ.get("SAMPLE_DATA_ROOT", default_data_root)
@@ -419,7 +418,7 @@ if __name__ == "__main__":
     except FileNotFoundError as e:
         logger.error(f"Initialization failed: {e}")
         exit(1)
-    except Exception as e:
+    except Exception:
         logger.exception(
             "An unexpected error occurred during predictor initialization."
         )
@@ -428,9 +427,9 @@ if __name__ == "__main__":
     logger.info("--- Loading Sample Data (__main__ Test) ---")
     try:
         sample_data = get_sample_data()
-        historical_documents = sample_data["past_documents"]
-        input_document = sample_data["target_document"]
-    except Exception as e:
+        historical_documents: list[dict] = sample_data["past_documents"]
+        input_document: dict = sample_data["target_document"]
+    except Exception:
         logger.exception("Error loading sample data.")
         exit(1)
 

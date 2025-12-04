@@ -1,8 +1,5 @@
-import sys
-import os
 import pytest
 from fastapi.testclient import TestClient
-
 
 from app import app
 from matching_service import WHITELISTED_SITES

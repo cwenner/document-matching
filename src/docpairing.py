@@ -1,11 +1,12 @@
-import numpy as np
-import pandas as pd
 import collections
 import datetime
 import logging
-import re
-import dateparser
 import pickle
+import re
+
+import dateparser
+import numpy as np
+import pandas as pd
 
 from document_utils import get_field
 from wfields import get_supplier_ids
@@ -565,13 +566,21 @@ class DocumentPairingPredictor:
         try:
             # For invoice-PO pairs, invoice should come after PO
             if doc1["kind"] == "invoice" and doc2["kind"] == "purchase-order":
-                return self._get_document_date(doc1) >= self._get_document_date(doc2)
+                date1 = self._get_document_date(doc1)
+                date2 = self._get_document_date(doc2)
+                if date1 is None or date2 is None:
+                    return True  # Assume valid if dates can't be parsed
+                return date1 >= date2
             # For PO-invoice pairs, invoice should come after PO
             elif doc1["kind"] == "purchase-order" and doc2["kind"] == "invoice":
-                return self._get_document_date(doc1) <= self._get_document_date(doc2)
+                date1 = self._get_document_date(doc1)
+                date2 = self._get_document_date(doc2)
+                if date1 is None or date2 is None:
+                    return True  # Assume valid if dates can't be parsed
+                return date1 <= date2
             # Other combinations are always valid
             return True
-        except:
+        except Exception:
             # If date parsing fails, assume valid
             return True
 
@@ -615,7 +624,7 @@ class DocumentPairingPredictor:
                 return float(
                     document["original_data"]["interpreted_data"]["incVatAmount"]
                 )
-        except:
+        except Exception:
             pass
         return 0.0
 
@@ -635,7 +644,7 @@ class DocumentPairingPredictor:
                 return float(
                     document["original_data"]["interpreted_data"]["excVatAmount"]
                 )
-        except:
+        except Exception:
             pass
         return 0.0
 
@@ -720,7 +729,7 @@ class DocumentPairingPredictor:
                             )
                             if item_id:
                                 article_numbers.append(item_id)
-                    except:
+                    except Exception:
                         pass
 
             elif doc["kind"] == "purchase-order":
@@ -742,7 +751,7 @@ class DocumentPairingPredictor:
                         )
                         if item_id:
                             article_numbers.append(item_id)
-        except Exception as e:
+        except Exception:
             # If article number extraction fails, return empty list
             return []
 
@@ -802,8 +811,11 @@ class DocumentPairingPredictor:
         try:
             invoice_date = self._get_document_date(invoice)
             po_date = self._get_document_date(po)
-            features["date_diff"] = (invoice_date - po_date).days
-        except:
+            if invoice_date is not None and po_date is not None:
+                features["date_diff"] = (invoice_date - po_date).days
+            else:
+                features["date_diff"] = 0
+        except Exception:
             features["date_diff"] = 0
 
         # Previous matches feature
@@ -844,7 +856,7 @@ class DocumentPairingPredictor:
                 * (doc1_exc_vat_amount - doc2_exc_vat_amount)
                 / ((doc2_exc_vat_amount + doc1_exc_vat_amount) or 1.0)
             )
-        except:
+        except Exception:
             # If amount extraction fails, use zero differences
             features["exc_vat_amount_diff"] = 0
             features["inc_vat_amount_diff"] = 0
@@ -855,8 +867,11 @@ class DocumentPairingPredictor:
         try:
             doc1_date = self._get_document_date(doc1)
             doc2_date = self._get_document_date(doc2)
-            features["date_diff"] = (doc1_date - doc2_date).days
-        except:
+            if doc1_date is not None and doc2_date is not None:
+                features["date_diff"] = (doc1_date - doc2_date).days
+            else:
+                features["date_diff"] = 0
+        except Exception:
             features["date_diff"] = 0
 
         features["num_previously_matched_invoices"] = 0

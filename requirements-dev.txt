@@ -3,3 +3,10 @@ pytest
 pytest-bdd
 pytest-mock
 pytest-cov
+black
+isort
+flake8
+pyright
+twine
+build
+nox

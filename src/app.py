@@ -1,9 +1,10 @@
 import json
 import logging
-from fastapi import Request, Response, FastAPI, HTTPException
-from matching_service import MatchingService
-from match_reporter import DeviationSeverity
 
+from fastapi import FastAPI, HTTPException, Request, Response
+
+from match_reporter import DeviationSeverity
+from matching_service import MatchingService
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -15,7 +16,7 @@ matching_service = MatchingService()
 
 # --- FastAPI App ---
 app = FastAPI()
-logger.info(f"✔ Matching Service API Ready")
+logger.info("✔ Matching Service API Ready")
 
 
 @app.get("/health")
@@ -152,7 +153,7 @@ def _dummy_match_report(document):
     kind = document.get("kind", "invoice")  # Assume invoice for dummy matched pair
     matched_kind = "purchase-order" if kind == "invoice" else "invoice"
     matched_id = (
-        f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}"  # Dummy matched ID
+        f"matched-doc-{hash(str(doc_id) + '-match') & 0xfff:03x}"  # Dummy matched ID
     )
     report_id = f"r-match-{hash(str(doc_id)) & 0xfff:03x}"
     return {

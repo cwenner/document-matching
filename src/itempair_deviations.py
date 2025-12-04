@@ -1,9 +1,10 @@
 # itempair_deviations.py
 
+import logging
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any, Type
-import logging
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

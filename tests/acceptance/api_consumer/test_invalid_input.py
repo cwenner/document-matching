@@ -3,17 +3,23 @@ BDD tests for invalid input handling - covering original feature scenarios
 """
 
 import json
+
 import pytest
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import given, parsers, scenario, then, when
+
+# Import existing step definitions and fixtures
+from tests.acceptance.steps.api_steps import (
+    check_status_code,
+    client,
+    context,
+    document_matching_service,
+)
+
+# Ensure imported step definitions are available for pytest-bdd
+__all__ = ["check_status_code", "client", "context", "document_matching_service"]
 
 # Import from centralized config module
 from tests.config import get_feature_path, get_test_data_path
-
-# Import existing step definitions and fixtures
-from tests.acceptance.steps.api_steps import client, context
-
-# Import the module to register all step definitions
-import tests.acceptance.steps.api_steps
 
 
 # Original 8 scenarios from the feature file
@@ -94,6 +100,8 @@ def test_handle_invalid_payload():
 
 
 # Step definitions for invalid input scenarios
+# Note: Local step definitions are required for pytest-bdd to discover them.
+# The imports from api_steps.py are kept for fixture sharing.
 @given("the document matching service is available")
 def document_matching_service_available(context):
     """Set up the document matching service for testing"""
@@ -247,6 +255,7 @@ def error_message_machine_readable(context):
         pytest.fail("Error response should be valid JSON for machine readability")
 
 
+# Step definition for status code checking (local definition needed for pytest-bdd)
 @then(parsers.parse("the response status code should be {status_code:d}"))
 def check_response_status_code(status_code, context):
     """Check that the response has the expected status code"""

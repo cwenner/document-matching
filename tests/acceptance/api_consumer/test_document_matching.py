@@ -1,21 +1,24 @@
 import json
+
 import pytest
-from pathlib import Path
-from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
+from pytest_bdd import given, parsers, scenario, then, when
 
 import app
 
-# Import from centralized config module
-from tests.config import get_feature_path, get_test_data_path
-
 # Import common step definitions
 from tests.acceptance.steps.api_steps import (
+    check_status_code,
     client,
     context,
     document_matching_service,
-    check_status_code,
 )
+
+# Ensure imported step definitions are available for pytest-bdd
+__all__ = ["check_status_code", "client", "context", "document_matching_service"]
+
+# Import from centralized config module
+from tests.config import get_feature_path, get_test_data_path
 
 
 @scenario(

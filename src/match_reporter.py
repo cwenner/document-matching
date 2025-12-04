@@ -1,16 +1,16 @@
 # match_reporter.py
 
 import hashlib
-from decimal import Decimal
 import logging
+from decimal import Decimal
 
+from document_utils import get_field
 from itempair_deviations import (
-    DocumentKind,
     DeviationSeverity,
+    DocumentKind,
     FieldDeviation,
     get_differing_amounts_severity,
 )
-from document_utils import get_field
 
 logger = logging.getLogger(__name__)
 

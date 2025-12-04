@@ -1,21 +1,21 @@
 import json
-from universaljsonencoder import UniversalJSONEncoder
-import requests
+import logging
 import os
 import sys
 import time
-import numpy as np
-import logging
-from typing import List, Dict, Set, Tuple, Optional, Any
-from collections import defaultdict
+from typing import Dict, List, Optional, Set
+
+import requests
+
+from universaljsonencoder import UniversalJSONEncoder
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format="%(message)s")
 
-from wfields import get_supplier_ids
 from document_utils import DocumentKind, get_field
-from try_client import DEFAULT_URL
 from matching_service import MatchingService
+from try_client import DEFAULT_URL
+from wfields import get_supplier_ids
 
 
 class MatchingEvaluator:
@@ -26,7 +26,7 @@ class MatchingEvaluator:
         max_tested: int = 100,
         skip_portion: float = 0.5,
         use_direct_calls: bool = False,
-        model_path: str = None,
+        model_path: Optional[str] = None,
         verbose: bool = False,
     ):
         """
@@ -222,9 +222,6 @@ class MatchingEvaluator:
             print(f"Results saved to {output_path}")
         except Exception as e:
             print(f"Error saving results: {e}", file=sys.stderr)
-        except Exception as e:
-            print(f"Error loading dataset: {e}", file=sys.stderr)
-            return False
 
     def update_document_pairings(
         self, document_id: str, document_kind: str, paired_ids: Dict
@@ -968,7 +965,7 @@ class MatchingEvaluator:
         print(f"Total documents: {total_documents}")
         print(f"First {skip_count} documents will only build history (not tested)")
         print(
-            f"Will test {test_count} documents (indices {test_start_idx}-{test_end_idx-1})"
+            f"Will test {test_count} documents (indices {test_start_idx}-{test_end_idx - 1})"
         )
 
         # First, build history without testing for the skip portion
@@ -980,7 +977,7 @@ class MatchingEvaluator:
 
             if self.verbose:
                 print(
-                    f"\nAdding document {i+1}/{skip_count} to history (not testing): {document_id}"
+                    f"\nAdding document {i + 1}/{skip_count} to history (not testing): {document_id}"
                 )
 
             # Record expected pairings from the target
@@ -1008,10 +1005,6 @@ class MatchingEvaluator:
             # )
 
             # Get matching candidates from history with pairing history included
-
-            if document["id"] != "000713" or document["kind"] != "purchase-order":
-                self.document_history.append(document)
-                continue
             candidates = self.get_matching_candidates(document)
 
             # Make prediction using the API
@@ -1058,7 +1051,7 @@ class MatchingEvaluator:
             if self.verbose:
                 try:
                     logging.debug(
-                        f"Document {i+1} evaluation:\n"
+                        f"Document {i + 1} evaluation:\n"
                         f"  invoice: Precision={document_result.get('invoice_precision', 1.0):.2f}, "
                         f"Recall={document_result.get('invoice_recall', 1.0):.2f}, "
                         f"Accuracy={document_result.get('invoice_accuracy', 1.0):.2f}\n"
@@ -1077,253 +1070,6 @@ class MatchingEvaluator:
         final_metrics = self.calculate_precision_recall()
         self.print_final_results(final_metrics)
         return True
-
-    def print_final_results(self, final_metrics):
-        """Print the final evaluation results.
-
-        Args:
-            final_metrics: Dictionary with final evaluation metrics
-        """
-        # Calculate overall document accuracy
-        avg_doc_accuracy = (
-            sum(self.document_accuracies) / len(self.document_accuracies)
-            if self.document_accuracies
-            else 0
-        )
-
-        # Print header
-        print("\n=== Final Evaluation Results ===")
-        print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
-
-        # Print per-document type metrics
-        for doc_type, metrics in final_metrics.items():
-            if doc_type == "overall":
-                continue
-
-            print(f"\n{doc_type.upper()}:")
-
-            # Format precision, recall, and F1 for display
-            precision = metrics["precision"]
-            recall = metrics["recall"]
-            f1 = metrics["f1_score"]
-            avg_accuracy = metrics["average_accuracy"]
-
-            precision_str = (
-                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
-            )
-            recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
-            f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-            accuracy_str = (
-                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-            )
-
-            print(f"  Precision: {precision_str}")
-            print(f"  Recall: {recall_str}")
-            print(f"  F1 Score: {f1_str}")
-            print(f"  Average Accuracy: {accuracy_str}")
-            print(f"  True Positives: {metrics['true_positives']}")
-            print(f"  True Negatives: {metrics['true_negatives']}")
-            print(f"  False Positives: {metrics['false_positives']}")
-            print(f"  False Negatives: {metrics['false_negatives']}")
-
-        # Print overall metrics
-        print("\nOVERALL:")
-
-        # Format for display
-        precision = final_metrics["overall"]["precision"]
-        recall = final_metrics["overall"]["recall"]
-        f1 = final_metrics["overall"]["f1_score"]
-        avg_accuracy = final_metrics["overall"]["average_accuracy"]
-
-        precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
-        recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
-        f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-        accuracy_str = (
-            f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-        )
-
-        print(f"  Precision: {precision_str}")
-        print(f"  Recall: {recall_str}")
-        print(f"  F1 Score: {f1_str}")
-        print(f"  Average Accuracy: {accuracy_str}")
-        print(
-            f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}"
-        )
-        print(
-            f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}"
-        )
-        print(
-            f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}"
-        )
-        print(
-            f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}"
-        )
-
-        # Save results to file
-        output_path = os.path.join(
-            os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
-        )
-
-        # Create results dictionary for saving
-        results = {
-            "overall_document_accuracy": float(avg_doc_accuracy),
-            "metrics": {
-                k: {kk: vv for kk, vv in v.items() if kk != "accuracies"}
-                for k, v in self.metrics.items()
-            },
-            "precision": final_metrics["overall"]["precision"],
-            "recall": final_metrics["overall"]["recall"],
-            "f1_score": final_metrics["overall"]["f1_score"],
-            "average_accuracy": final_metrics["overall"]["average_accuracy"],
-        }
-
-        try:
-            with open(output_path, "w") as f:
-                json.dump(results, f, cls=UniversalJSONEncoder, indent=4)
-            print(f"Results saved to {output_path}")
-        except Exception as e:
-            print(f"Error saving results: {e}", file=sys.stderr)
-
-    def update_document_pairings(
-        self, document_id: str, document_kind: str, paired_ids: Dict
-    ):
-        """
-        Update document pairing history with new matches.
-
-        Args:
-            document_id: ID of the document to update pairings for
-            document_kind: Kind of the document (invoice, purchase-order, delivery-receipt)
-            paired_ids: Dictionary with lists of paired IDs by document kind
-        """
-        if document_id not in self.document_pairings:
-            self.document_pairings[document_id] = {
-                "invoice": set(),
-                "delivery-receipt": set(),
-                "purchase-order": set(),
-            }
-
-        # Add all paired IDs to the document's pairing history
-        for kind, ids in paired_ids.items():
-            for paired_id in ids:
-                if paired_id not in self.document_pairings[document_id][kind]:
-                    self.document_pairings[document_id][kind].add(paired_id)
-
-                # Also update the reverse relationship
-                if paired_id not in self.document_pairings:
-                    self.document_pairings[paired_id] = {
-                        "invoice": set(),
-                        "delivery-receipt": set(),
-                        "purchase-order": set(),
-                    }
-                if document_id not in self.document_pairings[paired_id][document_kind]:
-                    self.document_pairings[paired_id][document_kind].add(document_id)
-        return True
-
-    def print_final_results(self, final_metrics):
-        """Print the final evaluation results.
-
-        Args:
-            final_metrics: Dictionary with final evaluation metrics
-        """
-        # Calculate overall document accuracy
-        avg_doc_accuracy = (
-            sum(self.document_accuracies) / len(self.document_accuracies)
-            if self.document_accuracies
-            else 0
-        )
-
-        # Print header
-        print("\n=== Final Evaluation Results ===")
-        print(f"\nOVERALL DOCUMENT ACCURACY: {avg_doc_accuracy:.4f}")
-
-        # Print per-document type metrics
-        for doc_type, metrics in final_metrics.items():
-            if doc_type == "overall":
-                continue
-
-            print(f"\n{doc_type.upper()}:")
-
-            # Format precision, recall, and F1 for display
-            precision = metrics["precision"]
-            recall = metrics["recall"]
-            f1 = metrics["f1_score"]
-            avg_accuracy = metrics["average_accuracy"]
-
-            precision_str = (
-                f"{precision:.4f}" if isinstance(precision, float) else "N/A"
-            )
-            recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
-            f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-            accuracy_str = (
-                f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-            )
-
-            print(f"  Precision: {precision_str}")
-            print(f"  Recall: {recall_str}")
-            print(f"  F1 Score: {f1_str}")
-            print(f"  Average Accuracy: {accuracy_str}")
-            print(f"  True Positives: {metrics['true_positives']}")
-            print(f"  True Negatives: {metrics['true_negatives']}")
-            print(f"  False Positives: {metrics['false_positives']}")
-            print(f"  False Negatives: {metrics['false_negatives']}")
-
-        # Print overall metrics
-        print("\nOVERALL:")
-
-        # Format for display
-        precision = final_metrics["overall"]["precision"]
-        recall = final_metrics["overall"]["recall"]
-        f1 = final_metrics["overall"]["f1_score"]
-        avg_accuracy = final_metrics["overall"]["average_accuracy"]
-
-        precision_str = f"{precision:.4f}" if isinstance(precision, float) else "N/A"
-        recall_str = f"{recall:.4f}" if isinstance(recall, float) else "N/A"
-        f1_str = f"{f1:.4f}" if isinstance(f1, float) else "N/A"
-        accuracy_str = (
-            f"{avg_accuracy:.4f}" if isinstance(avg_accuracy, float) else "N/A"
-        )
-
-        print(f"  Precision: {precision_str}")
-        print(f"  Recall: {recall_str}")
-        print(f"  F1 Score: {f1_str}")
-        print(f"  Average Accuracy: {accuracy_str}")
-        print(
-            f"  True Positives: {sum([m['true_positives'] for m in self.metrics.values()])}"
-        )
-        print(
-            f"  True Negatives: {sum([m['true_negatives'] for m in self.metrics.values()])}"
-        )
-        print(
-            f"  False Positives: {sum([m['false_positives'] for m in self.metrics.values()])}"
-        )
-        print(
-            f"  False Negatives: {sum([m['false_negatives'] for m in self.metrics.values()])}"
-        )
-
-        # Save results to file
-        output_path = os.path.join(
-            os.path.dirname(self.dataset_path), "matching_evaluation_results.json"
-        )
-
-        # Create results dictionary for saving
-        results = {
-            "overall_document_accuracy": float(avg_doc_accuracy),
-            "metrics": {
-                k: {kk: vv for kk, vv in v.items() if kk != "accuracies"}
-                for k, v in self.metrics.items()
-            },
-            "precision": final_metrics["overall"]["precision"],
-            "recall": final_metrics["overall"]["recall"],
-            "f1_score": final_metrics["overall"]["f1_score"],
-            "average_accuracy": final_metrics["overall"]["average_accuracy"],
-        }
-
-        try:
-            with open(output_path, "w") as f:
-                json.dump(results, f, cls=UniversalJSONEncoder, indent=4)
-            print(f"Results saved to {output_path}")
-        except Exception as e:
-            print(f"Error saving results: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":

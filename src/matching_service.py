@@ -1,12 +1,10 @@
-import json
-import sys
-import os
 import logging
-from typing import Dict, List, Optional, Tuple, Any
+import os
+from typing import Dict, List, Optional, Tuple
 
 from docpairing import DocumentPairingPredictor
 from match_pipeline import run_matching_pipeline
-from match_reporter import generate_no_match_report, DeviationSeverity
+from match_reporter import DeviationSeverity
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -185,9 +183,7 @@ class MatchingService:
         site = document.get("site", "unknown-site")
 
         # Generate a fake partner document ID and report ID
-        matched_id = (
-            f"matched-doc-{hash(str(doc_id)+'-match') & 0xfff:03x}"  # Dummy matched ID
-        )
+        matched_id = f"matched-doc-{hash(str(doc_id) + '-match') & 0xfff:03x}"  # Dummy matched ID
         report_id = f"r-match-{hash(str(doc_id)) & 0xfff:03x}"
         partner_kind = "purchase-order" if doc_kind == "invoice" else "invoice"
 
@@ -266,7 +262,7 @@ class MatchingService:
         document: Dict,
         candidate_documents: List[Dict],
         trace_id: str = "<trace_id missing>",
-    ) -> Tuple[Dict, Dict]:
+    ) -> Tuple[Optional[Dict], Dict]:
         """
         Process a document against candidate documents and return a matching report.
 
