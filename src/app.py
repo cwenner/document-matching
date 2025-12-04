@@ -179,7 +179,7 @@ def _dummy_match_report(document):
         ],
         "deviations": [  # Dummy deviation
             {
-                "code": "amounts-differ",
+                "code": "AMOUNTS_DIFFER",
                 "severity": DeviationSeverity.HIGH.value,
                 "message": "Incl VAT amount differs by 42.75 (dummy)",
                 "field_names": [
@@ -201,7 +201,7 @@ def _dummy_match_report(document):
                         "values": [9, 11],
                         "severity": DeviationSeverity.MEDIUM.value,
                         "message": "Quantity differs by 2 (dummy)",
-                        "code": "quantity-differs",  # Use consistent code
+                        "code": "QUANTITIES_DIFFER",
                     }
                 ],
             }

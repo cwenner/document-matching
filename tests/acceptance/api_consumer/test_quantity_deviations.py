@@ -172,7 +172,7 @@ def deviation_severity_reflects_percentage(context):
     for itempair in itempairs:
         itempair_deviations = itempair.get("deviations", [])
         for dev in itempair_deviations:
-            if dev.get("code") == "quantity-differs":
+            if dev.get("code") == "QUANTITIES_DIFFER":
                 quantities_differ_deviation = dev
                 break
         if quantities_differ_deviation:
@@ -180,7 +180,7 @@ def deviation_severity_reflects_percentage(context):
 
     assert (
         quantities_differ_deviation is not None
-    ), "Should have quantity-differs deviation"
+    ), "Should have QUANTITIES_DIFFER deviation"
 
     # Calculate expected percentage difference: (10 - 8) / 10 = 0.2 = 20%
     primary_quantity = 10

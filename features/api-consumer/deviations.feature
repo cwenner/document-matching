@@ -15,7 +15,7 @@ Feature: Document Matching - Detailed Deviation Information
     Then the response status code should be 200
     And the response body should contain a match report
     And the match report should contain "match" in labels
-    And the match report should include deviation with code "total-amounts-differ"
+    And the match report should include deviation with code "AMOUNTS_DIFFER"
     And the deviation severity should reflect the percentage difference
 
   @deviations @quantity_deviation @implemented
@@ -25,7 +25,7 @@ Feature: Document Matching - Detailed Deviation Information
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain deviation with code "quantity-differs"
+    And the match report should contain deviation with code "QUANTITIES_DIFFER"
     And the deviation severity should reflect the percentage difference
 
   @deviations @partial_delivery
@@ -35,7 +35,7 @@ Feature: Document Matching - Detailed Deviation Information
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain deviation with code "partial-delivery"
+    And the match report should contain deviation with code "PARTIAL_DELIVERY"
     And the deviation severity should be "info"
 
   @deviations @currency_mismatch
@@ -45,7 +45,7 @@ Feature: Document Matching - Detailed Deviation Information
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain deviation with code "currencies-differ"
+    And the match report should contain deviation with code "CURRENCIES_DIFFER"
     And the deviation severity should be "high"
 
   @deviations @description_mismatch
@@ -55,7 +55,7 @@ Feature: Document Matching - Detailed Deviation Information
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain deviation with code "descriptions-differ"
+    And the match report should contain deviation with code "DESCRIPTIONS_DIFFER"
     And the deviation severity should reflect the textual similarity
 
   @deviations @comprehensive
@@ -80,7 +80,7 @@ Feature: Document Matching - Detailed Deviation Information
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain deviation with code "amounts-differ"
+    And the match report should contain deviation with code "AMOUNTS_DIFFER"
     And the deviation should contain a "field_names" array with field path strings
     And the deviation should contain a "values" array with string representations of actual values
     And the "field_names" array length should equal the number of documents in the match
