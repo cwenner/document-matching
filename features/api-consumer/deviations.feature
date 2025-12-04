@@ -176,15 +176,88 @@ Feature: Document Matching - Detailed Deviation Information
     And the match report should contain deviation with code "CURRENCIES_DIFFER"
     And the deviation severity should be "high"
 
+  # ============================================================================
+  # DESCRIPTIONS_DIFFER (#27) - Similarity-based severity
+  # Thresholds: no-severity (sim>=0.98 OR casing/whitespace only), info (sim>=0.90),
+  #             low (sim>=0.75), medium (sim>=0.50), high (sim<0.50 OR one empty)
+  # ============================================================================
+
   @deviations @description_mismatch
   Scenario: Match with Different Item Descriptions
-    Given I have a primary invoice with item description "Office Supplies"
-    And I have a candidate purchase order with item description "Office Materials"
+    Given I have a primary invoice with item and article number "OFF-001" and description "Office Supplies"
+    And I have a candidate purchase order with item and article number "OFF-001" and description "Office Materials"
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should contain deviation with code "DESCRIPTIONS_DIFFER"
+    And the match report should contain item deviation with code "DESCRIPTIONS_DIFFER"
     And the deviation severity should reflect the textual similarity
+
+  @deviations @description @no_severity @implemented
+  Scenario: Description deviation - no-severity for nearly identical descriptions
+    Given I have a primary invoice with item and article number "BOLT-10" and description "10mm galvanized bolt"
+    And I have a candidate purchase order with item and article number "BOLT-10" and description "10mm galvanised bolt"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the DESCRIPTIONS_DIFFER item deviation severity should be "no-severity"
+
+  @deviations @description @no_severity @casing @implemented
+  Scenario: Description deviation - no-severity for casing differences only
+    Given I have a primary invoice with item and article number "WIDGET-A" and description "Widget Type A"
+    And I have a candidate purchase order with item and article number "WIDGET-A" and description "widget type a"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And there should be no DESCRIPTIONS_DIFFER deviation
+
+  @deviations @description @no_severity @whitespace @implemented
+  Scenario: Description deviation - no-severity for whitespace differences only
+    Given I have a primary invoice with item and article number "ABC-123" and description "ABC 123"
+    And I have a candidate purchase order with item and article number "ABC-123" and description "ABC  123"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And there should be no DESCRIPTIONS_DIFFER deviation
+
+  @deviations @description @info @implemented
+  Scenario: Description deviation - info severity for reordered terms
+    Given I have a primary invoice with item and article number "SCREW-M8-10" and description "M8 hex screw 10mm"
+    And I have a candidate purchase order with item and article number "SCREW-M8-10" and description "Hex screw M8x10"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the DESCRIPTIONS_DIFFER item deviation severity should be "info"
+
+  @deviations @description @low @implemented
+  Scenario: Description deviation - low severity for wording differences
+    Given I have a primary invoice with item and article number "BOLT-M10" and description "Stainless steel bolt M10"
+    And I have a candidate purchase order with item and article number "BOLT-M10" and description "Steel bolt M10 grade 8"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the DESCRIPTIONS_DIFFER item deviation severity should be "low"
+
+  @deviations @description @medium @implemented
+  Scenario: Description deviation - medium severity for overlapping topic
+    Given I have a primary invoice with item and article number "FASTENER-001" and description "Steel fastener set industrial grade"
+    And I have a candidate purchase order with item and article number "FASTENER-001" and description "Metal fastener hardware kit"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the DESCRIPTIONS_DIFFER item deviation severity should be "medium"
+
+  # Note: The empty description case (one empty, other non-empty → HIGH severity)
+  # cannot be tested end-to-end because items won't pair when one description is empty.
+  # This edge case is tested at the unit level in check_description_deviation().
+
+  @deviations @description @both_empty @implemented
+  Scenario: Description deviation - no deviation when both descriptions are empty
+    Given I have a primary invoice with item and article number "EMPTY-001" and description ""
+    And I have a candidate purchase order with item and article number "EMPTY-001" and description ""
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And there should be no DESCRIPTIONS_DIFFER deviation
 
   @deviations @comprehensive
   Scenario: Comprehensive Deviation Reporting
