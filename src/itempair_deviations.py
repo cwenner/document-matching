@@ -538,20 +538,31 @@ def create_item_unmatched_deviation(
 ) -> FieldDeviation:
     """
     Create ITEM_UNMATCHED deviation with severity based on line amount.
-    """
-    amount_field_map = {
-        DocumentKind.INVOICE: "debit",
-        DocumentKind.PURCHASE_ORDER: "unitAmount",
-        DocumentKind.DELIVERY_RECEIPT: "amount",
-    }
 
+    For PO items, line amount is calculated as quantityToInvoice * unitAmount
+    to match the AMOUNTS_DIFFER comparison logic.
+    """
     raw_item = item_data.get("raw_item", {})
     fields = raw_item.get("fields", [])
-    field_name = amount_field_map.get(document_kind)
 
     line_amount = None
-    if fields and field_name:
-        line_amount = getkv_value(fields, field_name)
+    if fields:
+        if document_kind == DocumentKind.PURCHASE_ORDER:
+            # For PO items, calculate line amount = qty * unit price
+            qty_val = getkv_value(fields, "quantityToInvoice")
+            unit_val = getkv_value(fields, "unitAmount")
+            if qty_val is not None and unit_val is not None:
+                try:
+                    line_amount = Decimal(str(qty_val)) * Decimal(str(unit_val))
+                except Exception:
+                    logger.warning(
+                        f"Could not calculate PO line amount: qty={qty_val}, unit={unit_val}"
+                    )
+                    line_amount = None
+        elif document_kind == DocumentKind.INVOICE:
+            line_amount = getkv_value(fields, "debit")
+        elif document_kind == DocumentKind.DELIVERY_RECEIPT:
+            line_amount = getkv_value(fields, "amount")
 
     severity = get_unmatched_item_severity(line_amount)
 
