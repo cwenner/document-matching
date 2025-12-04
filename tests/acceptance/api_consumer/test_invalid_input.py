@@ -99,12 +99,8 @@ def test_handle_invalid_payload():
     pass
 
 
-# Step definitions for invalid input scenarios
-@given("the document matching service is available")
-def document_matching_service_available(context):
-    """Set up the document matching service for testing"""
-    context["base_url"] = "http://localhost:8000"
-
+# Note: document_matching_service step is imported from api_steps.py
+# Local step definitions only for scenarios specific to invalid input testing
 
 @given("I have no primary document")
 def no_primary_document(context):
@@ -253,11 +249,7 @@ def error_message_machine_readable(context):
         pytest.fail("Error response should be valid JSON for machine readability")
 
 
-@then(parsers.parse("the response status code should be {status_code:d}"))
-def check_response_status_code(status_code, context):
-    """Check that the response has the expected status code"""
-    assert context["response"].status_code == status_code
-
+# Note: check_status_code step is imported from api_steps.py
 
 # Additional step definitions for remaining scenarios
 @given("I have a valid primary document")
