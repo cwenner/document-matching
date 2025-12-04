@@ -15,7 +15,7 @@ from tests.config import get_feature_path
 
 # Background
 @given(parsers.parse('the matching service is expected to be running at "{base_url}"'))
-def matching_service_base_url(context, base_url):  # noqa: F811
+def matching_service_base_url(context, base_url):
     # Use dictionary access as context is a dict in the test fixture
     context["base_url"] = base_url
 
@@ -45,7 +45,7 @@ def client():
 
 # --- Common When Step ---
 @when(parsers.parse('I send a GET request to "{path}"'))
-def send_get_request(context, client, path):  # noqa: F811
+def send_get_request(context, client, path):
     # Use dictionary access as context is a dict in the test fixture
     # For testing, we don't need the base_url as the TestClient handles the path directly
     context["response"] = client.get(path)
@@ -55,7 +55,7 @@ def send_get_request(context, client, path):  # noqa: F811
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
-def response_status_code(context, status_code):  # noqa: F811
+def response_status_code(context, status_code):
     assert context["response"].status_code == status_code
 
 
@@ -64,7 +64,7 @@ def response_status_code(context, status_code):  # noqa: F811
         'the JSON response should contain a field "{field_name}" with value "{field_value}"'
     )
 )
-def json_response_contains_field_value(context, field_name, field_value):  # noqa: F811
+def json_response_contains_field_value(context, field_name, field_value):
     response_json = context["response"].json()
     assert (
         field_name in response_json

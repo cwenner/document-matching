@@ -47,7 +47,7 @@ def test_po_match():
 
 
 @pytest.fixture
-def client():  # noqa: F811
+def client():
     """
     Test client for the FastAPI app
     """
@@ -55,13 +55,13 @@ def client():  # noqa: F811
 
 
 @pytest.fixture
-def context():  # noqa: F811
+def context():
     """Shared context between steps"""
     return {}
 
 
 @given("the document matching service is available")
-def document_matching_service(context):  # noqa: F811
+def document_matching_service(context):
     """
     Set up the document matching service for testing
     """
@@ -145,7 +145,7 @@ def send_post_with_primary_and_candidates_alt(endpoint, client, context):
 
 
 @then(parsers.parse("the response status code should be {status_code:d}"))
-def check_status_code(status_code, context):  # noqa: F811
+def check_status_code(status_code, context):
     """
     Check that the response has the expected status code
     """

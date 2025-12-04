@@ -52,7 +52,11 @@ def run_matching_pipeline(
 
     # --- Record History (Crucial for Predictor State) ---
     try:
-        id2doc = {doc["id"]: doc for doc in historical_documents if "id" in doc}
+        id2doc = {
+            doc["id"]: doc
+            for doc in historical_documents
+            if isinstance(doc, dict) and "id" in doc
+        }
         # Add the input document itself in case it's needed for lookups (e.g., transitive)
         # Note: predictor.record_document handles duplicates gracefully by updating
         if "id" in input_document:

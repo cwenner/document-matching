@@ -357,7 +357,7 @@ class MatchingEvaluator:
             # print(
             #     f"[DIRECT] Predicting for document {document_id} with {len(candidates)} candidates"
             # )
-            # start_time = time.time()
+            start_time = time.time()
 
             try:
                 # Generate a trace_id for logging
@@ -369,6 +369,48 @@ class MatchingEvaluator:
                 )
                 return report
 
+            #     elapsed = time.time() - start_time
+            #     # Comment out timing info to reduce output
+            # # print(f"Direct method call completed in {elapsed:.2f} seconds")
+
+            #     # Extract paired document IDs from the report
+            #     if report:
+            #         # Extract paired document IDs from the headers
+            #         paired_ids = {
+            #             "invoice": [],
+            #             "delivery-receipt": [],
+            #             "purchase-order": [],
+            #         }
+
+            #         # Check if this is a match (no match will not have document2 headers)
+            #         has_match = False
+            #         for header in report.get("headers", []):
+            #             if header.get("name") == "document2.id" and header.get("value"):
+            #                 has_match = True
+            #             if header.get("name") == "document2.kind" and header.get(
+            #                 "value"
+            #             ):
+            #                 matched_kind = header.get("value")
+
+            #         # If there's a match, extract the document2 ID
+            #         if has_match:
+            #             for header in report.get("headers", []):
+            #                 if header.get("name") == "document2.id":
+            #                     matched_id = header.get("value")
+            #                     if matched_id:
+            #                         # Find the kind of the matched document
+            #                         for header in report.get("headers", []):
+            #                             if header.get("name") == "document2.kind":
+            #                                 kind = header.get("value")
+            #                                 if kind:
+            #                                     paired_ids[kind].append(matched_id)
+
+            #         return paired_ids
+            # else:
+            #     print(
+            #         f"Error: No report returned from direct call", file=sys.stderr
+            #     )
+            #     return {}
             except Exception as e:
                 print(f"Error making direct prediction: {e}", file=sys.stderr)
                 return {}
@@ -379,9 +421,9 @@ class MatchingEvaluator:
                 "candidate-documents": candidates,
             }
 
-            print(
-                f"[HTTP] Predicting for document {document_id} with {len(candidates)} candidates"
-            )
+            # print(
+            #     f"[HTTP] Predicting for document {document_id} with {len(candidates)} candidates"
+            # )
 
             start_time = time.time()
 
@@ -395,7 +437,7 @@ class MatchingEvaluator:
                 )
 
                 elapsed = time.time() - start_time
-                print(f"API request completed in {elapsed:.2f} seconds")
+                # print(f"API request completed in {elapsed:.2f} seconds")
 
                 if response.ok:
                     return response.json()

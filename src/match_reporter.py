@@ -3,7 +3,6 @@
 import hashlib
 import logging
 from decimal import Decimal
-from typing import Optional
 
 from document_utils import get_field
 from itempair_deviations import (
@@ -30,7 +29,7 @@ def _calculate_overall_severity(
 
 
 def collect_document_deviations(
-    doc1: Optional[dict], doc2: Optional[dict]
+    doc1: dict | None, doc2: dict | None
 ) -> list[FieldDeviation]:
     deviations = []
     if not doc1 or not doc2:
@@ -38,8 +37,8 @@ def collect_document_deviations(
         return deviations
 
     try:
-        kind1 = DocumentKind(get_field(doc1, "kind"))  # noqa: F841
-        kind2 = DocumentKind(get_field(doc2, "kind"))  # noqa: F841
+        kind1 = DocumentKind(get_field(doc1, "kind"))
+        kind2 = DocumentKind(get_field(doc2, "kind"))
     except ValueError as e:
         logger.error(f"Invalid document kind for document deviation check: {e}")
         deviations.append(

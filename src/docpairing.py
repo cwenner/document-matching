@@ -597,29 +597,16 @@ class DocumentPairingPredictor:
         """Extract date from document"""
         try:
             if "created_at" in document:
-                date_str = document["created_at"]
-                if date_str:
-                    parsed_date = dateparser.parse(date_str)
-                    if parsed_date is not None:
-                        return parsed_date
-
-            date_field = {
-                "invoice": "creationTime",
-                "delivery-receipt": "date",
-                "purchase-order": "creationTime",
-            }.get(document["kind"])
-
-            if date_field:
-                date_str = self._get_header(document, date_field)
-                if date_str:
-                    parsed_date = dateparser.parse(date_str)
-                    if parsed_date is not None:
-                        return parsed_date
-        except Exception:
-            pass
-
-        # Default to current date if parsing fails
-        return datetime.datetime.now()
+                return dateparser.parse(document["created_at"])
+            if document["kind"] == "invoice":
+                return dateparser.parse(self._get_header(document, "creationTime"))
+            elif document["kind"] == "delivery-receipt":
+                return dateparser.parse(self._get_header(document, "date"))
+            elif document["kind"] == "purchase-order":
+                return dateparser.parse(self._get_header(document, "creationTime"))
+        except:
+            # Default to current date if parsing fails
+            return datetime.datetime.now()
 
     def _get_inc_vat_amount(self, document):
         """Get inclusive VAT amount from document"""

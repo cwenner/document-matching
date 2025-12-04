@@ -2,8 +2,8 @@
 
 import logging
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union
+from enum import StrEnum
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -15,13 +15,13 @@ AMOUNT_DEVIATION_MEDIUM_SEVERITY_MAX_ABS_DIFF: float = 1000.0
 AMOUNT_DEVIATION_MEDIUM_SEVERITY_MAX_REL_DIFF: float = 0.10
 
 
-class DocumentKind(str, Enum):
+class DocumentKind(StrEnum):
     INVOICE = "invoice"
     PURCHASE_ORDER = "purchase-order"
     DELIVERY_RECEIPT = "delivery-receipt"
 
 
-class DeviationSeverity(str, Enum):
+class DeviationSeverity(StrEnum):
     NO_SEVERITY = "no-severity"
     INFO = "info"
     LOW = "low"
@@ -64,7 +64,7 @@ class FieldComparison(BaseModel):
     severity: DeviationSeverity = DeviationSeverity.NO_SEVERITY
     is_header_field: bool = False
     is_item_field: bool = False
-    field_names: Dict[DocumentKind, Optional[str]] = Field(default_factory=dict)
+    field_names: dict[DocumentKind, str | None] = Field(default_factory=dict)
     field_encoded_type: Type = str
 
 
@@ -72,7 +72,7 @@ class FieldDeviation(BaseModel):
     code: str = ""
     message: str = ""
     severity: DeviationSeverity = DeviationSeverity.NO_SEVERITY
-    field_names: List[Optional[str]] = []
+    field_names: list[str | None] = []
     field_values: list[Any] = []
 
 
@@ -173,7 +173,7 @@ FIELD_COMPARISONS.append(
 )
 
 
-def getkv_value(kvs: Optional[List[dict]], name: str) -> Optional[Any]:
+def getkv_value(kvs: list[dict] | None, name: str) -> Any | None:
     if not isinstance(kvs, list):
         return None
     for kv in kvs:
@@ -184,9 +184,9 @@ def getkv_value(kvs: Optional[List[dict]], name: str) -> Optional[Any]:
 
 def check_itempair_comparison(
     comparison: FieldComparison,
-    document_kinds: List[DocumentKind],
-    document_item_fields: List[Optional[List[dict]]],
-) -> Optional[FieldDeviation]:
+    document_kinds: list[DocumentKind],
+    document_item_fields: list[list[dict] | None],
+) -> FieldDeviation | None:
     values = []
     field_names_used = []
 
@@ -200,7 +200,6 @@ def check_itempair_comparison(
             continue
 
         value = None
-        raw_value = None
         try:
             if field_name_config == "!quantityToInvoice*unitAmount":
                 if document_kind != DocumentKind.PURCHASE_ORDER:
@@ -281,9 +280,9 @@ def check_itempair_comparison(
 
 
 def collect_itempair_deviations(
-    document_kinds: List[DocumentKind],
-    document_item_fields: List[Optional[List[dict]]],
-) -> List[FieldDeviation]:
+    document_kinds: list[DocumentKind],
+    document_item_fields: list[list[dict] | None],
+) -> list[FieldDeviation]:
     deviations = []
     if len(document_kinds) != len(document_item_fields):
         logger.error(
