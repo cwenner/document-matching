@@ -10,14 +10,11 @@ readme = "README.md"
 authors = [
     { name = "Omnimodular Team", email = "team@omnimodular.com" }
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
@@ -58,7 +55,7 @@ packages = ["src"]
 
 [tool.black]
 line-length = 88
-target-version = ['py39', 'py310', 'py311', 'py312']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -81,7 +78,7 @@ known_first_party = ["src"]
 skip_gitignore = true
 
 [tool.pyright]
-pythonVersion = "3.9"
+pythonVersion = "3.12"
 typeCheckingMode = "standard"
 pythonPlatform = "All"
 venvPath = "."
