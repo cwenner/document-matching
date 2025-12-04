@@ -323,7 +323,7 @@ FIELD_COMPARISONS.append(
     )
 )
 
-# @TODO add thresholds for unit amounts if desired (currently uses MEDium default)
+# Unit price comparison - uses purchaseReceiptDataUnitAmount for Invoice (per wfields.py)
 FIELD_COMPARISONS.append(
     FieldComparison(
         code="PRICES_PER_UNIT_DIFFER",
@@ -331,8 +331,7 @@ FIELD_COMPARISONS.append(
         severity=DeviationSeverity.MEDIUM,
         is_item_field=True,
         field_names={
-            # @TODO Confirm correct Invoice unit price field. Using 'debit' might be incorrect if it's total.
-            DocumentKind.INVOICE: "debit",
+            DocumentKind.INVOICE: "purchaseReceiptDataUnitAmount",
             DocumentKind.PURCHASE_ORDER: "unitAmount",
             DocumentKind.DELIVERY_RECEIPT: "unitAmount",
         },
