@@ -1,71 +1,98 @@
 # Document-Matcher
 
-Responsible for producing matching reports given documents and candidates to match against.
+A document matching service that compares documents (invoices, purchase orders, delivery receipts) to find matches and generate matching reports. The system uses machine learning models and rule-based matching to identify document pairs and analyze deviations.
 
-## Serving test
+## Table of Contents
 
-Start server:
+- [Project Overview](#project-overview)
+- [Repository Structure](#repository-structure)
+- [Quick Start](#quick-start)
+- [Development](#development)
+- [Testing](#testing)
+- [API Documentation](#api-documentation)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+
+## Project Overview
+
+The Document-Matcher service provides:
+- Document similarity prediction using ML models
+- Rule-based matching for document pairs
+- Deviation analysis between matched documents
+- RESTful API for document matching requests
+- Comprehensive test suite with BDD scenarios
+
+## Repository Structure
 
 ```
-source .venv/bin/activate
+document-matching/
+├── src/                    # Core source code
+│   ├── app.py             # FastAPI application
+│   ├── matching_service.py # Core matching service
+│   ├── docpairing.py      # ML model wrapper
+│   └── match_pipeline.py  # Matching orchestration
+├── tests/                  # Test suite
+│   ├── acceptance/        # BDD step definitions
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   └── api/               # API tests
+├── features/              # BDD feature files
+│   ├── api-consumer/      # API usage scenarios
+│   ├── developer/         # Development support features
+│   ├── evaluation/        # Performance evaluation features
+│   └── operational/       # Operational features
+├── data/                  # ML models and test data
+│   ├── models/            # Trained ML models
+│   └── converted-shared-data/ # Test datasets
+├── docs/                  # API documentation
+├── CONTRIBUTING.md        # Contribution guidelines
+├── noxfile.py            # Test automation config
+└── pytest.ini            # Test configuration
+```
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.8+
+- Virtual environment
+
+### Setup
+
+1. Create and activate virtual environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+pip install -r requirements-dev.txt  # For development dependencies
+```
+
+3. Download ML models:
+```bash
+nox -s download_models
+```
+
+### Running the Service
+
+Start the API server:
+```bash
 PYTHONPATH=src uvicorn app:app
 ```
 
-Send a document at it:
-
-```
-source .venv/bin/activate
+Test the service:
+```bash
 PYTHONPATH=src python -m try_client
 ```
 
-## Evaluation
+## Development
 
-The evaluate_matching.py script can run document matching evaluation either by:
-1. Direct function calls (default, faster) - doesn't require running a server
-2. API requests to a running server
-
-### Using direct function calls (recommended)
-
-```
-source .venv/bin/activate
-PYTHONPATH=src python -m evaluate_matching --dataset ../popoc/data/pairing_sequential.json --max-tested 100 --skip-portion 0.5
-```
-
-### Using API requests (requires running server)
-
-```
-source .venv/bin/activate
-PYTHONPATH=src python -m evaluate_matching --dataset ../popoc/data/pairing_sequential.json --max-tested 100 --skip-portion 0.5 --use-api
-```
-
-### Parameters
-
-- `--dataset PATH`: Path to the pairing_sequential.json dataset file
-- `--max-tested N`: Maximum number of documents to test (default: 200)
-- `--skip-portion X`: Portion of documents to use for building history without testing (0.0-1.0) (default: 0.5)
-- `--use-api`: Use API calls instead of direct function calls
-- `--api-url URL`: URL of the matching service endpoint (default: http://localhost:8000/)
-- `--model-path PATH`: Path to the document pairing model file (only used with direct calls)
-
-### Evaluation Process
-
-The evaluation script:
-1. Loads documents from the dataset
-2. Processes documents sequentially to mimic real-world document flow
-3. Uses the first portion of documents (as per --skip-portion) to build history without testing
-4. Tests the next batch of documents (up to --max-tested)
-5. For each test document:
-   - Gets matching candidates from history based on overlapping supplier IDs
-   - Makes predictions using the matching pipeline
-   - Evaluates predictions against expected matches
-6. Calculates precision and recall metrics for the entire test set
-
-## Testing
+### Running Tests
 
 ```bash
-# Activate virtual environment
-source .venv/bin/activate
-
 # Run all tests and linting
 nox
 
@@ -74,11 +101,18 @@ nox
 export DOCUMENT_PAIRING_MODEL_URL="<model-url>"
 nox -s download_models
 
-# Run just tests
+# Run only tests
 nox -s test
 
-# Run just linting
+# Run only linting (black formatting check)
 nox -s lint
+
+# Run specific test categories using markers
+pytest -m api              # API tests only
+pytest -m smoke            # Smoke tests
+pytest -m core_matching    # Core matching functionality
+pytest -m implemented      # Only implemented features
+pytest -m "not wip"        # Skip work-in-progress tests
 ```
 
 ## Model Download
@@ -90,3 +124,121 @@ The document matching service requires a pre-trained SVM model. To download the 
 3. Run: `nox -s download_models`
 
 Note: In CI/CD environments, the model is downloaded during the Docker build process.
+
+### Available Test Markers
+
+The project uses pytest markers to categorize tests:
+- `api`, `health`, `smoke` - Test types
+- `model`, `core_matching` - Feature areas
+- `deviations`, `amount_deviation`, `quantity_deviation` - Deviation types
+- `story-1.1`, `story-1.2`, etc. - User story tracking
+- `implemented`, `wip`, `not_implemented` - Implementation status
+
+See `pytest.ini` for the complete list.
+
+### Code Formatting
+
+Format code using black:
+```bash
+black src/ tests/
+```
+
+## Testing
+
+### BDD Tests
+
+The project uses Behavior-Driven Development with Gherkin feature files organized by user perspective:
+
+- **api-consumer/** - API usage scenarios
+- **developer/** - Development and debugging features
+- **evaluation/** - Performance and accuracy evaluation
+- **operational/** - Health checks and operational features
+
+### Running Evaluations
+
+Evaluate matching performance using the evaluation script:
+
+#### Direct function calls (recommended):
+```bash
+PYTHONPATH=src python -m evaluate_matching \
+    --dataset ../popoc/data/pairing_sequential.json \
+    --max-tested 100 \
+    --skip-portion 0.5
+```
+
+#### Using API requests (requires running server):
+```bash
+PYTHONPATH=src python -m evaluate_matching \
+    --dataset ../popoc/data/pairing_sequential.json \
+    --max-tested 100 \
+    --skip-portion 0.5 \
+    --use-api
+```
+
+#### Evaluation Parameters:
+- `--dataset PATH`: Path to the pairing_sequential.json dataset
+- `--max-tested N`: Maximum number of documents to test (default: 200)
+- `--skip-portion X`: Portion of documents for history building (0.0-1.0, default: 0.5)
+- `--use-api`: Use API calls instead of direct function calls
+- `--api-url URL`: API endpoint URL (default: http://localhost:8000/)
+- `--model-path PATH`: Custom model path (direct calls only)
+
+## API Documentation
+
+API specifications are available in the `docs/` directory:
+- API endpoint descriptions
+- Sample inputs for different document types
+- Match report output format
+- Field descriptions and schemas
+
+### Key Endpoints
+
+- `POST /` - Submit documents for matching
+- `GET /health` - Service health check
+
+## Configuration
+
+### Environment Variables
+
+- `DISABLE_MODELS=true` - Disable ML model loading (uses dummy logic)
+- `DOCPAIR_MODEL_PATH` - Custom path to ML model file
+- `PYTHONPATH=src` - Required for running the application
+
+### Whitelisted Sites
+
+The following sites use the real ML pipeline:
+- badger-logistics
+- falcon-logistics
+- christopher-test
+- test-site
+
+Other sites will use dummy matching logic.
+
+## Key Components
+
+### Core Services
+
+- **FastAPI App** (`src/app.py`): Main API server with validation and error handling
+- **MatchingService** (`src/matching_service.py`): Document processing with lazy initialization
+- **DocumentPairingPredictor** (`src/docpairing.py`): ML model wrapper for similarity prediction
+- **Match Pipeline** (`src/match_pipeline.py`): Orchestrates the matching process
+
+### Processing Flow
+
+1. Documents arrive via POST to `/` endpoint with candidate documents
+2. MatchingService processes using either:
+   - Real ML pipeline for whitelisted sites
+   - Dummy logic for non-whitelisted sites
+3. Results are formatted as v3 match reports with deviations and item pairs
+
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Code style and standards
+- Testing requirements
+- Pull request process
+- Development workflow
+
+## License
+
+[Add license information here]
