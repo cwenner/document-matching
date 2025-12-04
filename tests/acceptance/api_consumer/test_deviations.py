@@ -194,7 +194,9 @@ def deviation_severity_reflects_percentage(context):
 
 
 @then(
-    parsers.parse('the AMOUNTS_DIFFER deviation severity should be "{expected_severity}"')
+    parsers.parse(
+        'the AMOUNTS_DIFFER deviation severity should be "{expected_severity}"'
+    )
 )
 def check_amounts_differ_severity(context, expected_severity):
     """Check that the AMOUNTS_DIFFER deviation has the expected severity."""
@@ -259,9 +261,7 @@ def check_item_deviation_severity(context, deviation_code, expected_severity):
 
 
 @then(
-    parsers.parse(
-        'the match report should contain item with match_type "{match_type}"'
-    )
+    parsers.parse('the match report should contain item with match_type "{match_type}"')
 )
 def match_report_contains_item_match_type(context, match_type):
     """Check that the match report contains an item with specific match_type."""

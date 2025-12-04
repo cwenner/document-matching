@@ -77,10 +77,36 @@ class FieldDeviation(BaseModel):
     field_values: list[Any] = []
 
 
+class DiffMetricsResult:
+    """Result of diff metrics calculation."""
+
+    def __init__(
+        self,
+        success: bool,
+        amount1: Decimal | None = None,
+        amount2: Decimal | None = None,
+        abs_diff: Decimal | None = None,
+        rel_diff: Decimal | None = None,
+        conversion_error: bool = False,
+    ):
+        self.success = success
+        self.amount1 = amount1
+        self.amount2 = amount2
+        self.abs_diff = abs_diff
+        self.rel_diff = rel_diff
+        self.conversion_error = conversion_error
+
+
 def _calculate_diff_metrics(
     amount1: Decimal | float, amount2: Decimal | float
-) -> tuple[Decimal, Decimal, Decimal, Decimal] | None:
-    """Calculate absolute and relative difference metrics."""
+) -> DiffMetricsResult:
+    """Calculate absolute and relative difference metrics.
+
+    Returns DiffMetricsResult with:
+    - success=False, conversion_error=True if amounts cannot be converted
+    - success=False, conversion_error=False if amounts are equal (no diff)
+    - success=True with metrics if amounts differ
+    """
     try:
         d_amount1 = Decimal(str(amount1))
         d_amount2 = Decimal(str(amount2))
@@ -88,16 +114,22 @@ def _calculate_diff_metrics(
         logger.warning(
             f"Could not convert amounts '{amount1}', '{amount2}' to Decimal for comparison."
         )
-        return None
+        return DiffMetricsResult(success=False, conversion_error=True)
 
     if d_amount1 == d_amount2:
-        return None
+        return DiffMetricsResult(success=False, conversion_error=False)
 
     abs_diff = abs(d_amount1 - d_amount2)
     sum_abs = abs(d_amount1) + abs(d_amount2)
     rel_diff = (2 * abs_diff / sum_abs) if sum_abs != Decimal(0) else Decimal(0)
 
-    return d_amount1, d_amount2, abs_diff, rel_diff
+    return DiffMetricsResult(
+        success=True,
+        amount1=d_amount1,
+        amount2=d_amount2,
+        abs_diff=abs_diff,
+        rel_diff=rel_diff,
+    )
 
 
 def get_header_amount_severity(
@@ -111,12 +143,17 @@ def get_header_amount_severity(
     - low: abs <= 1 AND rel <= 0.01
     - medium: abs <= 50 AND rel <= 0.05
     - high: otherwise
-    """
-    metrics = _calculate_diff_metrics(amount1, amount2)
-    if metrics is None:
-        return None
 
-    _, _, abs_diff, rel_diff = metrics
+    Returns LOW if amounts cannot be converted (data quality issue).
+    Returns None if amounts are equal (no deviation).
+    """
+    result = _calculate_diff_metrics(amount1, amount2)
+    if not result.success:
+        # Return LOW for conversion errors to flag data quality issues
+        return DeviationSeverity.LOW if result.conversion_error else None
+
+    abs_diff = result.abs_diff
+    rel_diff = result.rel_diff
 
     # no-severity: abs <= 0.01 AND rel <= 0.001
     if abs_diff <= Decimal("0.01") and rel_diff <= Decimal("0.001"):
@@ -144,12 +181,17 @@ def get_line_amount_severity(
     - low: abs <= 1 OR rel <= 0.01
     - medium: abs <= 10 OR rel <= 0.10
     - high: otherwise
-    """
-    metrics = _calculate_diff_metrics(amount1, amount2)
-    if metrics is None:
-        return None
 
-    _, _, abs_diff, rel_diff = metrics
+    Returns LOW if amounts cannot be converted (data quality issue).
+    Returns None if amounts are equal (no deviation).
+    """
+    result = _calculate_diff_metrics(amount1, amount2)
+    if not result.success:
+        # Return LOW for conversion errors to flag data quality issues
+        return DeviationSeverity.LOW if result.conversion_error else None
+
+    abs_diff = result.abs_diff
+    rel_diff = result.rel_diff
 
     # no-severity: abs <= 0.01
     if abs_diff <= Decimal("0.01"):
@@ -178,12 +220,17 @@ def get_unit_price_severity(
     - low: rel <= 0.05
     - medium: rel <= 0.20
     - high: otherwise
-    """
-    metrics = _calculate_diff_metrics(price1, price2)
-    if metrics is None:
-        return None
 
-    _, _, abs_diff, rel_diff = metrics
+    Returns LOW if prices cannot be converted (data quality issue).
+    Returns None if prices are equal (no deviation).
+    """
+    result = _calculate_diff_metrics(price1, price2)
+    if not result.success:
+        # Return LOW for conversion errors to flag data quality issues
+        return DeviationSeverity.LOW if result.conversion_error else None
+
+    abs_diff = result.abs_diff
+    rel_diff = result.rel_diff
 
     # no-severity: abs <= 0.005 OR rel <= 0.005
     if abs_diff <= Decimal("0.005") or rel_diff <= Decimal("0.005"):
@@ -211,12 +258,17 @@ def get_quantity_severity(
     - low: abs <= 1 AND rel <= 0.10
     - medium: abs <= 10 OR rel <= 0.50
     - high: otherwise
-    """
-    metrics = _calculate_diff_metrics(qty1, qty2)
-    if metrics is None:
-        return None
 
-    _, _, abs_diff, rel_diff = metrics
+    Returns LOW if quantities cannot be converted (data quality issue).
+    Returns None if quantities are equal (no deviation).
+    """
+    result = _calculate_diff_metrics(qty1, qty2)
+    if not result.success:
+        # Return LOW for conversion errors to flag data quality issues
+        return DeviationSeverity.LOW if result.conversion_error else None
+
+    abs_diff = result.abs_diff
+    rel_diff = result.rel_diff
 
     # low: abs <= 1 AND rel <= 0.10
     if abs_diff <= Decimal("1") and rel_diff <= Decimal("0.10"):
@@ -470,11 +522,12 @@ def get_unmatched_item_severity(
     except Exception:
         return DeviationSeverity.LOW
 
-    if amount <= Decimal("0.01"):
+    abs_amount = abs(amount)
+    if abs_amount <= Decimal("0.01"):
         return DeviationSeverity.NO_SEVERITY
-    if amount <= Decimal("1"):
+    if abs_amount <= Decimal("1"):
         return DeviationSeverity.LOW
-    if amount <= Decimal("10"):
+    if abs_amount <= Decimal("10"):
         return DeviationSeverity.MEDIUM
     return DeviationSeverity.HIGH
 
