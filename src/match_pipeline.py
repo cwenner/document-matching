@@ -333,7 +333,7 @@ def run_matching_pipeline(
                         {"kind": doc1.get("kind", "unknown"), "id": doc1.get("id")},
                         {"kind": doc2.get("kind", "unknown"), "id": doc2.get("id")},
                     ],
-                    "labels": ["match", "report-generation-error"],
+                    "labels": ["matched", "report-generation-error"],
                 }
 
     else:  # No pairings predicted

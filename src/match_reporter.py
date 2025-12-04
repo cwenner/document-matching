@@ -155,6 +155,21 @@ def generate_match_report(
     report_hash = hashlib.sha1(str(doc_ids_tuple).encode()).hexdigest()[:8]
     report_id = f"rep-{report_hash}"
 
+    # Determine base label based on certainty thresholds (ticket #29)
+    if match_confidence >= MATCHED_CERTAINTY_THRESHOLD:
+        base_label = "matched"
+    elif match_confidence < NO_MATCH_CERTAINTY_THRESHOLD:
+        base_label = "no-match"
+    else:
+        base_label = "uncertain"
+
+    # Build labels list
+    labels = [base_label]
+    if processed_item_pairs:
+        labels.append("matched-items")
+    else:
+        labels.append("potential-match-no-items")
+
     report = {
         "version": "v4.1-dev-split",
         "id": report_id,
@@ -166,11 +181,7 @@ def generate_match_report(
             {"kind": kind1.value, "id": doc1.get("id")},
             {"kind": kind2.value, "id": doc2.get("id")},
         ],
-        "labels": (
-            ["matched", "matched-items"]
-            if processed_item_pairs
-            else ["matched", "potential-match-no-items"]
-        ),
+        "labels": labels,
         "metrics": [
             {"name": "certainty", "value": max(0.0, min(1.0, match_confidence))},
             {
