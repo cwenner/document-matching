@@ -111,7 +111,7 @@ FIELD_COMPARISONS = []
 
 FIELD_COMPARISONS.append(
     FieldComparison(
-        code="amount-differs",
+        code="AMOUNTS_DIFFER",
         message="Amounts differ",
         severity=DeviationSeverity.MEDIUM,
         is_item_field=True,
@@ -126,7 +126,7 @@ FIELD_COMPARISONS.append(
 
 FIELD_COMPARISONS.append(
     FieldComparison(
-        code="description-differs",
+        code="DESCRIPTIONS_DIFFER",
         message="Descriptions differ",
         severity=DeviationSeverity.INFO,
         is_item_field=True,
@@ -142,7 +142,7 @@ FIELD_COMPARISONS.append(
 # @TODO add thresholds for unit amounts if desired (currently uses MEDium default)
 FIELD_COMPARISONS.append(
     FieldComparison(
-        code="unit-amount-differs",
+        code="PRICES_PER_UNIT_DIFFER",
         message="Unit amounts differ",
         severity=DeviationSeverity.MEDIUM,
         is_item_field=True,
@@ -158,7 +158,7 @@ FIELD_COMPARISONS.append(
 
 FIELD_COMPARISONS.append(
     FieldComparison(
-        code="quantity-differs",
+        code="QUANTITIES_DIFFER",
         message="Quantities differ",
         severity=DeviationSeverity.MEDIUM,
         is_item_field=True,
@@ -248,8 +248,8 @@ def check_itempair_comparison(
         for value2 in non_empty_values[:i]:
             current_severity = DeviationSeverity.NO_SEVERITY
             if (
-                comparison.code == "amount-differs"
-                or comparison.code == "unit-amount-differs"
+                comparison.code == "AMOUNTS_DIFFER"
+                or comparison.code == "PRICES_PER_UNIT_DIFFER"
             ):
                 severity_calc = get_differing_amounts_severity(value1, value2)
                 if severity_calc is not None:

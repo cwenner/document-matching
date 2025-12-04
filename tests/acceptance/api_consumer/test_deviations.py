@@ -168,13 +168,11 @@ def deviation_severity_reflects_percentage(context):
 
     amounts_differ_deviation = None
     for dev in deviations:
-        if dev.get("code") == "total-amounts-differ":
+        if dev.get("code") == "AMOUNTS_DIFFER":
             amounts_differ_deviation = dev
             break
 
-    assert (
-        amounts_differ_deviation is not None
-    ), "Should have total-amounts-differ deviation"
+    assert amounts_differ_deviation is not None, "Should have AMOUNTS_DIFFER deviation"
 
     # Calculate expected percentage difference: (1500 - 1450) / 1500 = 0.033 = 3.33%
     primary_amount = 1500.00

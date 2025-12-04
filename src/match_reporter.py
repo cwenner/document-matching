@@ -43,7 +43,7 @@ def collect_document_deviations(
         logger.error(f"Invalid document kind for document deviation check: {e}")
         deviations.append(
             FieldDeviation(
-                code="invalid-doc-kind", severity=DeviationSeverity.HIGH, message=str(e)
+                code="INVALID_DOC_KIND", severity=DeviationSeverity.HIGH, message=str(e)
             )
         )
         return deviations
@@ -54,7 +54,7 @@ def collect_document_deviations(
         if str(currency1).strip() and str(currency2).strip():
             deviations.append(
                 FieldDeviation(
-                    code="currencies-differ",
+                    code="CURRENCIES_DIFFER",
                     severity=DeviationSeverity.HIGH,
                     message=f"Currencies differ: {currency1} vs {currency2}",
                     field_names=["currency", "currency"],
@@ -84,7 +84,7 @@ def collect_document_deviations(
                 diff = abs(amount1 - amount2)
                 deviations.append(
                     FieldDeviation(
-                        code="total-amounts-differ",
+                        code="AMOUNTS_DIFFER",
                         severity=severity,
                         message=f"Total amount ({total_amount_field}) differs by {diff:.2f}",
                         field_names=[total_amount_field, total_amount_field],
