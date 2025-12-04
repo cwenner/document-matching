@@ -1005,10 +1005,6 @@ class MatchingEvaluator:
             # )
 
             # Get matching candidates from history with pairing history included
-
-            if document["id"] != "000713" or document["kind"] != "purchase-order":
-                self.document_history.append(document)
-                continue
             candidates = self.get_matching_candidates(document)
 
             # Make prediction using the API
