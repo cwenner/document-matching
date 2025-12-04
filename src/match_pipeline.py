@@ -339,6 +339,9 @@ def run_matching_pipeline(
     else:  # No pairings predicted
         logger.info("--- STEP 4: Generating No-Match Report ---")
         try:
+            # no_match_confidence defaults to 0.5 (uncertain) since we don't have a
+            # negative prediction score - we only know no pairing was found. A higher
+            # value would require evidence that the document truly has no matches.
             final_report = generate_no_match_report(input_document)
             logger.info(
                 f"No-match report generated successfully (ID: {final_report.get('id')})."
