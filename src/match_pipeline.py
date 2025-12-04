@@ -314,10 +314,12 @@ def run_matching_pipeline(
             logger.info("--- STEP 4: Generating Match Report ---")
             try:
                 final_report = generate_match_report(
-                    doc1, doc2, processed_item_pairs, document_deviations
+                    doc1,
+                    doc2,
+                    processed_item_pairs,
+                    document_deviations,
+                    match_confidence=match_confidence,
                 )
-                # Add prediction confidence if needed in the report later
-                # Example: final_report['metrics'].append({"name": "pairing_confidence", "value": match_confidence})
                 logger.info(
                     f"Match report generated successfully (ID: {final_report.get('id')})."
                 )
@@ -331,12 +333,15 @@ def run_matching_pipeline(
                         {"kind": doc1.get("kind", "unknown"), "id": doc1.get("id")},
                         {"kind": doc2.get("kind", "unknown"), "id": doc2.get("id")},
                     ],
-                    "labels": ["match", "report-generation-error"],
+                    "labels": ["matched", "report-generation-error"],
                 }
 
     else:  # No pairings predicted
         logger.info("--- STEP 4: Generating No-Match Report ---")
         try:
+            # no_match_confidence defaults to 0.5 (uncertain) since we don't have a
+            # negative prediction score - we only know no pairing was found. A higher
+            # value would require evidence that the document truly has no matches.
             final_report = generate_no_match_report(input_document)
             logger.info(
                 f"No-match report generated successfully (ID: {final_report.get('id')})."
