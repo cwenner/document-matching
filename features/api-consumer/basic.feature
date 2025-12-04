@@ -29,7 +29,7 @@ Feature: Core Document Matching API
     When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the response body should contain a match report in v3 schema
-    And the match report should contain "match" in labels
+    And the match report should contain "matched" in labels
     And the match report should include certainty metrics
     And the match report should reference both document IDs
     And the match report should complete within 60 seconds
@@ -41,7 +41,7 @@ Feature: Core Document Matching API
     When I send a POST request to "/" with the primary document and candidates
     Then the response status code should be 200
     And the response body should contain a match report in v3 schema
-    And the match report should contain "match" in labels
+    And the match report should contain "matched" in labels
     And the match report should include certainty metrics
     And the match report should reference both document IDs
     And the match report should complete within 60 seconds

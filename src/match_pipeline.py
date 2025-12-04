@@ -314,10 +314,12 @@ def run_matching_pipeline(
             logger.info("--- STEP 4: Generating Match Report ---")
             try:
                 final_report = generate_match_report(
-                    doc1, doc2, processed_item_pairs, document_deviations
+                    doc1,
+                    doc2,
+                    processed_item_pairs,
+                    document_deviations,
+                    match_confidence=match_confidence,
                 )
-                # Add prediction confidence if needed in the report later
-                # Example: final_report['metrics'].append({"name": "pairing_confidence", "value": match_confidence})
                 logger.info(
                     f"Match report generated successfully (ID: {final_report.get('id')})."
                 )

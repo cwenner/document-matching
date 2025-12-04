@@ -14,6 +14,39 @@ from itempair_deviations import (
 
 logger = logging.getLogger(__name__)
 
+# Certainty thresholds for label logic (from ticket #29)
+MATCHED_CERTAINTY_THRESHOLD = 0.5  # >= 0.5 -> "matched"
+NO_MATCH_CERTAINTY_THRESHOLD = 0.2  # < 0.2 -> "no-match"
+
+
+def calculate_future_match_certainty(
+    document: dict, kind: DocumentKind, is_matched: bool
+) -> float:
+    """
+    Calculate P(document will receive more matches in future).
+
+    Based on document type and current match state.
+    """
+    if kind == DocumentKind.INVOICE:
+        if is_matched:
+            return 0.1  # Already matched, less likely to get more
+        else:
+            has_order_ref = bool(get_field(document, "orderReference"))
+            if has_order_ref:
+                return 0.85  # Has reference, likely to find PO
+            return 0.5  # Unknown
+    elif kind == DocumentKind.PURCHASE_ORDER:
+        if is_matched:
+            return 0.3  # May still get delivery receipt
+        else:
+            return 0.7  # Likely to get invoice
+    elif kind == DocumentKind.DELIVERY_RECEIPT:
+        if is_matched:
+            return 0.1  # Usually terminal
+        else:
+            return 0.6  # May get PO match
+    return 0.5  # Default uncertainty
+
 
 # Helper function for similarity check
 def _calculate_overall_severity(
@@ -105,6 +138,7 @@ def generate_match_report(
     doc2: dict,
     processed_item_pairs: list[dict],
     document_deviations: list[FieldDeviation],
+    match_confidence: float = 0.5,
 ) -> dict:
     if not doc1 or not doc2:
         logger.error("Cannot generate match report with missing input documents.")
@@ -133,18 +167,24 @@ def generate_match_report(
             {"kind": kind2.value, "id": doc2.get("id")},
         ],
         "labels": (
-            ["match", "matched-items"]
+            ["matched", "matched-items"]
             if processed_item_pairs
-            else ["match", "potential-match-no-items"]
+            else ["matched", "potential-match-no-items"]
         ),
         "metrics": [
-            {"name": "certainty", "value": 0.93},
+            {"name": "certainty", "value": max(0.0, min(1.0, match_confidence))},
             {
                 "name": "deviation-severity",
                 "value": DeviationSeverity.NO_SEVERITY.value,
             },
-            {"name": f"{kind1.value}-has-future-match-certainty", "value": 0.0},
-            {"name": f"{kind2.value}-has-future-match-certainty", "value": 0.0},
+            {
+                "name": f"{kind1.value}-has-future-match-certainty",
+                "value": calculate_future_match_certainty(doc1, kind1, is_matched=True),
+            },
+            {
+                "name": f"{kind2.value}-has-future-match-certainty",
+                "value": calculate_future_match_certainty(doc2, kind2, is_matched=True),
+            },
             {"name": "matched-item-pairs", "value": len(processed_item_pairs)},
             {"name": f"{kind1.value}-total-items", "value": len(doc1.get("items", []))},
             {"name": f"{kind2.value}-total-items", "value": len(doc2.get("items", []))},
@@ -182,7 +222,7 @@ def generate_match_report(
                 "match_type": "unmatched",
                 "match_score": None,
                 "deviation_severity": pair_severity.value,
-                "item_unchanged_certainty": 0.95,
+                "item_unchanged_certainty": 0.0,  # Unmatched items have 0 certainty
                 "deviations": [dev.model_dump() for dev in item_deviations],
             }
             report["itempairs"].append(item_pair_report)
@@ -198,15 +238,17 @@ def generate_match_report(
             )
             all_report_severities.append(pair_severity)
 
+            # Use item match score for certainty (or 0.5 if not available)
+            item_score = pair_data.get("score", 0.5)
             item_pair_report = {
                 "item_indices": [
                     item1_data.get("item_index"),
                     item2_data.get("item_index"),
                 ],
                 "match_type": "matched",
-                "match_score": pair_data.get("score"),
+                "match_score": item_score,
                 "deviation_severity": pair_severity.value,
-                "item_unchanged_certainty": 0.95,
+                "item_unchanged_certainty": max(0.0, min(1.0, item_score)),
                 "deviations": [dev.model_dump() for dev in item_deviations],
             }
             report["itempairs"].append(item_pair_report)
@@ -227,7 +269,7 @@ def generate_match_report(
     return report
 
 
-def generate_no_match_report(doc1, doc2=None):
+def generate_no_match_report(doc1, doc2=None, no_match_confidence: float = 0.5):
     if not doc1:
         logger.error("Cannot generate no-match report without primary document.")
         return {"error": "Missing primary document for no-match report"}
@@ -258,12 +300,17 @@ def generate_no_match_report(doc1, doc2=None):
         "documents": [{"kind": kind1.value, "id": doc1.get("id")}],
         "labels": ["no-match"],
         "metrics": [
-            {"name": "certainty", "value": 0.95},
+            {"name": "certainty", "value": max(0.0, min(1.0, no_match_confidence))},
             {
                 "name": "deviation-severity",
                 "value": DeviationSeverity.NO_SEVERITY.value,
             },
-            {"name": f"{kind1.value}-has-future-match-certainty", "value": 0.88},
+            {
+                "name": f"{kind1.value}-has-future-match-certainty",
+                "value": calculate_future_match_certainty(
+                    doc1, kind1, is_matched=False
+                ),
+            },
             {"name": "matched-item-pairs", "value": 0},
             {"name": f"{kind1.value}-total-items", "value": len(doc1.get("items", []))},
         ],
@@ -276,7 +323,12 @@ def generate_no_match_report(doc1, doc2=None):
             kind2 = DocumentKind(get_field(doc2, "kind"))
             report["documents"].append({"kind": kind2.value, "id": doc2.get("id")})
             report["metrics"].append(
-                {"name": f"{kind2.value}-has-future-match-certainty", "value": 0.88}
+                {
+                    "name": f"{kind2.value}-has-future-match-certainty",
+                    "value": calculate_future_match_certainty(
+                        doc2, kind2, is_matched=False
+                    ),
+                }
             )
             report["metrics"].append(
                 {
