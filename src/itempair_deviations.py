@@ -9,11 +9,10 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-# Legacy constants - kept for reference but no longer used
-# AMOUNT_DEVIATION_MEDIUM_SEVERITY_MIN_ABS_DIFF: float = 1.0
-# AMOUNT_DEVIATION_MEDIUM_SEVERITY_MIN_REL_DIFF: float = 0.001
-# AMOUNT_DEVIATION_MEDIUM_SEVERITY_MAX_ABS_DIFF: float = 1000.0
-# AMOUNT_DEVIATION_MEDIUM_SEVERITY_MAX_REL_DIFF: float = 0.10
+# Confidence value for ITEMS_DIFFER when one similarity metric is very low (<0.3)
+# but the other is only moderately low (<0.7). This mixed signal suggests possible
+# mismatch but with less certainty than when both metrics are low.
+MIXED_SIMILARITY_CONFIDENCE = 0.6
 
 
 class DocumentKind(StrEnum):
@@ -77,24 +76,17 @@ class FieldDeviation(BaseModel):
     field_values: list[Any] = []
 
 
-class DiffMetricsResult:
+class DiffMetricsResult(BaseModel):
     """Result of diff metrics calculation."""
 
-    def __init__(
-        self,
-        success: bool,
-        amount1: Decimal | None = None,
-        amount2: Decimal | None = None,
-        abs_diff: Decimal | None = None,
-        rel_diff: Decimal | None = None,
-        conversion_error: bool = False,
-    ):
-        self.success = success
-        self.amount1 = amount1
-        self.amount2 = amount2
-        self.abs_diff = abs_diff
-        self.rel_diff = rel_diff
-        self.conversion_error = conversion_error
+    model_config = {"arbitrary_types_allowed": True}
+
+    success: bool
+    amount1: Decimal | None = None
+    amount2: Decimal | None = None
+    abs_diff: Decimal | None = None
+    rel_diff: Decimal | None = None
+    conversion_error: bool = False
 
 
 def _calculate_diff_metrics(
@@ -346,7 +338,7 @@ FIELD_COMPARISONS.append(
         severity=DeviationSeverity.MEDIUM,
         is_item_field=True,
         field_names={
-            # @TODO Confirm correct Invoice quantity field.
+            # Invoice uses purchaseReceiptData fields per wfields.py spec
             DocumentKind.INVOICE: "purchaseReceiptDataQuantity",
             DocumentKind.PURCHASE_ORDER: "quantityToInvoice",
             DocumentKind.DELIVERY_RECEIPT: "quantity",
@@ -617,12 +609,12 @@ def check_items_differ(
             field_values=[],
         )
 
+    # Mixed signal: one metric very low (<0.3), other only moderately low (<0.7)
     if (item_id_sim < 0.3 and desc_sim < 0.7) or (desc_sim < 0.3 and item_id_sim < 0.7):
-        confidence = 0.6
         return FieldDeviation(
             code="ITEMS_DIFFER",
             severity=DeviationSeverity.MEDIUM,
-            message=f"Items may be different products (confidence: {confidence:.0%})",
+            message=f"Items may be different products (confidence: {MIXED_SIMILARITY_CONFIDENCE:.0%})",
             field_names=[],
             field_values=[],
         )
