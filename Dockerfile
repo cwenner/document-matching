@@ -67,6 +67,7 @@ RUN     --mount=target=/mnt,from=builder \
         python3 -m pip install --progress-bar off --no-index --find-links=/mnt/whl \
         -r requirements.txt -c constraints-cpu.txt
 
+ENV     PIP_CONSTRAINT=/opt/omnicoder/matching/constraints-cpu.txt
 RUN     --mount=type=cache,target=/root/.cache/pip \
         python3 -m nox -f noxfile.py -s test
 
