@@ -290,3 +290,12 @@ def test_quantity_high_severity():
 def test_partial_delivery():
     """Test PARTIAL_DELIVERY deviation when qty < PO qty."""
     pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Quantity deviation - medium severity for moderate excess",
+)
+def test_quantity_medium_severity():
+    """Test medium severity for moderate quantity excess."""
+    pass

@@ -61,6 +61,48 @@ Feature: Document Matching - Detailed Deviation Information
     And the AMOUNTS_DIFFER deviation severity should be "high"
 
   # ============================================================================
+  # AMOUNTS_DIFFER - Line Level (Item Pairs)
+  # Thresholds: no-severity (abs<=0.01), low (abs<=1 OR rel<=1%),
+  #             medium (abs<=10 OR rel<=10%), high (otherwise)
+  # ============================================================================
+
+  @deviations @amount_deviation @line_level @no_severity @implemented
+  Scenario: Line item amount deviation - no-severity for tiny differences
+    Given I have a primary invoice with item amount 100.00
+    And I have a candidate purchase order with item amount 100.005
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the line item AMOUNTS_DIFFER deviation severity should be "no-severity"
+
+  @deviations @amount_deviation @line_level @low @implemented
+  Scenario: Line item amount deviation - low severity for small differences
+    Given I have a primary invoice with item amount 100.00
+    And I have a candidate purchase order with item amount 100.50
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the line item AMOUNTS_DIFFER deviation severity should be "low"
+
+  @deviations @amount_deviation @line_level @medium @implemented
+  Scenario: Line item amount deviation - medium severity for moderate differences
+    Given I have a primary invoice with item amount 100.00
+    And I have a candidate purchase order with item amount 105.00
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the line item AMOUNTS_DIFFER deviation severity should be "medium"
+
+  @deviations @amount_deviation @line_level @high @implemented
+  Scenario: Line item amount deviation - high severity for large differences
+    Given I have a primary invoice with item amount 100.00
+    And I have a candidate purchase order with item amount 150.00
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the line item AMOUNTS_DIFFER deviation severity should be "high"
+
+  # ============================================================================
   # QUANTITIES_DIFFER (#26) - Only when qty > PO qty
   # Thresholds: low (abs<=1 AND rel<=10%), medium (abs<=10 OR rel<=50%), high (otherwise)
   # ============================================================================
@@ -92,6 +134,15 @@ Feature: Document Matching - Detailed Deviation Information
     Then the response status code should be 200
     And the response body should contain a match report
     And the QUANTITIES_DIFFER item deviation severity should be "high"
+
+  @deviations @quantity_deviation @medium @implemented
+  Scenario: Quantity deviation - medium severity for moderate excess
+    Given I have a primary invoice document with item quantity 15
+    And I have a candidate purchase order with item quantity 10
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the QUANTITIES_DIFFER item deviation severity should be "medium"
 
   # ============================================================================
   # PARTIAL_DELIVERY (#21) - When qty < PO qty, always INFO
@@ -132,6 +183,24 @@ Feature: Document Matching - Detailed Deviation Information
     And the response body should contain a match report
     And the PRICES_PER_UNIT_DIFFER item deviation severity should be "high"
 
+  @deviations @unit_price @no_severity @implemented
+  Scenario: Unit price deviation - no-severity for tiny price difference
+    Given I have a primary invoice with item unit price 100.00
+    And I have a candidate purchase order with item unit price 100.002
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And there should be no PRICES_PER_UNIT_DIFFER deviation or it should be "no-severity"
+
+  @deviations @unit_price @medium @implemented
+  Scenario: Unit price deviation - medium severity for moderate price difference
+    Given I have a primary invoice with item unit price 100.00
+    And I have a candidate purchase order with item unit price 115.00
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the PRICES_PER_UNIT_DIFFER item deviation severity should be "medium"
+
   # ============================================================================
   # ARTICLE_NUMBERS_DIFFER (#22)
   # Default MEDIUM, downgrade to LOW if description similarity >= 0.9
@@ -147,20 +216,75 @@ Feature: Document Matching - Detailed Deviation Information
     And the ARTICLE_NUMBERS_DIFFER item deviation severity should be "low" or "medium"
 
   # ============================================================================
+  # ITEMS_DIFFER (#28) - Prediction that paired items are different products
+  # Severity: HIGH (confidence >= 0.8), MEDIUM (mixed signal)
+  # ============================================================================
+
+  @deviations @items_differ @high
+  Scenario: Items differ - high severity when both similarities very low
+    Given I have a primary invoice with item article number "WIDGET-A" and description "Red plastic widget"
+    And I have a candidate purchase order with item article number "GADGET-B" and description "Blue metal gadget"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match report should contain item deviation with code "ITEMS_DIFFER"
+    And the ITEMS_DIFFER item deviation severity should be "high"
+
+  @deviations @items_differ @medium
+  Scenario: Items differ - medium severity for mixed similarity signals
+    Given I have a primary invoice with item article number "BOLT-123" and description "Steel fastener bolt"
+    And I have a candidate purchase order with item article number "SCREW-456" and description "Steel fastener screw"
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match report should contain item deviation with code "ITEMS_DIFFER"
+    And the ITEMS_DIFFER item deviation severity should be "medium"
+
+  # ============================================================================
   # ITEM_UNMATCHED (#20)
   # Severity based on line amount: no-severity (<=0.01), low (<=1),
   #                                medium (<=10), high (>10)
   # ============================================================================
 
-  @deviations @item_unmatched @implemented
-  Scenario: Unmatched item with high value
-    Given I have a primary invoice with two items where one has no match
+  @deviations @item_unmatched @no_severity @implemented
+  Scenario: Unmatched item - no-severity for trivial line amount
+    Given I have a primary invoice with two items where one has amount 0.005 and no match
     And I have a candidate purchase order with one item
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
     And the match report should contain item with match_type "unmatched"
-    And the ITEM_UNMATCHED deviation severity should reflect the line amount
+    And the ITEM_UNMATCHED deviation severity should be "no-severity"
+
+  @deviations @item_unmatched @low @implemented
+  Scenario: Unmatched item - low severity for small line amount
+    Given I have a primary invoice with two items where one has amount 0.50 and no match
+    And I have a candidate purchase order with one item
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match report should contain item with match_type "unmatched"
+    And the ITEM_UNMATCHED deviation severity should be "low"
+
+  @deviations @item_unmatched @medium @implemented
+  Scenario: Unmatched item - medium severity for moderate line amount
+    Given I have a primary invoice with two items where one has amount 5.00 and no match
+    And I have a candidate purchase order with one item
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match report should contain item with match_type "unmatched"
+    And the ITEM_UNMATCHED deviation severity should be "medium"
+
+  @deviations @item_unmatched @high @implemented
+  Scenario: Unmatched item - high severity for large line amount
+    Given I have a primary invoice with two items where one has amount 100.00 and no match
+    And I have a candidate purchase order with one item
+    When I send a POST request to "/" with the primary document and candidate document
+    Then the response status code should be 200
+    And the response body should contain a match report
+    And the match report should contain item with match_type "unmatched"
+    And the ITEM_UNMATCHED deviation severity should be "high"
 
   # ============================================================================
   # Other deviation scenarios

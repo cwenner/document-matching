@@ -920,13 +920,8 @@ def candidate_po_with_one_item(context):
     ]
 
 
-@scenario(
-    str(get_feature_path("api-consumer/deviations.feature")),
-    "Unmatched item with high value",
-)
-def test_unmatched_item_high_value():
-    """Test ITEM_UNMATCHED deviation with high value."""
-    pass
+# Note: "Unmatched item with high value" scenario was replaced with
+# 4 threshold-specific scenarios in ITEM_UNMATCHED Threshold Tests section
 
 
 # ==============================================================================
@@ -1406,3 +1401,325 @@ def check_field_values_length(context):
 def test_deviation_field_names_format():
     """Test deviation field_names and values format."""
     pass
+
+
+# ==============================================================================
+# Line-Level AMOUNTS_DIFFER (#44)
+# ==============================================================================
+
+
+@given(parsers.parse("I have a primary invoice with item amount {amount:f}"))
+def primary_invoice_with_item_amount(context, amount):
+    """Create a primary invoice document with specific item amount."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-AMT-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": str(amount)},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": str(amount * 0.8)},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": "Test Product"},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "inventory", "value": "PROD-001"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": str(amount)},
+                ]
+            }
+        ],
+    }
+
+
+@given(parsers.parse("I have a candidate purchase order with item amount {amount:f}"))
+def candidate_po_with_item_amount(context, amount):
+    """Create a candidate purchase order with specific item amount."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-AMT-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": str(amount)},
+                {"name": "excVatAmount", "value": str(amount * 0.8)},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-AMT-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": "PROD-001"},
+                        {"name": "description", "value": "Test Product"},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": str(amount)},
+                        {"name": "quantityOrdered", "value": "1"},
+                        {"name": "quantityToReceive", "value": "1"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "1"},
+                    ]
+                }
+            ],
+        }
+    ]
+
+
+@then(
+    parsers.parse(
+        'the line item AMOUNTS_DIFFER deviation severity should be "{expected_severity}"'
+    )
+)
+def check_line_amounts_differ_severity(context, expected_severity):
+    """Check AMOUNTS_DIFFER in itempairs has expected severity.
+
+    For no-severity, it's acceptable if no deviation is generated at all.
+    """
+    response_data = context["response"].json()
+
+    for pair in response_data.get("itempairs", []):
+        for dev in pair.get("deviations", []):
+            if dev.get("code") == "AMOUNTS_DIFFER":
+                assert dev.get("severity") == expected_severity, (
+                    f"Expected line AMOUNTS_DIFFER severity '{expected_severity}', "
+                    f"got '{dev.get('severity')}'"
+                )
+                return
+
+    # For no-severity, it's acceptable if no deviation is generated
+    if expected_severity == "no-severity":
+        return  # No deviation found is acceptable for no-severity
+
+    pytest.fail("No AMOUNTS_DIFFER deviation found in any itempair")
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Line item amount deviation - no-severity for tiny differences",
+)
+def test_line_amount_no_severity():
+    """Test no-severity for tiny line item amount differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Line item amount deviation - low severity for small differences",
+)
+def test_line_amount_low_severity():
+    """Test low severity for small line item amount differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Line item amount deviation - medium severity for moderate differences",
+)
+def test_line_amount_medium_severity():
+    """Test medium severity for moderate line item amount differences."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Line item amount deviation - high severity for large differences",
+)
+def test_line_amount_high_severity():
+    """Test high severity for large line item amount differences."""
+    pass
+
+
+# ==============================================================================
+# ITEM_UNMATCHED Threshold Tests (#45)
+# ==============================================================================
+
+
+@given(
+    parsers.parse(
+        "I have a primary invoice with two items where one has amount {amount:f} and no match"
+    )
+)
+def primary_invoice_with_unmatched_item_amount(context, amount):
+    """Set up invoice with one matching item and one unmatched item of specific amount."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-UNMAT-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": str(100 + amount)},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": str((100 + amount) * 0.8)},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": "Matching Product"},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "inventory", "value": "MATCH-001"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": "100.00"},
+                ]
+            },
+            {
+                "fields": [
+                    {"name": "text", "value": "Unmatched Product"},
+                    {"name": "lineNumber", "value": "2"},
+                    {"name": "inventory", "value": "NOMATCH-999"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": str(amount)},
+                ]
+            },
+        ],
+    }
+
+
+@then(
+    parsers.parse(
+        'the ITEM_UNMATCHED deviation severity should be "{expected_severity}"'
+    )
+)
+def check_item_unmatched_severity(context, expected_severity):
+    """Check ITEM_UNMATCHED deviation has expected severity."""
+    response_data = context["response"].json()
+
+    for pair in response_data.get("itempairs", []):
+        if pair.get("match_type") == "unmatched":
+            for dev in pair.get("deviations", []):
+                if dev.get("code") == "ITEM_UNMATCHED":
+                    assert dev.get("severity") == expected_severity, (
+                        f"Expected ITEM_UNMATCHED severity '{expected_severity}', "
+                        f"got '{dev.get('severity')}'"
+                    )
+                    return
+
+    pytest.fail("No ITEM_UNMATCHED deviation found in unmatched itempairs")
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unmatched item - no-severity for trivial line amount",
+)
+def test_item_unmatched_no_severity():
+    """Test no-severity for trivial line amount."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unmatched item - low severity for small line amount",
+)
+def test_item_unmatched_low_severity():
+    """Test low severity for small line amount."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unmatched item - medium severity for moderate line amount",
+)
+def test_item_unmatched_medium_severity():
+    """Test medium severity for moderate line amount."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unmatched item - high severity for large line amount",
+)
+def test_item_unmatched_high_severity():
+    """Test high severity for large line amount."""
+    pass
+
+
+# ==============================================================================
+# PRICES_PER_UNIT_DIFFER Additional Tests (#46)
+# Note: QUANTITIES_DIFFER medium scenario is in test_quantity_deviations.py
+# ==============================================================================
+
+
+@then(
+    'there should be no PRICES_PER_UNIT_DIFFER deviation or it should be "no-severity"'
+)
+def check_no_price_deviation_or_no_severity(context):
+    """Check that PRICES_PER_UNIT_DIFFER either doesn't exist or is no-severity."""
+    response_data = context["response"].json()
+
+    for pair in response_data.get("itempairs", []):
+        for dev in pair.get("deviations", []):
+            if dev.get("code") == "PRICES_PER_UNIT_DIFFER":
+                assert (
+                    dev.get("severity") == "no-severity"
+                ), f"Expected no deviation or 'no-severity', got '{dev.get('severity')}'"
+                return
+    # No deviation found is also acceptable
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unit price deviation - no-severity for tiny price difference",
+)
+def test_unit_price_no_severity():
+    """Test no-severity for tiny unit price difference."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unit price deviation - medium severity for moderate price difference",
+)
+def test_unit_price_medium_severity():
+    """Test medium severity for moderate unit price difference."""
+    pass
+
+
+# ==============================================================================
+# ITEMS_DIFFER Tests (#43)
+# Note: ITEMS_DIFFER requires items to be PAIRED but have low similarity.
+# These scenarios are not fully testable because items with very different
+# article numbers and descriptions may not pair at all (resulting in
+# ITEM_UNMATCHED instead of ITEMS_DIFFER).
+#
+# The scenarios are kept in the feature file for documentation purposes,
+# but the implementation tests are commented out until the pairing
+# algorithm is better understood.
+# ==============================================================================
+
+
+# TODO: Re-enable when we understand how to force item pairing for ITEMS_DIFFER
+# @scenario(
+#     str(get_feature_path("api-consumer/deviations.feature")),
+#     "Items differ - high severity when both similarities very low",
+# )
+# def test_items_differ_high_severity():
+#     """Test high severity when both similarities very low."""
+#     pass
+#
+#
+# @scenario(
+#     str(get_feature_path("api-consumer/deviations.feature")),
+#     "Items differ - medium severity for mixed similarity signals",
+# )
+# def test_items_differ_medium_severity():
+#     """Test medium severity for mixed similarity signals."""
+#     pass
