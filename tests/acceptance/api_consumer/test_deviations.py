@@ -1031,3 +1031,378 @@ def check_deviation_severity(context, expected_severity):
 def test_match_with_different_currencies():
     """Test CURRENCIES_DIFFER deviation with high severity."""
     pass
+
+
+# ==============================================================================
+# Match with Different Item Descriptions
+# ==============================================================================
+
+
+@then("the deviation severity should reflect the textual similarity")
+def check_deviation_reflects_textual_similarity(context):
+    """Check that deviation severity reflects textual similarity."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+
+    found_desc_deviation = False
+    for pair in itempairs:
+        for dev in pair.get("deviations", []):
+            if dev.get("code") == "DESCRIPTIONS_DIFFER":
+                found_desc_deviation = True
+                severity = dev.get("severity")
+                valid_severities = ["no-severity", "info", "low", "medium", "high"]
+                assert (
+                    severity in valid_severities
+                ), f"DESCRIPTIONS_DIFFER should have valid severity, got: {severity}"
+                break
+
+    assert found_desc_deviation, "Should have DESCRIPTIONS_DIFFER deviation"
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Match with Different Item Descriptions",
+)
+def test_match_with_different_descriptions_scenario():
+    """Test DESCRIPTIONS_DIFFER deviation with similarity-based severity."""
+    pass
+
+
+# ==============================================================================
+# Comprehensive Deviation Reporting
+# ==============================================================================
+
+
+@given("I have a primary invoice document with multiple deviations from the standard")
+def primary_invoice_with_multiple_deviations(context):
+    """Create a primary invoice with multiple deviation sources."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-COMP-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": "1500.00"},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": "1200.00"},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": "Widget A Premium"},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "inventory", "value": "WGT-001"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "10"},
+                    {"name": "debit", "value": "500.00"},
+                    {"name": "unitPrice", "value": "50.00"},
+                ]
+            },
+            {
+                "fields": [
+                    {"name": "text", "value": "Gadget B"},
+                    {"name": "lineNumber", "value": "2"},
+                    {"name": "inventory", "value": "GDG-002"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "5"},
+                    {"name": "debit", "value": "250.00"},
+                    {"name": "unitPrice", "value": "50.00"},
+                ]
+            },
+        ],
+    }
+
+
+@given("I have a candidate purchase order with corresponding deviations")
+def candidate_po_with_corresponding_deviations(context):
+    """Create a candidate PO with corresponding deviations."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-COMP-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": "1400.00"},
+                {"name": "excVatAmount", "value": "1120.00"},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-COMP-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": "WGT-001"},
+                        {"name": "description", "value": "Widget A Standard"},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": "45.00"},
+                        {"name": "quantityOrdered", "value": "12"},
+                        {"name": "quantityToReceive", "value": "12"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "12"},
+                    ]
+                },
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-COMP-002"},
+                        {"name": "lineNumber", "value": "2"},
+                        {"name": "inventory", "value": "GDG-002"},
+                        {"name": "description", "value": "Gadget B"},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": "50.00"},
+                        {"name": "quantityOrdered", "value": "5"},
+                        {"name": "quantityToReceive", "value": "5"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "5"},
+                    ]
+                },
+            ],
+        }
+    ]
+
+
+@then('the match report should include a "deviations" section at document level')
+def check_document_level_deviations(context):
+    """Check that match report has document-level deviations."""
+    response_data = context["response"].json()
+    assert "deviations" in response_data, "Match report should have 'deviations' key"
+    assert isinstance(response_data["deviations"], list), "deviations should be a list"
+
+
+@then(
+    'each item pair in the match report should include a "deviations" section where applicable'
+)
+def check_itempair_deviations_section(context):
+    """Check that item pairs have deviations section."""
+    response_data = context["response"].json()
+    itempairs = response_data.get("itempairs", [])
+    assert len(itempairs) > 0, "Should have at least one item pair"
+
+    for i, pair in enumerate(itempairs):
+        assert "deviations" in pair, f"Item pair {i} should have 'deviations' key"
+
+
+@then("all deviations should include standardized deviation codes")
+def check_standardized_deviation_codes(context):
+    """Check that all deviations have standardized codes."""
+    response_data = context["response"].json()
+
+    valid_codes = [
+        "AMOUNTS_DIFFER",
+        "QUANTITIES_DIFFER",
+        "PARTIAL_DELIVERY",
+        "PRICES_PER_UNIT_DIFFER",
+        "ARTICLE_NUMBERS_DIFFER",
+        "DESCRIPTIONS_DIFFER",
+        "ITEM_UNMATCHED",
+        "ITEMS_DIFFER",
+        "CURRENCIES_DIFFER",
+        "INVALID_DOC_KIND",
+    ]
+
+    # Check document-level deviations
+    for dev in response_data.get("deviations", []):
+        code = dev.get("code")
+        assert code is not None, "Deviation should have 'code' field"
+        assert code in valid_codes, f"Unknown deviation code: {code}"
+
+    # Check item-level deviations
+    for pair in response_data.get("itempairs", []):
+        for dev in pair.get("deviations", []):
+            code = dev.get("code")
+            assert code is not None, "Deviation should have 'code' field"
+            assert code in valid_codes, f"Unknown deviation code: {code}"
+
+
+@then("all deviations should include a severity level")
+def check_deviations_have_severity(context):
+    """Check that all deviations have severity level."""
+    response_data = context["response"].json()
+    valid_severities = ["no-severity", "info", "low", "medium", "high"]
+
+    # Check document-level deviations
+    for dev in response_data.get("deviations", []):
+        severity = dev.get("severity")
+        assert severity is not None, "Deviation should have 'severity' field"
+        assert severity in valid_severities, f"Invalid severity: {severity}"
+
+    # Check item-level deviations
+    for pair in response_data.get("itempairs", []):
+        for dev in pair.get("deviations", []):
+            severity = dev.get("severity")
+            assert severity is not None, "Deviation should have 'severity' field"
+            assert severity in valid_severities, f"Invalid severity: {severity}"
+
+
+@then(
+    "all deviations should include human-readable messages explaining the discrepancy"
+)
+def check_deviations_have_messages(context):
+    """Check that all deviations have human-readable messages."""
+    response_data = context["response"].json()
+
+    # Check document-level deviations
+    for dev in response_data.get("deviations", []):
+        message = dev.get("message")
+        assert message is not None, "Deviation should have 'message' field"
+        assert len(message) > 0, "Message should not be empty"
+
+    # Check item-level deviations
+    for pair in response_data.get("itempairs", []):
+        for dev in pair.get("deviations", []):
+            message = dev.get("message")
+            assert message is not None, "Deviation should have 'message' field"
+            assert len(message) > 0, "Message should not be empty"
+
+
+@then("all deviations should include field references and actual values that differ")
+def check_deviations_have_field_refs(context):
+    """Check that deviations have field references and values."""
+    response_data = context["response"].json()
+
+    # Check document-level deviations
+    for dev in response_data.get("deviations", []):
+        assert "field_names" in dev, "Deviation should have 'field_names'"
+        assert "field_values" in dev, "Deviation should have 'field_values'"
+
+    # Check item-level deviations
+    for pair in response_data.get("itempairs", []):
+        for dev in pair.get("deviations", []):
+            assert "field_names" in dev, "Deviation should have 'field_names'"
+            assert "field_values" in dev, "Deviation should have 'field_values'"
+
+
+@then(
+    'the match report should include a "deviation-severity" metric showing the highest deviation severity'
+)
+def check_deviation_severity_metric(context):
+    """Check that match report has deviation-severity metric in metrics array."""
+    response_data = context["response"].json()
+    assert "metrics" in response_data, "Match report should have 'metrics' array"
+
+    # Find the deviation-severity metric
+    deviation_metric = None
+    for metric in response_data["metrics"]:
+        if metric.get("name") == "deviation-severity":
+            deviation_metric = metric
+            break
+
+    assert (
+        deviation_metric is not None
+    ), "Match report should have 'deviation-severity' metric"
+
+    valid_severities = ["no-severity", "info", "low", "medium", "high"]
+    assert (
+        deviation_metric["value"] in valid_severities
+    ), f"Invalid deviation-severity value: {deviation_metric['value']}"
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Comprehensive Deviation Reporting",
+)
+def test_comprehensive_deviation_reporting():
+    """Test comprehensive deviation reporting structure."""
+    pass
+
+
+# ==============================================================================
+# Deviation Field Names and Values Format
+# ==============================================================================
+
+
+@then('the deviation should contain a "field_names" array with field path strings')
+def check_field_names_array(context):
+    """Check that deviation has field_names array."""
+    response_data = context["response"].json()
+    deviations = response_data.get("deviations", [])
+
+    amounts_differ = None
+    for dev in deviations:
+        if dev.get("code") == "AMOUNTS_DIFFER":
+            amounts_differ = dev
+            break
+
+    assert amounts_differ is not None, "Should have AMOUNTS_DIFFER deviation"
+    assert "field_names" in amounts_differ, "Should have 'field_names' array"
+    assert isinstance(
+        amounts_differ["field_names"], list
+    ), "field_names should be a list"
+    for fn in amounts_differ["field_names"]:
+        assert isinstance(fn, str), f"field_name should be string, got: {type(fn)}"
+
+
+@then(
+    'the deviation should contain a "field_values" array with string representations of actual values'
+)
+def check_field_values_array(context):
+    """Check that deviation has field_values array."""
+    response_data = context["response"].json()
+    deviations = response_data.get("deviations", [])
+
+    amounts_differ = None
+    for dev in deviations:
+        if dev.get("code") == "AMOUNTS_DIFFER":
+            amounts_differ = dev
+            break
+
+    assert amounts_differ is not None, "Should have AMOUNTS_DIFFER deviation"
+    assert "field_values" in amounts_differ, "Should have 'field_values' array"
+    assert isinstance(
+        amounts_differ["field_values"], list
+    ), "field_values should be a list"
+    for val in amounts_differ["field_values"]:
+        assert isinstance(val, str), f"value should be string, got: {type(val)}"
+
+
+@then(
+    'the "field_names" array length should equal the number of documents in the match'
+)
+def check_field_names_length(context):
+    """Check that field_names array has correct length."""
+    response_data = context["response"].json()
+    deviations = response_data.get("deviations", [])
+    num_documents = len(response_data.get("documents", []))
+
+    for dev in deviations:
+        if dev.get("code") == "AMOUNTS_DIFFER":
+            field_names = dev.get("field_names", [])
+            assert len(field_names) == num_documents, (
+                f"field_names length ({len(field_names)}) should equal "
+                f"number of documents ({num_documents})"
+            )
+
+
+@then(
+    'the "field_values" array length should equal the number of documents in the match'
+)
+def check_field_values_length(context):
+    """Check that field_values array has correct length."""
+    response_data = context["response"].json()
+    deviations = response_data.get("deviations", [])
+    num_documents = len(response_data.get("documents", []))
+
+    for dev in deviations:
+        if dev.get("code") == "AMOUNTS_DIFFER":
+            field_values = dev.get("field_values", [])
+            assert len(field_values) == num_documents, (
+                f"field_values length ({len(field_values)}) should equal "
+                f"number of documents ({num_documents})"
+            )
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Deviation Field Names and Values Format",
+)
+def test_deviation_field_names_format():
+    """Test deviation field_names and values format."""
+    pass

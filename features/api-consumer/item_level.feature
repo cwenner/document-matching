@@ -6,7 +6,7 @@ Feature: Document Matching at Item Level
   Background:
     Given the document matching service is available
 
-  @story-1.1 @item_level @item_pairing
+  @story-1.1 @item_level @item_pairing @implemented
   Scenario: Item Pairing Success
     Given I have a primary invoice with 3 items
     And I have a candidate purchase order with the same 3 items
@@ -18,7 +18,7 @@ Feature: Document Matching at Item Level
     And each itempair should have item_unchanged_certainty scores
     And each itempair should have match_type property as a string with value "matched"
 
-  @story-1.1 @item_level @unmatched_primary
+  @story-1.1 @item_level @unmatched_primary @implemented
   Scenario: Unmatched Items in Primary Document
     Given I have a primary invoice with 5 items
     And I have a candidate purchase order with 3 matching items
@@ -33,7 +33,7 @@ Feature: Document Matching at Item Level
     And the unmatched itempairs should have match_type property as a string with value "unmatched"
     And the unmatched itempairs should have deviations with code "item-unmatched"
 
-  @story-1.1 @item_level @unmatched_candidate
+  @story-1.1 @item_level @unmatched_candidate @implemented
   Scenario: Unmatched Items in Candidate Document
     Given I have a primary invoice with 3 items
     And I have a candidate purchase order with 5 items
@@ -46,7 +46,7 @@ Feature: Document Matching at Item Level
     And the unmatched itempairs should have item_indices [null, n]
     And the unmatched itempairs should have deviations with code "item-unmatched"
 
-  @story-1.1 @item_level @item_reordering
+  @story-1.1 @item_level @item_reordering @implemented
   Scenario: Different Item Order in Documents
     Given I have a primary invoice with items in order A, B, C
     And I have a candidate purchase order with items in order C, A, B
@@ -56,7 +56,7 @@ Feature: Document Matching at Item Level
     And the match report should contain 3 itempairs with match_type "matched"
     And the item_indices should correctly map the reordered items
 
-  @story-1.1 @item_level @article_numbers_differ
+  @story-1.1 @item_level @article_numbers_differ @implemented
   Scenario: Matching Items with Different Article Numbers
     Given I have a primary invoice with item article number "ABC123"
     And I have a candidate purchase order with item article number "XYZ123"
