@@ -3,6 +3,7 @@ import datetime
 import logging
 import pickle
 import re
+from typing import Dict, List, Optional, Tuple
 
 import dateparser
 import numpy as np
@@ -12,6 +13,12 @@ from document_utils import get_field
 from wfields import get_supplier_ids
 
 # @TODO everything here needs refactoring
+
+# Certainty constants for different match types
+REFERENCE_MATCH_CERTAINTY = (
+    0.95  # High but not 1.0 to account for OCR/extraction errors
+)
+SVM_FALLBACK_MIN_CERTAINTY = 0.15  # Minimum certainty for SVM fallback matches
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +36,8 @@ class DocumentPairingPredictor:
 
         Args:
             model_path (str): Path to the pickled SVM model
-            svc_threshold (float): Threshold for SVM confidence to consider a match
+            svc_threshold (float): Threshold for SVM confidence to consider a match.
+                Default is 0.15 to bias towards more matches (more permissive).
         """
         # Load the SVM model
         # TODO: This should ideally be loaded lazily or passed in, not loaded at init globally
@@ -175,23 +183,27 @@ class DocumentPairingPredictor:
                 )
 
             predictions = []
+            # Get any SVM confidence scores that were stored during fallback
+            svm_scores = ref_pred.get("_svm_confidence_scores", {})
 
             # Add invoice pairings
             for doc_id in ref_pred.get("paired_invoice_ids", []):
                 if doc_id in [d["id"] for d in candidate_documents]:
-                    predictions.append(
-                        (doc_id, 1.0)
-                    )  # Assign max confidence to reference matches
+                    # Use SVM score if available, otherwise reference match certainty
+                    score = svm_scores.get(doc_id, REFERENCE_MATCH_CERTAINTY)
+                    predictions.append((doc_id, score))
 
             # Add delivery pairings
             for doc_id in ref_pred.get("paired_delivery_ids", []):
                 if doc_id in [d["id"] for d in candidate_documents]:
-                    predictions.append((doc_id, 1.0))
+                    score = svm_scores.get(doc_id, REFERENCE_MATCH_CERTAINTY)
+                    predictions.append((doc_id, score))
 
             # Add purchase order pairings
             for doc_id in ref_pred.get("paired_purchase_order_ids", []):
                 if doc_id in [d["id"] for d in candidate_documents]:
-                    predictions.append((doc_id, 1.0))
+                    score = svm_scores.get(doc_id, REFERENCE_MATCH_CERTAINTY)
+                    predictions.append((doc_id, score))
 
             if predictions:
                 return predictions
@@ -473,6 +485,11 @@ class DocumentPairingPredictor:
         # Apply threshold
         if best_score > self.svc_threshold:
             base_pred["paired_purchase_order_ids"] = [best_po_id]
+            # Store the actual SVM confidence score for this match
+            base_pred["_svm_confidence_scores"] = base_pred.get(
+                "_svm_confidence_scores", {}
+            )
+            base_pred["_svm_confidence_scores"][best_po_id] = float(best_score)
             # Make transitive again after updating
             base_pred = self._make_pairings_transitive(document, base_pred)
 
