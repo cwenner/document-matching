@@ -36,7 +36,8 @@ class MatchingService:
 
         Args:
             model_path: Optional path to the model file. If not provided, will use default or environment variable
-            svc_threshold: Threshold for the SVM classifier
+            svc_threshold: Threshold for the SVM classifier. Default 0.15 biases
+                towards more matches (more permissive).
         """
         self._predictor = None
         self.model_path = model_path
