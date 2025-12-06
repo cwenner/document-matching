@@ -31,7 +31,7 @@ Feature: Document Matching at Item Level
     And the unmatched itempairs should have item_indices [n, null]
     And the matched itempairs should have match_type property as a string with value "matched"
     And the unmatched itempairs should have match_type property as a string with value "unmatched"
-    And the unmatched itempairs should have deviations with code "item-unmatched"
+    And the unmatched itempairs should have deviations with code "ITEM_UNMATCHED"
 
   @story-1.1 @item_level @unmatched_candidate @implemented
   Scenario: Unmatched Items in Candidate Document
@@ -44,7 +44,7 @@ Feature: Document Matching at Item Level
     And 3 itempairs should have match_type "matched"
     And 2 itempairs should have match_type "unmatched"
     And the unmatched itempairs should have item_indices [null, n]
-    And the unmatched itempairs should have deviations with code "item-unmatched"
+    And the unmatched itempairs should have deviations with code "ITEM_UNMATCHED"
 
   @story-1.1 @item_level @item_reordering @implemented
   Scenario: Different Item Order in Documents
@@ -65,4 +65,4 @@ Feature: Document Matching at Item Level
     Then the response status code should be 200
     And the response body should contain a match report
     And the match report should contain an itempair for these items
-    And the itempair should have deviation with code "article-numbers-differ"
+    And the itempair should have deviation with code "ARTICLE_NUMBERS_DIFFER"
