@@ -35,7 +35,7 @@ Feature: Document Matching - Match Certainty Metrics
     When I send a POST request to "/" with the primary document and candidate documents
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should include a "po-has-future-match-certainty" metric
+    And the match report should include a "purchase-order-has-future-match-certainty" metric
     And the future match certainty should be a decimal value between 0 and 1
 
   @metrics @item_level_certainty
