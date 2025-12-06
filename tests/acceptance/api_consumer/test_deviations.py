@@ -241,7 +241,10 @@ def match_report_contains_item_deviation(context, deviation_code):
     )
 )
 def check_item_deviation_severity(context, deviation_code, expected_severity):
-    """Check that a specific item deviation has the expected severity."""
+    """Check that a specific item deviation has the expected severity.
+
+    Also handles 'or' patterns like 'low" or "medium' that get parsed as single value.
+    """
     response_data = context["response"].json()
     itempairs = response_data.get("itempairs", [])
 
@@ -255,9 +258,18 @@ def check_item_deviation_severity(context, deviation_code, expected_severity):
             break
 
     assert found_deviation is not None, f"Should have {deviation_code} deviation"
-    assert (
-        found_deviation.get("severity") == expected_severity
-    ), f"{deviation_code} severity should be '{expected_severity}', got: {found_deviation.get('severity')}"
+
+    # Handle "or" patterns - parsers.parse captures 'low" or "medium' as one value
+    if '" or "' in expected_severity:
+        allowed_severities = [s.strip('"') for s in expected_severity.split('" or "')]
+        assert found_deviation.get("severity") in allowed_severities, (
+            f"{deviation_code} severity should be one of {allowed_severities}, "
+            f"got: {found_deviation.get('severity')}"
+        )
+    else:
+        assert (
+            found_deviation.get("severity") == expected_severity
+        ), f"{deviation_code} severity should be '{expected_severity}', got: {found_deviation.get('severity')}"
 
 
 @then(
@@ -296,29 +308,18 @@ def check_item_unmatched_severity_reflects_amount(context):
 
 @then(
     parsers.parse(
-        'the ARTICLE_NUMBERS_DIFFER item deviation severity should be "{sev1}" or "{sev2}"'
+        'the match report should contain deviation with code "{deviation_code}"'
     )
 )
-def check_article_numbers_severity_range(context, sev1, sev2):
-    """Check that ARTICLE_NUMBERS_DIFFER severity is one of two values."""
+def match_report_contains_deviation_code(context, deviation_code):
+    """Check that the match report contains a deviation with a specific code."""
     response_data = context["response"].json()
-    itempairs = response_data.get("itempairs", [])
+    deviations = response_data.get("deviations", [])
 
-    found_deviation = None
-    for itempair in itempairs:
-        for dev in itempair.get("deviations", []):
-            if dev.get("code") == "ARTICLE_NUMBERS_DIFFER":
-                found_deviation = dev
-                break
-        if found_deviation:
-            break
-
-    assert found_deviation is not None, "Should have ARTICLE_NUMBERS_DIFFER deviation"
-    severity = found_deviation.get("severity")
-    assert severity in [
-        sev1,
-        sev2,
-    ], f"ARTICLE_NUMBERS_DIFFER severity should be '{sev1}' or '{sev2}', got: {severity}"
+    deviation_codes = [dev.get("code") for dev in deviations]
+    assert (
+        deviation_code in deviation_codes
+    ), f"Should contain deviation with code '{deviation_code}', got codes: {deviation_codes}"
 
 
 # ==============================================================================
@@ -642,4 +643,391 @@ def test_description_medium_severity():
 )
 def test_description_no_deviation_both_empty():
     """Test no deviation when both descriptions are empty."""
+    pass
+
+
+# ==============================================================================
+# Unit Price Deviations (#25)
+# ==============================================================================
+
+
+@given(parsers.parse("I have a primary invoice with item unit price {price:f}"))
+def primary_invoice_with_unit_price(context, price):
+    """Create a primary invoice document with specific item unit price."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-UNIT-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": str(price)},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": str(price * 0.8)},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": "Test Product"},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "purchaseReceiptDataUnitAmount", "value": str(price)},
+                    {"name": "debit", "value": str(price)},
+                ]
+            }
+        ],
+    }
+
+
+@given(
+    parsers.parse("I have a candidate purchase order with item unit price {price:f}")
+)
+def candidate_po_with_unit_price(context, price):
+    """Create a candidate purchase order with specific item unit price."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-UNIT-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": str(price)},
+                {"name": "excVatAmount", "value": str(price * 0.8)},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-UNIT-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": "INV-001"},
+                        {"name": "description", "value": "Test Product"},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": str(price)},
+                        {"name": "quantityOrdered", "value": "1"},
+                        {"name": "quantityToReceive", "value": "1"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "1"},
+                    ]
+                }
+            ],
+        }
+    ]
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unit price deviation - low severity for small price difference",
+)
+def test_unit_price_low_severity():
+    """Test low severity for small unit price difference."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unit price deviation - high severity for large price difference",
+)
+def test_unit_price_high_severity():
+    """Test high severity for large unit price difference."""
+    pass
+
+
+# ==============================================================================
+# Article Number Deviations (#22)
+# ==============================================================================
+
+
+@given(
+    parsers.re(
+        r'I have a primary invoice with item article number "(?P<article_number>.+)" and description "(?P<description>.*)"'
+    )
+)
+def primary_invoice_with_article_and_desc(context, article_number, description):
+    """Create a primary invoice with article number and description."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-ART-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": "100.00"},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": "80.00"},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": description},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "inventory", "value": article_number},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": "80.00"},
+                ]
+            }
+        ],
+    }
+
+
+@given(
+    parsers.re(
+        r'I have a candidate purchase order with item article number "(?P<article_number>.+)" and description "(?P<description>.*)"'
+    )
+)
+def candidate_po_with_article_and_desc(context, article_number, description):
+    """Create a candidate purchase order with article number and description."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-ART-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": "100.00"},
+                {"name": "excVatAmount", "value": "80.00"},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-ART-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": article_number},
+                        {"name": "description", "value": description},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": "80.00"},
+                        {"name": "quantityOrdered", "value": "1"},
+                        {"name": "quantityToReceive", "value": "1"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "1"},
+                    ]
+                }
+            ],
+        }
+    ]
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Article number deviation with similar descriptions",
+)
+def test_article_number_deviation():
+    """Test article number deviation with similar descriptions."""
+    pass
+
+
+# ==============================================================================
+# Unmatched Items (#20)
+# ==============================================================================
+
+
+@given("I have a primary invoice with two items where one has no match")
+def primary_invoice_with_unmatched_item(context):
+    """Create a primary invoice with two items, one of which won't match."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-UNMAT-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": "200.00"},
+            {"name": "currencyCode", "value": "USD"},
+            {"name": "excVatAmount", "value": "160.00"},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": "Matching Product"},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "inventory", "value": "MATCH-001"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": "80.00"},
+                ]
+            },
+            {
+                "fields": [
+                    {"name": "text", "value": "Unmatched Product"},
+                    {"name": "lineNumber", "value": "2"},
+                    {"name": "inventory", "value": "NOMATCH-999"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": "80.00"},
+                ]
+            },
+        ],
+    }
+
+
+@given("I have a candidate purchase order with one item")
+def candidate_po_with_one_item(context):
+    """Create a candidate purchase order with only one matching item."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-UNMAT-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": "100.00"},
+                {"name": "excVatAmount", "value": "80.00"},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-MATCH-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": "MATCH-001"},
+                        {"name": "description", "value": "Matching Product"},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": "80.00"},
+                        {"name": "quantityOrdered", "value": "1"},
+                        {"name": "quantityToReceive", "value": "1"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "1"},
+                    ]
+                }
+            ],
+        }
+    ]
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Unmatched item with high value",
+)
+def test_unmatched_item_high_value():
+    """Test ITEM_UNMATCHED deviation with high value."""
+    pass
+
+
+# ==============================================================================
+# Currency Deviations
+# ==============================================================================
+
+
+@given(parsers.parse('I have a primary invoice document with currency "{currency}"'))
+def primary_invoice_with_currency(context, currency):
+    """Create a primary invoice document with specific currency."""
+    context["document"] = {
+        "version": "v3",
+        "id": "PD-CUR-001",
+        "kind": "invoice",
+        "site": "test-site",
+        "stage": "input",
+        "headers": [
+            {"name": "supplierId", "value": "S789"},
+            {"name": "invoiceDate", "value": "2025-06-22"},
+            {"name": "invoiceNumber", "value": "INV-2025-0622"},
+            {"name": "incVatAmount", "value": "100.00"},
+            {"name": "currency", "value": currency},
+            {"name": "currencyCode", "value": currency},
+            {"name": "excVatAmount", "value": "80.00"},
+            {"name": "type", "value": "DEBIT"},
+            {"name": "orderReference", "value": "PO-12345"},
+        ],
+        "items": [
+            {
+                "fields": [
+                    {"name": "text", "value": "Test Product"},
+                    {"name": "lineNumber", "value": "1"},
+                    {"name": "purchaseReceiptDataQuantity", "value": "1"},
+                    {"name": "debit", "value": "80.00"},
+                ]
+            }
+        ],
+    }
+
+
+@given(parsers.parse('I have a candidate purchase order with currency "{currency}"'))
+def candidate_po_with_currency(context, currency):
+    """Create a candidate purchase order with specific currency."""
+    context["candidate-documents"] = [
+        {
+            "version": "v3",
+            "id": "CD-CUR-001",
+            "kind": "purchase-order",
+            "site": "test-site",
+            "stage": "final",
+            "headers": [
+                {"name": "orderNumber", "value": "PO-12345"},
+                {"name": "supplierId", "value": "S789"},
+                {"name": "description", "value": "Test order"},
+                {"name": "orderDate", "value": "2025-06-20"},
+                {"name": "incVatAmount", "value": "100.00"},
+                {"name": "currency", "value": currency},
+                {"name": "excVatAmount", "value": "80.00"},
+            ],
+            "items": [
+                {
+                    "fields": [
+                        {"name": "id", "value": "IT-CUR-001"},
+                        {"name": "lineNumber", "value": "1"},
+                        {"name": "inventory", "value": "INV-001"},
+                        {"name": "description", "value": "Test Product"},
+                        {"name": "uom", "value": "STYCK"},
+                        {"name": "unitAmount", "value": "80.00"},
+                        {"name": "quantityOrdered", "value": "1"},
+                        {"name": "quantityToReceive", "value": "1"},
+                        {"name": "quantityReceived", "value": "0"},
+                        {"name": "quantityToInvoice", "value": "1"},
+                    ]
+                }
+            ],
+        }
+    ]
+
+
+@then(parsers.parse('the deviation severity should be "{expected_severity}"'))
+def check_deviation_severity(context, expected_severity):
+    """Check that a deviation has the expected severity."""
+    response_data = context["response"].json()
+    deviations = response_data.get("deviations", [])
+
+    found = False
+    for dev in deviations:
+        if dev.get("severity") == expected_severity:
+            found = True
+            break
+
+    assert found, (
+        f"Should have deviation with severity '{expected_severity}', "
+        f"got deviations: {deviations}"
+    )
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Match with Different Currencies",
+)
+def test_match_with_different_currencies():
+    """Test CURRENCIES_DIFFER deviation with high severity."""
     pass
