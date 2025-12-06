@@ -166,7 +166,7 @@ Feature: Document Matching - Detailed Deviation Information
   # Other deviation scenarios
   # ============================================================================
 
-  @deviations @currency_mismatch
+  @deviations @currency_mismatch @implemented
   Scenario: Match with Different Currencies
     Given I have a primary invoice document with currency "USD"
     And I have a candidate purchase order with currency "EUR"
@@ -182,7 +182,7 @@ Feature: Document Matching - Detailed Deviation Information
   #             low (sim>=0.75), medium (sim>=0.50), high (sim<0.50 OR one empty)
   # ============================================================================
 
-  @deviations @description_mismatch
+  @deviations @description_mismatch @implemented
   Scenario: Match with Different Item Descriptions
     Given I have a primary invoice with item and article number "OFF-001" and description "Office Supplies"
     And I have a candidate purchase order with item and article number "OFF-001" and description "Office Materials"
@@ -259,7 +259,7 @@ Feature: Document Matching - Detailed Deviation Information
     And the response body should contain a match report
     And there should be no DESCRIPTIONS_DIFFER deviation
 
-  @deviations @comprehensive
+  @deviations @comprehensive @implemented
   Scenario: Comprehensive Deviation Reporting
     Given I have a primary invoice document with multiple deviations from the standard
     And I have a candidate purchase order with corresponding deviations
@@ -274,7 +274,7 @@ Feature: Document Matching - Detailed Deviation Information
     And all deviations should include field references and actual values that differ
     And the match report should include a "deviation-severity" metric showing the highest deviation severity
 
-  @deviations @field_format
+  @deviations @field_format @implemented
   Scenario: Deviation Field Names and Values Format
     Given I have a primary invoice document with amount 1800.00
     And I have a candidate purchase order with amount 1750.50
@@ -283,6 +283,6 @@ Feature: Document Matching - Detailed Deviation Information
     And the response body should contain a match report
     And the match report should contain deviation with code "AMOUNTS_DIFFER"
     And the deviation should contain a "field_names" array with field path strings
-    And the deviation should contain a "values" array with string representations of actual values
+    And the deviation should contain a "field_values" array with string representations of actual values
     And the "field_names" array length should equal the number of documents in the match
-    And the "values" array length should equal the number of documents in the match
+    And the "field_values" array length should equal the number of documents in the match
