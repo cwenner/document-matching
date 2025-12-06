@@ -3,8 +3,9 @@ import os
 from typing import Dict, List, Optional, Tuple
 
 from docpairing import DocumentPairingPredictor
+from itempair_deviations import DocumentKind
 from match_pipeline import run_matching_pipeline
-from match_reporter import DeviationSeverity
+from match_reporter import DeviationSeverity, calculate_future_match_certainty
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -13,6 +14,11 @@ logger = logging.getLogger("matching_service")
 
 # Global configuration
 USE_PREDICTION = os.environ.get("DISABLE_MODELS", "false").lower() != "true"
+
+# Certainty value when no actual matching is performed (dummy fallback)
+# Using 0.5 indicates "unknown/uncertain" since no real matching occurred
+DUMMY_CERTAINTY = 0.5
+
 WHITELISTED_SITES = {
     "badger-logistics",
     "falcon-logistics",
@@ -129,6 +135,16 @@ class MatchingService:
         # Generate a somewhat unique report ID based on doc ID
         report_id = f"r-nomatch-{hash(str(doc_id)) & 0xfff:03x}"
 
+        # Calculate future match certainty using actual function
+        try:
+            kind_enum = DocumentKind(doc_kind)
+            future_certainty = calculate_future_match_certainty(
+                document, kind_enum, is_matched=False
+            )
+        except ValueError:
+            # Invalid document kind, use default uncertainty
+            future_certainty = DUMMY_CERTAINTY
+
         report = {
             "version": "v3",
             "id": report_id,
@@ -157,14 +173,14 @@ class MatchingService:
             "itempairs": [],
             "metrics": [
                 {"name": "candidate-documents", "value": 0},
-                {"name": "certainty", "value": 0.95},
+                {"name": "certainty", "value": DUMMY_CERTAINTY},
                 {
                     "name": "deviation-severity",
                     "value": DeviationSeverity.NO_SEVERITY.value,
                 },
                 {
                     "name": f"{doc_kind}-has-future-match-certainty",
-                    "value": 0.88,
+                    "value": future_certainty,
                 },
             ],
             "labels": ["no-match"],
@@ -187,6 +203,25 @@ class MatchingService:
         report_id = f"r-match-{hash(str(doc_id)) & 0xfff:03x}"
         partner_kind = "purchase-order" if doc_kind == "invoice" else "invoice"
 
+        # Calculate future match certainties using actual function
+        try:
+            kind_enum = DocumentKind(doc_kind)
+            doc_future_certainty = calculate_future_match_certainty(
+                document, kind_enum, is_matched=True
+            )
+        except ValueError:
+            doc_future_certainty = DUMMY_CERTAINTY
+
+        try:
+            partner_kind_enum = DocumentKind(partner_kind)
+            # Create a dummy partner document for calculation
+            partner_doc = {"kind": partner_kind}
+            partner_future_certainty = calculate_future_match_certainty(
+                partner_doc, partner_kind_enum, is_matched=True
+            )
+        except ValueError:
+            partner_future_certainty = DUMMY_CERTAINTY
+
         report = {
             "version": "v3",
             "id": report_id,
@@ -198,7 +233,7 @@ class MatchingService:
                 {"name": "document1.kind", "value": doc_kind},
                 {"name": "document2.id", "value": matched_id},
                 {"name": "document2.kind", "value": partner_kind},
-                {"name": "match.confidence", "value": "0.99"},
+                {"name": "match.confidence", "value": str(DUMMY_CERTAINTY)},
             ],
             "documents": [
                 {"kind": doc_kind, "id": doc_id},
@@ -239,18 +274,24 @@ class MatchingService:
                     "item_indices": [0, 0],  # Dummy indices
                     "match_type": "matched",
                     "deviation_severity": DeviationSeverity.MEDIUM.value,
-                    "item_unchanged_certainty": 0.88,
+                    "item_unchanged_certainty": DUMMY_CERTAINTY,
                 }
             ],
             "metrics": [
                 {"name": "candidate-documents", "value": 1},
-                {"name": "certainty", "value": 0.93},
+                {"name": "certainty", "value": DUMMY_CERTAINTY},
                 {
                     "name": "deviation-severity",
                     "value": DeviationSeverity.HIGH.value,
                 },
-                {"name": f"{doc_kind}-has-future-match-certainty", "value": 0.98},
-                {"name": f"{partner_kind}-has-future-match-certainty", "value": 0.99},
+                {
+                    "name": f"{doc_kind}-has-future-match-certainty",
+                    "value": doc_future_certainty,
+                },
+                {
+                    "name": f"{partner_kind}-has-future-match-certainty",
+                    "value": partner_future_certainty,
+                },
             ],
             "labels": ["match"],
         }
