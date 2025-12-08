@@ -367,8 +367,9 @@ class MatchingService:
                     {
                         "name": "candidate-documents",
                         "value": [
-                            { "kind": cd["kind"], "id": cd["id"] } for cd in candidate_documents
-                        ]
+                            {"kind": cd["kind"], "id": cd["id"]}
+                            for cd in candidate_documents
+                        ],
                     }
                 )
 
