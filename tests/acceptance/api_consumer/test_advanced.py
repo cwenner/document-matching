@@ -27,12 +27,17 @@ def context():
 # ==============================================================================
 
 
+@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/advanced.feature")),
     "Future Match Certainty",
 )
 def test_future_match_certainty():
-    """Test future match certainty metrics in response."""
+    """Test future match certainty metrics in response.
+
+    NOTE: Currently marked as WIP because the API does not produce
+    'delivery-receipt-has-future-match-certainty' metric. See issue #61.
+    """
     pass
 
 

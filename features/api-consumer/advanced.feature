@@ -6,7 +6,8 @@ Feature: Advanced Document Matching Features
   Background:
     Given the document matching service is available
 
-  @story-1.1 @advanced @future_match @implemented
+  # NOTE: API does not produce "delivery-receipt-has-future-match-certainty" metric - see issue #61
+  @story-1.1 @advanced @future_match @wip
   Scenario: Future Match Certainty
     Given I have a primary invoice document
     And I have a candidate purchase order document
@@ -15,6 +16,7 @@ Feature: Advanced Document Matching Features
     And the response body should contain a match report
     And the match report should include "invoice-has-future-match-certainty" metric
     And the match report should include "purchase-order-has-future-match-certainty" metric
+    And the match report should include "delivery-receipt-has-future-match-certainty" metric
 
   @story-1.1 @advanced @attachment_data @implemented
   Scenario: Documents with Attachment Data

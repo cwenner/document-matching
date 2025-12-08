@@ -6,14 +6,16 @@ Feature: Document Matching API Error Cases
   Background:
     Given the document matching service is available
 
-  @story-1.1 @error_cases @no_match @implemented
+  # NOTE: API does not produce "no-match" label for non-matching documents - see issue #60
+  @story-1.1 @error_cases @no_match @wip
   Scenario: No-Match Scenario
     Given I have a primary invoice document
     And I have a candidate purchase order document that should not match
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
-    And the match report should include certainty metrics
+    And the match report should contain "no-match" in labels
+    And the match report should have low certainty metrics
 
   @story-1.1 @error_cases @empty_candidates @implemented
   Scenario: Empty Candidate List
