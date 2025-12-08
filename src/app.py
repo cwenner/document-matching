@@ -121,9 +121,13 @@ async def request_handler(request: Request):
                 raise RequestValidationError(validation_error.errors())
             raise HTTPException(status_code=400, detail=str(validation_error))
 
-        # Convert back to dicts for matching service
-        document = indata.get("document", {})
-        candidate_documents = indata.get("candidate-documents", [])
+        # Use validated model data for matching service
+        # exclude_none=True maintains backward compatibility with code expecting missing keys
+        document = match_request.document.model_dump(by_alias=True, exclude_none=True)
+        candidate_documents = [
+            doc.model_dump(by_alias=True, exclude_none=True)
+            for doc in match_request.candidate_documents
+        ]
 
         # Log request receipt
         doc_id = document.get("id", "<id missing>")
