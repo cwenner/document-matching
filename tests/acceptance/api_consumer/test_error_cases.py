@@ -27,17 +27,12 @@ def context():
 # ==============================================================================
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/error_cases.feature")),
     "No-Match Scenario",
 )
 def test_no_match_scenario():
-    """Test no-match response with 'no-match' label and low certainty.
-
-    NOTE: Currently marked as WIP because the API does not produce 'no-match'
-    label for non-matching documents. See issue #60.
-    """
+    """Test no-match response with 'no-match' label and low certainty."""
     pass
 
 
@@ -388,17 +383,22 @@ def check_label_in_report(label, context):
 
 @then("the match report should have low certainty metrics")
 def check_low_certainty(context):
-    """Check that match report has low certainty metrics."""
+    """Check that match report has low certainty metrics.
+
+    Note: Only checks the main "certainty" metric, not "future-match-certainty"
+    metrics which have different semantics (likelihood of future matches).
+    """
     response_data = context["response"].json()
     metrics = response_data.get("metrics", [])
-    # Look for certainty metric
-    certainty_metrics = [m for m in metrics if "certainty" in m.get("name", "").lower()]
-    if certainty_metrics:
-        for m in certainty_metrics:
-            value = m.get("value", 1.0)
-            if isinstance(value, (int, float)):
-                # Low certainty is typically < 0.5 for no-match
-                assert value < 0.5, f"Expected low certainty (<0.5), got {value}"
+    # Look for the main certainty metric (not future-match-certainty)
+    main_certainty = next(
+        (m for m in metrics if m.get("name", "") == "certainty"), None
+    )
+    if main_certainty:
+        value = main_certainty.get("value", 1.0)
+        if isinstance(value, (int, float)):
+            # Low certainty (< 0.5) indicates confident no-match
+            assert value < 0.5, f"Expected low certainty (<0.5), got {value}"
 
 
 @then("the response body should indicate no matches were found")

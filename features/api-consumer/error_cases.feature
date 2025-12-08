@@ -6,8 +6,7 @@ Feature: Document Matching API Error Cases
   Background:
     Given the document matching service is available
 
-  # NOTE: API does not produce "no-match" label for non-matching documents - see issue #60
-  @story-1.1 @error_cases @no_match @wip
+  @story-1.1 @error_cases @no_match @implemented
   Scenario: No-Match Scenario
     Given I have a primary invoice document
     And I have a candidate purchase order document that should not match
