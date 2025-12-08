@@ -280,10 +280,10 @@ def primary_document(context):
 
 @given("I have too many candidate documents exceeding the limit")
 def too_many_candidates(context):
-    """Create too many candidate documents."""
-    # Create many candidates to exceed payload limits
+    """Create too many candidate documents to exceed the hard limit (10000)."""
+    # Create candidates to exceed MAX_CANDIDATE_DOCUMENTS (10000)
     context["candidate-documents"] = [
-        create_po_document(doc_id=f"PO-{i:05d}") for i in range(1000)
+        create_po_document(doc_id=f"PO-{i:05d}") for i in range(10001)
     ]
 
 
