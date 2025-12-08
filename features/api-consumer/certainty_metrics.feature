@@ -7,7 +7,7 @@ Feature: Document Matching - Match Certainty Metrics
   Background:
     Given the document matching service is available
 
-  @metrics @certainty_value
+  @metrics @certainty_value @implemented
   Scenario: Match Report Includes Certainty Metric
     Given I have a primary invoice document
     And I have a candidate purchase order document
@@ -18,7 +18,7 @@ Feature: Document Matching - Match Certainty Metrics
     And the metrics section should contain a "certainty" value between 0 and 1
     And the certainty value should reflect the confidence level of the match
 
-  @metrics @future_match_prediction
+  @metrics @future_match_prediction @implemented
   Scenario: Future Match Prediction for Invoices
     Given I have a primary invoice document
     And I have a list of candidate documents
@@ -28,7 +28,7 @@ Feature: Document Matching - Match Certainty Metrics
     And the match report should include an "invoice-has-future-match-certainty" metric
     And the future match certainty should be a decimal value between 0 and 1
 
-  @metrics @future_match_prediction_po
+  @metrics @future_match_prediction_po @implemented
   Scenario: Future Match Prediction for Purchase Orders
     Given I have a primary purchase order document
     And I have a list of candidate documents
@@ -38,7 +38,7 @@ Feature: Document Matching - Match Certainty Metrics
     And the match report should include a "purchase-order-has-future-match-certainty" metric
     And the future match certainty should be a decimal value between 0 and 1
 
-  @metrics @item_level_certainty
+  @metrics @item_level_certainty @implemented
   Scenario: Item-Level Match Certainty
     Given I have a primary document with line items
     And I have a candidate document with matching line items
@@ -48,7 +48,7 @@ Feature: Document Matching - Match Certainty Metrics
     And each item pair should include an "item_unchanged_certainty" value
     And all item certainty values should be between 0 and 1
 
-  @metrics @varying_certainty
+  @metrics @varying_certainty @implemented
   Scenario: Match with Varying Certainty Levels
     Given I have a primary document with some ambiguous attributes
     And I have multiple candidate documents with different similarity levels
@@ -58,7 +58,7 @@ Feature: Document Matching - Match Certainty Metrics
     And each match report should have a different certainty value
     And the certainty values should correlate with the similarity levels
 
-  @metrics @comprehensive
+  @metrics @comprehensive @implemented
   Scenario: Comprehensive Certainty Metrics
     Given I have a complex primary document with items and attachments
     And I have candidate documents with varying levels of similarity
