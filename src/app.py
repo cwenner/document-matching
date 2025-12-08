@@ -27,7 +27,7 @@ class Document(BaseModel):
     headers: Optional[List[Any]] = None
     items: Optional[List[Any]] = None
 
-    model_config = {"extra": "allow"}
+    model_config = {"extra": "allow", "use_enum_values": True}
 
     @field_validator("kind", mode="before")
     @classmethod
