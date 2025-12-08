@@ -28,7 +28,8 @@ def test_post_missing_document():
     payload = {"candidate-documents": []}
     response = client.post("/", json=payload)
     assert response.status_code == 400
-    assert "Missing or invalid 'document'" in response.json()["detail"]
+    detail = response.json()["detail"].lower()
+    assert "document" in detail and ("required" in detail or "missing" in detail)
 
 
 def test_post_invalid_candidates():
@@ -36,7 +37,8 @@ def test_post_invalid_candidates():
     payload = {"document": DUMMY_DOC, "candidate-documents": "not-a-list"}
     response = client.post("/", json=payload)
     assert response.status_code == 400
-    assert "Invalid 'candidate-documents' format" in response.json()["detail"]
+    detail = response.json()["detail"].lower()
+    assert "candidate" in detail and ("list" in detail or "array" in detail)
 
 
 def test_post_non_whitelisted_site_dummy_no_match():

@@ -32,13 +32,12 @@ def test_missing_primary_document():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")),
     "Invalid Document Format",
 )
 def test_invalid_document_format():
-    """Test API response when document format is invalid - WIP."""
+    """Test API response when document format is invalid."""
     pass
 
 
@@ -70,13 +69,12 @@ def test_unsupported_content_type():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")),
     "Missing Required Document Fields",
 )
 def test_missing_required_fields():
-    """Test API response when required document fields are missing - WIP."""
+    """Test API response when required document fields are missing."""
     pass
 
 
@@ -211,7 +209,16 @@ def error_indicates_format_issue(context):
             "detail", response_data.get("message", response_data.get("error", ""))
         )
     )
-    format_keywords = ["format", "invalid", "structure", "schema"]
+    format_keywords = [
+        "format",
+        "invalid",
+        "structure",
+        "schema",
+        "required",
+        "field",
+        "validation",
+        "type",
+    ]
     message_lower = error_message.lower()
     found_keywords = [
         keyword for keyword in format_keywords if keyword in message_lower

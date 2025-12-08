@@ -59,31 +59,21 @@ def test_missing_primary_document():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/error_cases.feature")),
     "Invalid Document Format",
 )
 def test_invalid_document_format():
-    """Test invalid document format returns 400 error.
-
-    NOTE: Currently marked as WIP because the API does not validate document
-    structure - accepts any dict and attempts processing.
-    """
+    """Test invalid document format returns 400 error."""
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/error_cases.feature")),
     "Invalid Document Kind",
 )
 def test_invalid_document_kind():
-    """Test invalid document kind returns 400 error.
-
-    NOTE: Currently marked as WIP because the API does not validate document
-    kind enum - accepts any kind value.
-    """
+    """Test invalid document kind returns 400 error."""
     pass
 
 
