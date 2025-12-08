@@ -47,8 +47,7 @@ Feature: Document Matching API - Invalid Input Handling
     And the error message should indicate that candidates must be an array
     And the error message should be machine-readable
 
-  # NOTE: FastAPI returns 422 for unsupported content type, not 415
-  @error_cases @unsupported_content_type @wip
+  @error_cases @unsupported_content_type @implemented
   Scenario: Unsupported Content Type
     Given I have documents in an unsupported format
     When I send a POST request to "/" with an unsupported Content-Type header

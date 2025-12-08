@@ -13,6 +13,9 @@ logger = logging.getLogger("matching_service_api")
 # Create a service instance
 matching_service = MatchingService()
 
+# Maximum number of candidate documents allowed per request
+MAX_CANDIDATE_DOCUMENTS = 100
+
 # --- FastAPI App ---
 app = FastAPI()
 logger.info("✔ Matching Service API Ready")
@@ -42,6 +45,14 @@ async def request_handler(request: Request):
     """Handles matching requests."""
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")
 
+    # Validate Content-Type header
+    content_type = request.headers.get("content-type", "")
+    if content_type and not content_type.startswith("application/json"):
+        logger.error(f"Trace ID {trace_id}: Unsupported Content-Type: {content_type}")
+        raise HTTPException(
+            status_code=415, detail="Unsupported Media Type. Use application/json"
+        )
+
     try:
         # Parse request data
         indata = await request.json()
@@ -65,6 +76,16 @@ async def request_handler(request: Request):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid 'candidate-documents' format, expected a list",
+            )
+
+        # Check candidate document count limit
+        if len(candidate_documents) > MAX_CANDIDATE_DOCUMENTS:
+            logger.error(
+                f"Trace ID {trace_id}: Too many candidate documents: {len(candidate_documents)}"
+            )
+            raise HTTPException(
+                status_code=413,
+                detail=f"Payload too large. Maximum {MAX_CANDIDATE_DOCUMENTS} candidate documents allowed",
             )
 
         # Log request receipt

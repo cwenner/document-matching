@@ -82,17 +82,12 @@ def test_invalid_document_kind():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/error_cases.feature")),
     "Request Payload Too Large",
 )
 def test_payload_too_large():
-    """Test payload too large returns 413 error.
-
-    NOTE: Currently marked as WIP because the API does not enforce
-    candidate document limits.
-    """
+    """Test payload too large returns 413 error."""
     pass
 
 

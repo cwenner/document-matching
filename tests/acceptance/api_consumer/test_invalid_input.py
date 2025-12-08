@@ -60,13 +60,12 @@ def test_candidates_not_array():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")),
     "Unsupported Content Type",
 )
 def test_unsupported_content_type():
-    """Test API response when content type is unsupported - WIP."""
+    """Test API response when content type is unsupported."""
     pass
 
 
