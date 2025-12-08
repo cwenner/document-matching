@@ -362,6 +362,15 @@ class MatchingService:
                 final_report["metrics"].append(
                     {"name": "candidate-documents", "value": len(candidate_documents)}
                 )
+                final_report["internal"] = final_report.get("internal", [])
+                final_report["internal"].append(
+                    {
+                        "name": "candidate-documents",
+                        "value": [
+                            { "kind": cd["kind"], "id": cd["id"] } for cd in candidate_documents
+                        ]
+                    }
+                )
 
                 if not final_report:
                     logger.error(
