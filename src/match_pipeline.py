@@ -12,6 +12,7 @@ from itempair_deviations import (
 from itempairing import pair_document_items
 from match_reporter import DeviationSeverity  # Import DeviationSeverity for adaptation
 from match_reporter import (
+    NO_MATCH_CERTAINTY_THRESHOLD,
     collect_document_deviations,
     generate_match_report,
     generate_no_match_report,
@@ -22,6 +23,10 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Certainty value for confident no-match (below NO_MATCH_CERTAINTY_THRESHOLD)
+# Used when no pairings are found among provided candidates
+CONFIDENT_NO_MATCH_CERTAINTY = NO_MATCH_CERTAINTY_THRESHOLD - 0.05  # 0.15
 
 
 def run_matching_pipeline(
@@ -339,10 +344,11 @@ def run_matching_pipeline(
     else:  # No pairings predicted
         logger.info("--- STEP 4: Generating No-Match Report ---")
         try:
-            # no_match_confidence defaults to 0.5 (uncertain) since we don't have a
-            # negative prediction score - we only know no pairing was found. A higher
-            # value would require evidence that the document truly has no matches.
-            final_report = generate_no_match_report(input_document)
+            # Use low certainty value since no candidates matched - we're confident
+            # this is a no-match among the provided candidates.
+            final_report = generate_no_match_report(
+                input_document, no_match_confidence=CONFIDENT_NO_MATCH_CERTAINTY
+            )
             logger.info(
                 f"No-match report generated successfully (ID: {final_report.get('id')})."
             )
