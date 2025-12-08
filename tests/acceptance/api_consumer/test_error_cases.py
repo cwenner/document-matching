@@ -72,17 +72,12 @@ def test_invalid_document_kind():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/error_cases.feature")),
     "Request Payload Too Large",
 )
 def test_payload_too_large():
-    """Test payload too large returns 413 error.
-
-    NOTE: Currently marked as WIP because the API does not enforce
-    candidate document limits.
-    """
+    """Test payload too large returns 413 error."""
     pass
 
 
@@ -275,10 +270,10 @@ def primary_document(context):
 
 @given("I have too many candidate documents exceeding the limit")
 def too_many_candidates(context):
-    """Create too many candidate documents."""
-    # Create many candidates to exceed payload limits
+    """Create too many candidate documents to exceed the hard limit (10000)."""
+    # Create candidates to exceed MAX_CANDIDATE_DOCUMENTS (10000)
     context["candidate-documents"] = [
-        create_po_document(doc_id=f"PO-{i:05d}") for i in range(1000)
+        create_po_document(doc_id=f"PO-{i:05d}") for i in range(10001)
     ]
 
 

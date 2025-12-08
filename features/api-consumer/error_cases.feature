@@ -54,8 +54,7 @@ Feature: Document Matching API Error Cases
     And the response body should contain a clear error message
     And the error message should indicate the invalid document kind
 
-  # NOTE: API does not enforce candidate document limits
-  @story-1.1 @error_cases @payload_too_large @wip
+  @story-1.1 @error_cases @payload_too_large @implemented
   Scenario: Request Payload Too Large
     Given I have a primary document
     And I have too many candidate documents exceeding the limit

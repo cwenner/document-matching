@@ -63,7 +63,7 @@ Customers could e.g. provide labels such as `not-shown` if a report was never us
 | severity | string enum | One of: `no-severity`, `info`, `low`, `medium`, `high`. |
 | message | string | Human-readable description of the deviation. Suitable for developers, not end users. |
 | field_names | array[string] | Attempts to reference which fields in the respective documents caused the deviation. This is a list with one element per document in `documents`. E.g. when a deviation is detected in amounts between two documents, the amount fields may have different names in the two documents. |
-| values | array[any as string] | For the above-mentioned field names, what were the values in the documents. Encoded as strings. |
+| field_values | array[any as string] | For the above-mentioned field names, what were the values in the documents. Encoded as strings. |
 
 ### Itempairs
 

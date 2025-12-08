@@ -62,6 +62,11 @@ class MatchRequest(BaseModel):
 # Create a service instance
 matching_service = MatchingService()
 
+# Maximum number of candidate documents allowed per request (hard limit - returns 413)
+MAX_CANDIDATE_DOCUMENTS = 10000
+# Soft cap for processing - logs warning and truncates to this limit
+CANDIDATE_PROCESSING_CAP = 1000
+
 # --- FastAPI App ---
 app = FastAPI()
 logger.info("✔ Matching Service API Ready")
@@ -106,6 +111,14 @@ async def request_handler(request: Request):
     """Handles matching requests."""
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")
 
+    # Validate Content-Type header (case-insensitive per RFC 7231)
+    content_type = request.headers.get("content-type", "")
+    if content_type and not content_type.lower().startswith("application/json"):
+        logger.error(f"Trace ID {trace_id}: Unsupported Content-Type: {content_type}")
+        raise HTTPException(
+            status_code=415, detail="Unsupported Media Type. Use application/json"
+        )
+
     try:
         # Parse request data
         indata = await request.json()
@@ -128,6 +141,25 @@ async def request_handler(request: Request):
             doc.model_dump(by_alias=True, exclude_none=True)
             for doc in match_request.candidate_documents
         ]
+
+        # Check candidate document count limit (hard limit)
+        if len(candidate_documents) > MAX_CANDIDATE_DOCUMENTS:
+            logger.error(
+                f"Trace ID {trace_id}: Too many candidate documents: {len(candidate_documents)}"
+            )
+            raise HTTPException(
+                status_code=413,
+                detail=f"Payload too large. Maximum {MAX_CANDIDATE_DOCUMENTS} candidate documents allowed",
+            )
+
+        # Soft cap: if over processing limit, log warning and truncate
+        if len(candidate_documents) > CANDIDATE_PROCESSING_CAP:
+            original_count = len(candidate_documents)
+            candidate_documents = candidate_documents[:CANDIDATE_PROCESSING_CAP]
+            logger.warning(
+                f"Trace ID {trace_id}: Candidate count {original_count} exceeds processing cap. "
+                f"Truncated to first {CANDIDATE_PROCESSING_CAP} candidates."
+            )
 
         # Log request receipt
         doc_id = document.get("id", "<id missing>")
