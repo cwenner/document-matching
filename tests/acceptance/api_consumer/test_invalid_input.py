@@ -77,13 +77,12 @@ def test_missing_required_fields():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/invalid_input.feature")),
     "Invalid Field Values",
 )
 def test_invalid_field_values():
-    """Test API response when document field values are invalid - WIP."""
+    """Test API response when document field values are invalid (V1: basic validation only)."""
     pass
 
 
