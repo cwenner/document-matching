@@ -38,7 +38,6 @@ def test_basic_invoice_po_match():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/basic.feature")),
     "Basic PO-Delivery Receipt Match",
@@ -46,8 +45,8 @@ def test_basic_invoice_po_match():
 def test_basic_po_dr_match():
     """Test basic matching of PO to delivery receipt.
 
-    NOTE: Currently marked as WIP because the ML model expects invoice as primary document.
-    PO-primary matching would require model retraining. See issue #40 notes.
+    Uses reference-based matching (not ML) per ADR-001.
+    Delivery receipt's purchaseOrderNumber field matches PO's orderNumber.
     """
     pass
 
@@ -186,6 +185,7 @@ def create_delivery_receipt(
                     {"name": "lineNumber", "value": "1"},
                     {"name": "quantity", "value": "1"},
                     {"name": "inventory", "value": "ART-001"},
+                    {"name": "purchaseOrderNumber", "value": order_ref},
                 ]
             }
         ],
