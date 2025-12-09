@@ -163,6 +163,19 @@ async def liveness_handler(_request: Request):
     return {"status": "HEALTHY"}
 
 
+@app.get("/health/circuit-breakers")
+async def circuit_breakers_handler(_request: Request):
+    """Circuit breaker status endpoint - shows status of all circuit breakers."""
+    try:
+        from src.external_service_client import get_all_circuit_breaker_statuses
+
+        statuses = get_all_circuit_breaker_statuses()
+        return {"circuit_breakers": statuses}
+    except Exception as e:
+        logger.warning(f"Failed to get circuit breaker statuses: {e}")
+        return {"circuit_breakers": {}, "error": "Circuit breaker monitoring not available"}
+
+
 # Main endpoint for matching - handles all document matching requests
 @app.post("/")
 async def request_handler(request: Request):
