@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from typing import Any, List, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -11,9 +12,26 @@ from document_utils import DocumentKind
 from matching_service import MatchingService
 
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] - %(message)s",
 )
 logger = logging.getLogger("matching_service_api")
+
+
+def get_or_generate_request_id(request: Request) -> str:
+    """
+    Get X-Request-ID from headers or generate a new UUID if not provided.
+
+    Args:
+        request: FastAPI Request object
+
+    Returns:
+        Request ID string
+    """
+    request_id = request.headers.get("x-request-id")
+    if not request_id:
+        request_id = str(uuid.uuid4())
+    return request_id
 
 
 class Document(BaseModel):
@@ -72,11 +90,23 @@ app = FastAPI()
 logger.info("✔ Matching Service API Ready")
 
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Add X-Request-ID header to all HTTP exceptions."""
+    request_id = get_or_generate_request_id(request)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers={"X-Request-ID": request_id},
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     """Convert Pydantic validation errors to 400 responses with clear messages."""
+    request_id = get_or_generate_request_id(request)
     errors = exc.errors()
     error_messages = []
     for error in errors:
@@ -84,37 +114,52 @@ async def validation_exception_handler(
         msg = error.get("msg", "validation error")
         error_messages.append(f"{loc}: {msg}")
     detail = "; ".join(error_messages) if error_messages else "Validation error"
-    return JSONResponse(status_code=400, content={"detail": detail})
+    return JSONResponse(
+        status_code=400,
+        content={"detail": detail},
+        headers={"X-Request-ID": request_id},
+    )
 
 
 @app.get("/health")
-async def health_handler(_request: Request):
+async def health_handler(request: Request):
     """Health probe endpoint."""
-    return Response("Ready to match\r\n")
+    request_id = get_or_generate_request_id(request)
+    return Response("Ready to match\r\n", headers={"X-Request-ID": request_id})
 
 
 @app.get("/health/readiness")
-async def readiness_handler(_request: Request):
+async def readiness_handler(request: Request):
     """Readiness probe endpoint - used to determine if the service is ready to accept requests."""
-    return {"status": "READY"}
+    request_id = get_or_generate_request_id(request)
+    return JSONResponse(
+        content={"status": "READY"}, headers={"X-Request-ID": request_id}
+    )
 
 
 @app.get("/health/liveness")
-async def liveness_handler(_request: Request):
+async def liveness_handler(request: Request):
     """Liveness probe endpoint - used to determine if the service is running."""
-    return {"status": "HEALTHY"}
+    request_id = get_or_generate_request_id(request)
+    return JSONResponse(
+        content={"status": "HEALTHY"}, headers={"X-Request-ID": request_id}
+    )
 
 
 # Main endpoint for matching - handles all document matching requests
 @app.post("/")
 async def request_handler(request: Request):
     """Handles matching requests."""
+    request_id = get_or_generate_request_id(request)
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")
 
     # Validate Content-Type header (case-insensitive per RFC 7231)
     content_type = request.headers.get("content-type", "")
     if content_type and not content_type.lower().startswith("application/json"):
-        logger.error(f"Trace ID {trace_id}: Unsupported Content-Type: {content_type}")
+        logger.error(
+            f"Trace ID {trace_id}: Unsupported Content-Type: {content_type}",
+            extra={"request_id": request_id},
+        )
         raise HTTPException(
             status_code=415, detail="Unsupported Media Type. Use application/json"
         )
@@ -145,7 +190,8 @@ async def request_handler(request: Request):
         # Check candidate document count limit (hard limit)
         if len(candidate_documents) > MAX_CANDIDATE_DOCUMENTS:
             logger.error(
-                f"Trace ID {trace_id}: Too many candidate documents: {len(candidate_documents)}"
+                f"Trace ID {trace_id}: Too many candidate documents: {len(candidate_documents)}",
+                extra={"request_id": request_id},
             )
             raise HTTPException(
                 status_code=413,
@@ -158,13 +204,15 @@ async def request_handler(request: Request):
             candidate_documents = candidate_documents[:CANDIDATE_PROCESSING_CAP]
             logger.warning(
                 f"Trace ID {trace_id}: Candidate count {original_count} exceeds processing cap. "
-                f"Truncated to first {CANDIDATE_PROCESSING_CAP} candidates."
+                f"Truncated to first {CANDIDATE_PROCESSING_CAP} candidates.",
+                extra={"request_id": request_id},
             )
 
         # Log request receipt
         doc_id = document.get("id", "<id missing>")
         logger.info(
-            f"Trace ID {trace_id}: Processing request for document {doc_id} with {len(candidate_documents)} candidates"
+            f"Trace ID {trace_id}: Processing request for document {doc_id} with {len(candidate_documents)} candidates",
+            extra={"request_id": request_id},
         )
 
         # Ensure the service is initialized (lazy initialization)
@@ -178,17 +226,20 @@ async def request_handler(request: Request):
 
         # Handle errors
         if not final_report:
-            logger.error(json.dumps(log_entry))
+            logger.error(json.dumps(log_entry), extra={"request_id": request_id})
             raise HTTPException(
                 status_code=500, detail="Matching service failed to process document"
             )
 
         # Log success and return result
-        logger.info(json.dumps(log_entry))
-        return final_report
+        logger.info(json.dumps(log_entry), extra={"request_id": request_id})
+        return JSONResponse(content=final_report, headers={"X-Request-ID": request_id})
 
     except json.JSONDecodeError:
-        logger.error(f"Trace ID {trace_id}: Failed to decode JSON request body.")
+        logger.error(
+            f"Trace ID {trace_id}: Failed to decode JSON request body.",
+            extra={"request_id": request_id},
+        )
         raise HTTPException(status_code=400, detail="Invalid JSON request body")
     except RequestValidationError:
         # Re-raise validation errors to let FastAPI handle them
@@ -197,5 +248,8 @@ async def request_handler(request: Request):
         # Re-raise HTTPExceptions to let FastAPI handle them
         raise e
     except Exception as e:
-        logger.exception(f"Trace ID {trace_id}: Unexpected error in request handler.")
+        logger.exception(
+            f"Trace ID {trace_id}: Unexpected error in request handler.",
+            extra={"request_id": request_id},
+        )
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
