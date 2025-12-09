@@ -34,9 +34,9 @@ Feature: Document Matching API Error Cases
     And the response body should contain a clear error message
     And the error message should indicate the missing primary document
 
-  # NOTE: API does not validate document structure - accepts any dict and attempts processing
-  # BLOCKED BY: #74 (Define input validation strictness and error responses)
-  @story-1.1 @error_cases @invalid_format @wip
+  # NOTE: Pydantic validates document structure - missing required fields return 400
+  # RESOLVED BY: #74 (Define input validation strictness and error responses)
+  @story-1.1 @error_cases @invalid_format @implemented
   Scenario: Invalid Document Format
     Given I have a primary document with invalid format
     And I have valid candidate documents
@@ -45,9 +45,9 @@ Feature: Document Matching API Error Cases
     And the response body should contain a clear error message
     And the error message should indicate the format issue
 
-  # NOTE: API does not validate document kind enum - accepts any kind value
-  # BLOCKED BY: #74 (Define input validation strictness and error responses)
-  @story-1.1 @error_cases @invalid_kind @wip
+  # NOTE: Custom validator enforces DocumentKind enum - invalid kinds return 400 with clear message
+  # RESOLVED BY: #74 (Define input validation strictness and error responses)
+  @story-1.1 @error_cases @invalid_kind @implemented
   Scenario: Invalid Document Kind
     Given I have a primary document with unsupported kind
     And I have valid candidate documents

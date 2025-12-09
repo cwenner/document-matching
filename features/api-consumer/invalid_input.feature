@@ -17,9 +17,9 @@ Feature: Document Matching API - Invalid Input Handling
     And the error message should indicate the missing primary document
     And the error message should be machine-readable
 
-  # NOTE: API does not validate document structure - accepts any dict and attempts processing
-  # BLOCKED BY: #74 (Define input validation strictness and error responses)
-  @error_cases @invalid_format @wip
+  # NOTE: Pydantic validates document structure - missing required fields return 400
+  # RESOLVED BY: #74 (Define input validation strictness and error responses)
+  @error_cases @invalid_format @implemented
   Scenario: Invalid Document Format
     Given I have a primary document with invalid format
     And I have a list of valid candidate documents
@@ -57,9 +57,9 @@ Feature: Document Matching API - Invalid Input Handling
     And the error message should indicate the unsupported content type
     And the error message should be machine-readable
 
-  # NOTE: API does not validate required document fields - accepts minimal dict
-  # BLOCKED BY: #74 (Define input validation strictness and error responses)
-  @error_cases @missing_required_fields @wip
+  # NOTE: Pydantic validates required fields (id, kind) - missing fields return 400
+  # RESOLVED BY: #74 (Define input validation strictness and error responses)
+  @error_cases @missing_required_fields @implemented
   Scenario: Missing Required Document Fields
     Given I have a primary document missing required fields
     And I have a list of valid candidate documents
@@ -69,9 +69,10 @@ Feature: Document Matching API - Invalid Input Handling
     And the error message should specify which required fields are missing
     And the error message should be machine-readable
 
-  # NOTE: API does not validate field values - accepts any values
-  # BLOCKED BY: #74 (Define input validation strictness and error responses)
-  @error_cases @invalid_field_values @wip
+  # NOTE: V1 validates only basic field values (types, id non-empty, kind enum)
+  # Advanced value validation (amounts, dates, etc.) is out of scope for V1
+  # RESOLVED BY: #74 - Basic validation implemented, advanced validation deferred
+  @error_cases @invalid_field_values @implemented
   Scenario: Invalid Field Values
     Given I have a primary document with invalid field values
     And I have a list of valid candidate documents

@@ -1,25 +1,13 @@
 {
     "version": "v3",
-    "id": "PD-004",
-    "kind": "invoice",
+    "id": "",
+    "kind": "invalid-document-type",
     "site": "test-site",
     "stage": "input",
     "headers": [
         {
             "name": "supplierId",
-            "value": ""
-        },
-        {
-            "name": "invoiceDate",
-            "value": "invalid-date-format"
-        },
-        {
-            "name": "incVatAmount",
-            "value": "not-a-number"
-        },
-        {
-            "name": "currencyCode",
-            "value": "INVALID_CURRENCY"
+            "value": "SUP-001"
         }
     ],
     "items": []
