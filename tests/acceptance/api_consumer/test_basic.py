@@ -52,7 +52,6 @@ def test_basic_po_dr_match():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/basic.feature")),
     "Three-Way Document Matching",
@@ -60,9 +59,9 @@ def test_basic_po_dr_match():
 def test_three_way_matching():
     """Test matching invoice with both PO and delivery receipt.
 
-    NOTE: Currently marked as WIP because the system returns a single match report
-    for the best match, not separate match reports for each candidate pair.
-    The feature expectation differs from current product behavior.
+    Returns multiple match reports for three-way matching:
+    - Invoice ↔ Purchase Order
+    - Purchase Order ↔ Delivery Receipt
     """
     pass
 
@@ -355,40 +354,69 @@ def check_response_time(seconds, context):
 def check_two_match_reports(context):
     """Check for two match reports in response."""
     response_data = context["response"].json()
-    # Response could be a single report with multiple document pairs
-    # or could indicate matches with multiple documents
-    documents = response_data.get("documents", [])
-    assert len(documents) >= 2, "Should have at least 2 document matches"
+    # For three-way matching, response should have matchReports array
+    assert "matchReports" in response_data, "Response should have matchReports field"
+    match_reports = response_data.get("matchReports", [])
+    assert len(match_reports) == 2, f"Expected 2 match reports, got {len(match_reports)}"
+
+    # Verify summary exists
+    assert "summary" in response_data, "Response should have summary field"
+    summary = response_data["summary"]
+    assert "matchCount" in summary, "Summary should have matchCount"
+    assert "linkedDocuments" in summary, "Summary should have linkedDocuments"
+    assert "overallSeverity" in summary, "Summary should have overallSeverity"
 
 
 @then("one match report should be between invoice and purchase order")
 def check_invoice_po_match(context):
     """Check for invoice-PO match in response."""
     response_data = context["response"].json()
-    documents = response_data.get("documents", [])
-    doc_kinds = [doc.get("kind") for doc in documents]
-    # Check that we have invoice and PO in the matches
-    assert "invoice" in doc_kinds or context["document"]["kind"] == "invoice"
+    match_reports = response_data.get("matchReports", [])
+
+    # Find a report that contains both invoice and purchase-order
+    found_match = False
+    for report in match_reports:
+        documents = report.get("documents", [])
+        doc_kinds = {doc.get("kind") for doc in documents}
+        if "invoice" in doc_kinds and "purchase-order" in doc_kinds:
+            found_match = True
+            break
+
+    assert found_match, "Expected to find a match report between invoice and purchase-order"
 
 
 @then("one match report should be between purchase order and delivery receipt")
 def check_po_dr_match(context):
     """Check for PO-DR match indication in response."""
     response_data = context["response"].json()
-    # This verifies that the response structure includes PO and/or DR matching
-    documents = response_data.get("documents", [])
-    doc_kinds = [doc.get("kind") for doc in documents]
-    # At least one candidate kind should be present
-    assert any(
-        k in ["purchase-order", "delivery-receipt"] for k in doc_kinds
-    ), f"Expected PO or DR match, got kinds: {doc_kinds}"
+    match_reports = response_data.get("matchReports", [])
+
+    # Find a report that contains both purchase-order and delivery-receipt
+    found_match = False
+    for report in match_reports:
+        documents = report.get("documents", [])
+        doc_kinds = {doc.get("kind") for doc in documents}
+        if "purchase-order" in doc_kinds and "delivery-receipt" in doc_kinds:
+            found_match = True
+            break
+
+    assert (
+        found_match
+    ), "Expected to find a match report between purchase-order and delivery-receipt"
 
 
 @then("both match reports should follow the v3 schema")
 def check_both_v3_schema(context):
-    """Check that response follows v3 schema."""
+    """Check that both match reports follow v3 schema."""
     response_data = context["response"].json()
-    assert response_data.get("version") == "v3", "Response should be v3 schema"
+    match_reports = response_data.get("matchReports", [])
+
+    for i, report in enumerate(match_reports):
+        assert report.get("version") == "v3", f"Report {i} should be v3 schema"
+        assert "documents" in report, f"Report {i} should have documents field"
+        assert "labels" in report, f"Report {i} should have labels field"
+        assert "deviations" in report, f"Report {i} should have deviations field"
+        assert "metrics" in report, f"Report {i} should have metrics field"
 
 
 @then(parsers.parse("both match reports should complete within {seconds:d} seconds"))

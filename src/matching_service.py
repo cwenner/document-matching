@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 
 from docpairing import DocumentPairingPredictor
 from itempair_deviations import DocumentKind
-from match_pipeline import run_matching_pipeline
+from match_pipeline import run_matching_pipeline, run_matching_pipeline_multiple
 from match_reporter import DeviationSeverity, calculate_future_match_certainty
 
 logging.basicConfig(
@@ -89,6 +89,26 @@ class MatchingService:
             logger.error(f"Failed to initialize predictor: {e}")
             return None
 
+    def _is_three_way_matching(
+        self, document: Dict, candidate_documents: List[Dict]
+    ) -> bool:
+        """
+        Determine if this is a three-way matching scenario.
+        Three-way matching involves Invoice + PO + Delivery Receipt.
+
+        Args:
+            document: The primary document
+            candidate_documents: List of candidate documents
+
+        Returns:
+            True if this is a three-way matching scenario
+        """
+        all_docs = [document] + candidate_documents
+        kinds = set(doc.get("kind") for doc in all_docs)
+
+        # Three-way matching: invoice, purchase-order, and delivery-receipt
+        return {"invoice", "purchase-order", "delivery-receipt"}.issubset(kinds)
+
     def adapt_report_to_v3(self, report: dict) -> dict:
         """
         Adapts report generated to API spec.
@@ -112,6 +132,45 @@ class MatchingService:
         v3_report.setdefault("labels", [])
 
         return v3_report
+
+    def _create_summary(self, reports: List[Dict]) -> Dict:
+        """
+        Create a summary object for multiple match reports.
+
+        Args:
+            reports: List of match reports
+
+        Returns:
+            Summary dict with matchCount, linkedDocuments, and overallSeverity
+        """
+        match_count = sum(1 for r in reports if "matched" in r.get("labels", []))
+
+        # Collect all unique document IDs
+        linked_docs = set()
+        for report in reports:
+            for doc in report.get("documents", []):
+                doc_id = doc.get("id")
+                if doc_id:
+                    linked_docs.add(doc_id)
+
+        # Determine overall severity (highest severity wins)
+        severity_order = ["no-severity", "info", "low", "medium", "high"]
+        overall_severity = "no-severity"
+
+        for report in reports:
+            for metric in report.get("metrics", []):
+                if metric.get("name") == "deviation-severity":
+                    severity = metric.get("value", "no-severity")
+                    if severity_order.index(severity) > severity_order.index(
+                        overall_severity
+                    ):
+                        overall_severity = severity
+
+        return {
+            "matchCount": match_count,
+            "linkedDocuments": sorted(list(linked_docs)),
+            "overallSeverity": overall_severity,
+        }
 
     def get_dummy_matching_report(self, document: Dict) -> Dict:
         """
@@ -343,53 +402,102 @@ class MatchingService:
             logger.info(
                 f"Trace ID {trace_id}: Site '{site}' is whitelisted. Attempting real pipeline matching."
             )
+
+            # Check if this is a three-way matching scenario
+            is_three_way = self._is_three_way_matching(document, candidate_documents)
+
             try:
-                pipeline_report = run_matching_pipeline(
-                    self._predictor, document, candidate_documents
-                )
-
-                if pipeline_report is None:
-                    logger.error(
-                        f"Trace ID {trace_id}: Pipeline run failed critically for document {doc_id}."
+                if is_three_way:
+                    logger.info(
+                        f"Trace ID {trace_id}: Detected three-way matching scenario. Generating multiple reports."
                     )
-                    log_entry["level"] = "error"
-                    log_entry["message"] = (
-                        f"Pipeline run failed critically for document {doc_id}."
+                    pipeline_reports = run_matching_pipeline_multiple(
+                        self._predictor, document, candidate_documents
                     )
-                    return None, log_entry
 
-                final_report = self.adapt_report_to_v3(pipeline_report)
-                final_report["metrics"].append(
-                    {"name": "candidate-documents", "value": len(candidate_documents)}
-                )
-                final_report["internal"] = final_report.get("internal", [])
-                final_report["internal"].append(
-                    {
-                        "name": "candidate-documents",
-                        "value": [
-                            {"kind": cd["kind"], "id": cd["id"]}
-                            for cd in candidate_documents
-                        ],
+                    if pipeline_reports is None:
+                        logger.error(
+                            f"Trace ID {trace_id}: Pipeline run failed critically for document {doc_id}."
+                        )
+                        log_entry["level"] = "error"
+                        log_entry["message"] = (
+                            f"Pipeline run failed critically for document {doc_id}."
+                        )
+                        return None, log_entry
+
+                    # Adapt each report to v3
+                    adapted_reports = []
+                    for report in pipeline_reports:
+                        adapted = self.adapt_report_to_v3(report)
+                        adapted["metrics"].append(
+                            {
+                                "name": "candidate-documents",
+                                "value": len(candidate_documents),
+                            }
+                        )
+                        adapted_reports.append(adapted)
+
+                    # Create the response with matchReports and summary
+                    final_response = {
+                        "matchReports": adapted_reports,
+                        "summary": self._create_summary(adapted_reports),
                     }
-                )
 
-                if not final_report:
-                    logger.error(
-                        f"Trace ID {trace_id}: Pipeline returned an error for doc {doc_id}"
-                    )
-                    log_entry["level"] = "error"
                     log_entry["message"] = (
-                        f"Pipeline returned an error for doc {doc_id}"
+                        f"Successfully processed three-way matching for document {doc_id}."
                     )
-                    return None, log_entry
+                    log_entry["matchResult"] = "three-way"
+                    log_entry["reportCount"] = len(adapted_reports)
+                    return final_response, log_entry
 
-                log_entry["message"] = (
-                    f"Successfully processed document {doc_id} using pipeline."
-                )
-                log_entry["matchResult"] = final_report.get("labels", ["unknown"])[
-                    0
-                ]  # Log match/no-match
-                return final_report, log_entry
+                else:
+                    # Single pairing - existing behavior
+                    pipeline_report = run_matching_pipeline(
+                        self._predictor, document, candidate_documents
+                    )
+
+                    if pipeline_report is None:
+                        logger.error(
+                            f"Trace ID {trace_id}: Pipeline run failed critically for document {doc_id}."
+                        )
+                        log_entry["level"] = "error"
+                        log_entry["message"] = (
+                            f"Pipeline run failed critically for document {doc_id}."
+                        )
+                        return None, log_entry
+
+                    final_report = self.adapt_report_to_v3(pipeline_report)
+                    final_report["metrics"].append(
+                        {"name": "candidate-documents", "value": len(candidate_documents)}
+                    )
+                    final_report["internal"] = final_report.get("internal", [])
+                    final_report["internal"].append(
+                        {
+                            "name": "candidate-documents",
+                            "value": [
+                                {"kind": cd["kind"], "id": cd["id"]}
+                                for cd in candidate_documents
+                            ],
+                        }
+                    )
+
+                    if not final_report:
+                        logger.error(
+                            f"Trace ID {trace_id}: Pipeline returned an error for doc {doc_id}"
+                        )
+                        log_entry["level"] = "error"
+                        log_entry["message"] = (
+                            f"Pipeline returned an error for doc {doc_id}"
+                        )
+                        return None, log_entry
+
+                    log_entry["message"] = (
+                        f"Successfully processed document {doc_id} using pipeline."
+                    )
+                    log_entry["matchResult"] = final_report.get("labels", ["unknown"])[
+                        0
+                    ]  # Log match/no-match
+                    return final_report, log_entry
 
             except Exception as e:
                 logger.exception(
