@@ -47,9 +47,9 @@ Feature: Core Document Matching API
     And the match report should reference both document IDs
     And the match report should complete within 60 seconds
 
-  # NOTE: System returns single best match report, not separate reports for each pair
-  # BLOCKED BY: #53 (Three-way document matching with separate reports)
-  @story-1.1 @core @three_way_match @wip
+  # NOTE: System returns multiple match reports for three-way matching (Invoice→PO, PO→Delivery)
+  # IMPLEMENTS: #53 (Three-way document matching with separate reports)
+  @story-1.1 @core @three_way_match @implemented
   Scenario: Three-Way Document Matching
     Given I have an invoice document
     And I have a candidate purchase order document
