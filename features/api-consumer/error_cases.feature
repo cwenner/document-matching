@@ -35,7 +35,7 @@ Feature: Document Matching API Error Cases
     And the error message should indicate the missing primary document
 
   # NOTE: API does not validate document structure - accepts any dict and attempts processing
-  # BLOCKED BY: Design decision - validation strictness not yet defined
+  # BLOCKED BY: #74 (Define input validation strictness and error responses)
   @story-1.1 @error_cases @invalid_format @wip
   Scenario: Invalid Document Format
     Given I have a primary document with invalid format
@@ -46,7 +46,7 @@ Feature: Document Matching API Error Cases
     And the error message should indicate the format issue
 
   # NOTE: API does not validate document kind enum - accepts any kind value
-  # BLOCKED BY: Design decision - kind validation strictness not yet defined
+  # BLOCKED BY: #74 (Define input validation strictness and error responses)
   @story-1.1 @error_cases @invalid_kind @wip
   Scenario: Invalid Document Kind
     Given I have a primary document with unsupported kind
