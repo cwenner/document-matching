@@ -29,6 +29,300 @@ logger = logging.getLogger(__name__)
 CONFIDENT_NO_MATCH_CERTAINTY = NO_MATCH_CERTAINTY_THRESHOLD - 0.05  # 0.15
 
 
+def run_matching_pipeline_multiple(
+    predictor: DocumentPairingPredictor,
+    input_document: dict,
+    historical_documents: list[dict],
+):
+    """
+    Runs the full matching pipeline for three-way matching scenarios.
+    Returns multiple match reports, one for each attempted pairing.
+
+    For Invoice + PO + DR:
+    - Returns report for Invoice↔PO pairing
+    - Returns report for PO↔DR pairing
+
+    Args:
+        predictor: An initialized DocumentPairingPredictor instance.
+        input_document: The target document dictionary.
+        historical_documents: A list of candidate document dictionaries.
+
+    Returns:
+        A list of dictionaries representing match reports (matched or no-match).
+        Returns None if a critical error occurs during processing.
+    """
+    logger.info(
+        f"--- Running Multiple Pairing Pipeline for Document ID: {input_document.get('id', 'N/A')} ---"
+    )
+
+    if not predictor:
+        logger.error("Predictor is not initialized. Cannot run pipeline.")
+        return None
+
+    # Extract attachments
+    unpack_attachments(input_document)
+    for candidate_doc in historical_documents:
+        unpack_attachments(candidate_doc)
+
+    # Record history
+    try:
+        id2doc = {
+            doc["id"]: doc
+            for doc in historical_documents
+            if isinstance(doc, dict) and "id" in doc
+        }
+        if "id" in input_document:
+            id2doc[input_document["id"]] = input_document
+        else:
+            logger.warning("Input document is missing an 'id'.")
+
+        predictor.clear_documents()
+        for doc in historical_documents:
+            predictor.record_document(doc)
+        if isinstance(input_document, dict):
+            predictor.record_document(input_document)
+
+        id2doc = predictor.id2document.copy()
+
+    except Exception as e:
+        logger.exception("Error during data recording for pipeline run.")
+        error_report = generate_no_match_report(input_document)
+        error_report["labels"].append("pipeline-error")
+        error_report["deviations"] = [
+            {
+                "code": "pipeline-setup-error",
+                "message": f"Failed to record documents: {e}",
+                "severity": "high",
+            }
+        ]
+        return [error_report]
+
+    # Determine pairings for three-way matching
+    # Strategy: Invoice↔PO and PO↔DR
+    reports = []
+
+    # Group documents by kind
+    doc_by_kind = {}
+    doc_by_kind[input_document.get("kind")] = input_document
+    for doc in historical_documents:
+        doc_by_kind[doc.get("kind")] = doc
+
+    # Define pairing strategy
+    pairings_to_attempt = []
+
+    if "invoice" in doc_by_kind and "purchase-order" in doc_by_kind:
+        pairings_to_attempt.append(("invoice", "purchase-order"))
+
+    if "purchase-order" in doc_by_kind and "delivery-receipt" in doc_by_kind:
+        pairings_to_attempt.append(("purchase-order", "delivery-receipt"))
+
+    # If no strategic pairings, fall back to matching input against all candidates
+    if not pairings_to_attempt:
+        for candidate_doc in historical_documents:
+            report = _process_single_pairing(
+                predictor, input_document, candidate_doc, id2doc
+            )
+            if report:
+                reports.append(report)
+        return reports if reports else [generate_no_match_report(input_document)]
+
+    # Process each strategic pairing
+    for kind1, kind2 in pairings_to_attempt:
+        doc1 = doc_by_kind.get(kind1)
+        doc2 = doc_by_kind.get(kind2)
+
+        if doc1 and doc2:
+            report = _process_single_pairing(predictor, doc1, doc2, id2doc)
+            if report:
+                reports.append(report)
+
+    return reports if reports else [generate_no_match_report(input_document)]
+
+
+def _process_single_pairing(
+    predictor: DocumentPairingPredictor,
+    doc1: dict,
+    doc2: dict,
+    id2doc: dict,
+) -> dict:
+    """
+    Process a single document pairing and generate a match report.
+
+    Args:
+        predictor: An initialized DocumentPairingPredictor instance.
+        doc1: First document dictionary.
+        doc2: Second document dictionary.
+        id2doc: Map of document IDs to document objects.
+
+    Returns:
+        A dictionary representing the match report (either match or no-match).
+        Returns None if a critical error occurs during processing.
+    """
+    doc1_id = doc1.get("id", "N/A")
+    doc2_id = doc2.get("id", "N/A")
+
+    logger.info(f"Processing pairing: {doc1_id} <-> {doc2_id}")
+
+    # Predict pairing confidence
+    try:
+        pairings = predictor.predict_pairings(
+            doc1,
+            [doc2],
+            use_reference_logic=True,
+        )
+
+        if not pairings or pairings[0][1] < NO_MATCH_CERTAINTY_THRESHOLD:
+            # No match - return no-match report
+            logger.info(f"No match between {doc1_id} and {doc2_id}")
+            return generate_no_match_report(doc1, no_match_confidence=CONFIDENT_NO_MATCH_CERTAINTY)
+
+        match_confidence = pairings[0][1]
+        logger.info(f"Match found: {doc1_id} <-> {doc2_id} (confidence: {match_confidence:.4f})")
+
+    except Exception:
+        logger.exception(f"Error during pairing prediction for {doc1_id} <-> {doc2_id}")
+        return generate_no_match_report(doc1, no_match_confidence=CONFIDENT_NO_MATCH_CERTAINTY)
+
+    # Collect document-level deviations
+    document_deviations = []
+    try:
+        document_deviations = collect_document_deviations(doc1, doc2)
+        logger.info(f"Collected {len(document_deviations)} document-level deviations.")
+    except Exception as e:
+        logger.exception(f"Error collecting document deviations for {doc1_id} <-> {doc2_id}")
+
+    # Extract and pair items
+    doc1_items, doc2_items = [], []
+    try:
+        doc1_items = get_document_items(doc1)
+        doc2_items = get_document_items(doc2)
+        logger.info(
+            f"Extracted {len(doc1_items)} items from doc1, {len(doc2_items)} items from doc2."
+        )
+    except Exception as e:
+        logger.exception(f"Error extracting items for {doc1_id} <-> {doc2_id}")
+
+    processed_item_pairs = []
+    if doc1_items and doc2_items:
+        try:
+            matched_item_pairs_raw = pair_document_items(doc1_items, doc2_items)
+            logger.info(f"Found {len(matched_item_pairs_raw)} initial item pairs.")
+
+            for raw_pair in matched_item_pairs_raw:
+                item1_data = raw_pair.get("item1")
+                item2_data = raw_pair.get("item2")
+
+                if not item1_data or not item2_data:
+                    continue
+
+                doc_kinds = [
+                    item1_data["document_kind"],
+                    item2_data["document_kind"],
+                ]
+                item1_fields = item1_data.get("raw_item", {}).get("fields")
+                item2_fields = item2_data.get("raw_item", {}).get("fields")
+
+                item_deviations = []
+                if item1_fields is not None and item2_fields is not None:
+                    try:
+                        item_deviations = collect_itempair_deviations(
+                            doc_kinds,
+                            [item1_fields, item2_fields],
+                            raw_pair.get("similarities"),
+                        )
+                    except Exception as e_dev:
+                        logger.exception(
+                            f"Error collecting deviations for item pair"
+                        )
+                        item_deviations.append(
+                            FieldDeviation(
+                                code="deviation-calc-failed",
+                                message=str(e_dev),
+                                severity=DeviationSeverity.HIGH,
+                            )
+                        )
+
+                processed_item_pairs.append(
+                    {
+                        "item1": item1_data,
+                        "item2": item2_data,
+                        "score": raw_pair.get("score"),
+                        "similarities": raw_pair.get("similarities"),
+                        "deviations": item_deviations,
+                    }
+                )
+
+            # Add unmatched items
+            for item in doc1_items:
+                if not item.get("matched"):
+                    doc_kind = item.get("document_kind")
+                    if doc_kind:
+                        unmatched_deviation = create_item_unmatched_deviation(
+                            item, doc_kind
+                        )
+                        processed_item_pairs.append(
+                            {
+                                "item1": item,
+                                "item2": None,
+                                "score": None,
+                                "similarities": None,
+                                "deviations": [unmatched_deviation],
+                                "match_type": "unmatched",
+                            }
+                        )
+
+            for item in doc2_items:
+                if not item.get("matched"):
+                    doc_kind = item.get("document_kind")
+                    if doc_kind:
+                        unmatched_deviation = create_item_unmatched_deviation(
+                            item, doc_kind
+                        )
+                        processed_item_pairs.append(
+                            {
+                                "item1": None,
+                                "item2": item,
+                                "score": None,
+                                "similarities": None,
+                                "deviations": [unmatched_deviation],
+                                "match_type": "unmatched",
+                            }
+                        )
+
+        except Exception as e_item_processing:
+            logger.exception("Error during item pairing or deviation collection.")
+            document_deviations.append(
+                FieldDeviation(
+                    code="item-processing-failed",
+                    message=str(e_item_processing),
+                    severity=DeviationSeverity.HIGH,
+                )
+            )
+
+    # Generate match report
+    try:
+        final_report = generate_match_report(
+            doc1,
+            doc2,
+            processed_item_pairs,
+            document_deviations,
+            match_confidence=match_confidence,
+        )
+        logger.info(f"Match report generated successfully (ID: {final_report.get('id')}).")
+        return final_report
+    except Exception as e:
+        logger.exception("Error occurred during match report generation.")
+        return {
+            "error": "Failed to generate final match report",
+            "details": str(e),
+            "documents": [
+                {"kind": doc1.get("kind", "unknown"), "id": doc1.get("id")},
+                {"kind": doc2.get("kind", "unknown"), "id": doc2.get("id")},
+            ],
+            "labels": ["matched", "report-generation-error"],
+        }
+
+
 def run_matching_pipeline(
     predictor: DocumentPairingPredictor,
     input_document: dict,
