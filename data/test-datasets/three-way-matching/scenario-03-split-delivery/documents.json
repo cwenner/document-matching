@@ -1,0 +1,282 @@
+[
+  {
+    "version": "v3",
+    "id": "PO-S03-001",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "PO-2025-003"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-300"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-01-10"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "1800.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "1500.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-003A"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-30001"
+          },
+          {
+            "name": "description",
+            "value": "Module X"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "250.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "3.00"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-003B"
+          },
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-30002"
+          },
+          {
+            "name": "description",
+            "value": "Module Y"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "250.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "3.00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "INV-S03-001",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+      {
+        "name": "invoiceNumber",
+        "value": "INV-2025-003"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-300"
+      },
+      {
+        "name": "invoiceDate",
+        "value": "2025-01-15"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-003"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "1800.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "1500.00"
+      },
+      {
+        "name": "currencyCode",
+        "value": "USD"
+      },
+      {
+        "name": "type",
+        "value": "DEBIT"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Module X"
+          },
+          {
+            "name": "debit",
+            "value": "750.00"
+          },
+          {
+            "name": "quantity",
+            "value": "3"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-003A"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "text",
+            "value": "Module Y"
+          },
+          {
+            "name": "debit",
+            "value": "750.00"
+          },
+          {
+            "name": "quantity",
+            "value": "3"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-003B"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S03-001",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-003A"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-300"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-12"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-003"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Module X"
+          },
+          {
+            "name": "quantity",
+            "value": "3"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-003A"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S03-002",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-003B"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-300"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-13"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-003"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Module Y"
+          },
+          {
+            "name": "quantity",
+            "value": "3"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-003B"
+          }
+        ]
+      }
+    ]
+  }
+]

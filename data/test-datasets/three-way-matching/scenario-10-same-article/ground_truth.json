@@ -1,0 +1,19 @@
+{
+  "scenario": "scenario-10-same-article",
+  "description": "Edge case: Same article number (ART-10000) appears on multiple PO lines with different delivery locations",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S10-001", "INV-S10-001", "DR-S10-001"],
+      "shared_po_lines": ["PO-LINE-010A"],
+      "reasoning": "Invoice and Delivery both explicitly reference PO-LINE-010A (Warehouse A). Matching must be based on specific PO line reference, NOT just article number."
+    },
+    {
+      "group_id": "group-2",
+      "documents": ["PO-S10-001", "DR-S10-002"],
+      "shared_po_lines": ["PO-LINE-010B"],
+      "reasoning": "Delivery DR-S10-002 references PO-LINE-010B (Warehouse B) only. No invoice yet for this line."
+    }
+  ],
+  "notes": "This scenario tests that matching logic uses explicit PO line references rather than just matching on article numbers. All three PO lines have the same article (ART-10000), but documents should only be grouped when they reference the same specific PO line ID."
+}

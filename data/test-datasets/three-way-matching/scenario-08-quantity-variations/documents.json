@@ -1,0 +1,293 @@
+[
+  {
+    "version": "v3",
+    "id": "PO-S08-001",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "PO-2025-008"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-800"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-01-10"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "12000.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "10000.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-008A"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-80001"
+          },
+          {
+            "name": "description",
+            "value": "Industrial Valve"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "10.00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "INV-S08-001",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+      {
+        "name": "invoiceNumber",
+        "value": "INV-2025-008A"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-800"
+      },
+      {
+        "name": "invoiceDate",
+        "value": "2025-01-15"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-008"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "3600.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "3000.00"
+      },
+      {
+        "name": "currencyCode",
+        "value": "USD"
+      },
+      {
+        "name": "type",
+        "value": "DEBIT"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Industrial Valve"
+          },
+          {
+            "name": "debit",
+            "value": "3000.00"
+          },
+          {
+            "name": "quantity",
+            "value": "3"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-008A"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "INV-S08-002",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+      {
+        "name": "invoiceNumber",
+        "value": "INV-2025-008B"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-800"
+      },
+      {
+        "name": "invoiceDate",
+        "value": "2025-01-20"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-008"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "8400.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "7000.00"
+      },
+      {
+        "name": "currencyCode",
+        "value": "USD"
+      },
+      {
+        "name": "type",
+        "value": "DEBIT"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Industrial Valve"
+          },
+          {
+            "name": "debit",
+            "value": "7000.00"
+          },
+          {
+            "name": "quantity",
+            "value": "7"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-008A"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S08-001",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-008A"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-800"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-12"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-008"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Industrial Valve"
+          },
+          {
+            "name": "quantity",
+            "value": "5"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-008A"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S08-002",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-008B"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-800"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-18"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-008"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Industrial Valve"
+          },
+          {
+            "name": "quantity",
+            "value": "5"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-008A"
+          }
+        ]
+      }
+    ]
+  }
+]

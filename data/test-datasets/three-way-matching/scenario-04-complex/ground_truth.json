@@ -1,0 +1,18 @@
+{
+  "scenario": "scenario-04-complex",
+  "description": "Complex: 1 PO with 4 line items, 2 Invoices, 2 Deliveries - need correct pairing",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S04-001", "INV-S04-001", "DR-S04-001"],
+      "shared_po_lines": ["PO-LINE-004A", "PO-LINE-004B"],
+      "reasoning": "Invoice INV-S04-001 and Delivery DR-S04-001 both reference PO lines A and B (Gear Assemblies)"
+    },
+    {
+      "group_id": "group-2",
+      "documents": ["PO-S04-001", "INV-S04-002", "DR-S04-002"],
+      "shared_po_lines": ["PO-LINE-004C", "PO-LINE-004D"],
+      "reasoning": "Invoice INV-S04-002 and Delivery DR-S04-002 both reference PO lines C and D (Bearings)"
+    }
+  ]
+}

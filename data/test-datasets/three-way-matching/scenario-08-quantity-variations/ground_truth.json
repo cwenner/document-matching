@@ -1,0 +1,12 @@
+{
+  "scenario": "scenario-08-quantity-variations",
+  "description": "Quantity variations: Partial deliveries and invoicing with varying quantities on same PO line",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S08-001", "INV-S08-001", "INV-S08-002", "DR-S08-001", "DR-S08-002"],
+      "shared_po_lines": ["PO-LINE-008A"],
+      "reasoning": "All invoices and deliveries reference the same PO line (Industrial Valve), regardless of different quantities. Total: 10 invoiced (3+7), 10 delivered (5+5) matching PO quantity."
+    }
+  ]
+}

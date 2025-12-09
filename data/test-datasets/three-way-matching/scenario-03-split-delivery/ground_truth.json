@@ -1,0 +1,12 @@
+{
+  "scenario": "scenario-03-split-delivery",
+  "description": "Split delivery: 1 PO with 2 line items, 1 Invoice (covers both), 2 Deliveries (each covers 1 line)",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S03-001", "INV-S03-001", "DR-S03-001", "DR-S03-002"],
+      "shared_po_lines": ["PO-LINE-003A", "PO-LINE-003B"],
+      "reasoning": "All documents reference the same PO. The invoice and two deliveries are linked via shared PO lines."
+    }
+  ]
+}

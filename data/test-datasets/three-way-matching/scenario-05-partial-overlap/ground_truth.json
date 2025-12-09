@@ -1,0 +1,12 @@
+{
+  "scenario": "scenario-05-partial-overlap",
+  "description": "Partial overlap: 1 PO with 3 lines, Invoice covers lines 1-2, Delivery covers lines 2-3",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S05-001", "INV-S05-001", "DR-S05-001"],
+      "shared_po_lines": ["PO-LINE-005B"],
+      "reasoning": "Invoice and Delivery both reference PO-LINE-005B (Connector Set B), creating a link between them despite covering different line combinations"
+    }
+  ]
+}
