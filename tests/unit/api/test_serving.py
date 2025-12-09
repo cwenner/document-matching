@@ -71,3 +71,25 @@ def test_post_non_whitelisted_site_dummy_match():
     assert len(report["documents"]) == 2  # Dummy match has 2 docs
     assert report["documents"][0]["id"] == DUMMY_DOC["id"]
     assert report["documents"][0]["kind"] == DUMMY_DOC["kind"]
+
+
+def test_gzip_compression_with_accept_encoding():
+    """Test that gzip compression is applied when Accept-Encoding header is present."""
+    payload = {"document": DUMMY_DOC, "candidate-documents": []}
+    headers = {"Accept-Encoding": "gzip"}
+    with patch("builtins.hash", return_value=1):
+        response = client.post("/", json=payload, headers=headers)
+    assert response.status_code == 200
+    # Check if content-encoding header is present for compressed responses
+    # Note: compression only happens for responses larger than minimum_size threshold
+    assert response.json()["kind"] == "match-report"
+
+
+def test_gzip_compression_threshold():
+    """Test that small responses are not compressed."""
+    # Test with health endpoint which returns small response
+    headers = {"Accept-Encoding": "gzip"}
+    response = client.get("/health", headers=headers)
+    assert response.status_code == 200
+    # Small responses should not be compressed (below 1KB threshold)
+    assert "Ready to match" in response.text

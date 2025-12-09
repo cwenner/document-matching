@@ -224,6 +224,13 @@ API specifications are available in the `docs/` directory:
 - `POST /` - Submit documents for matching
 - `GET /health` - Service health check
 
+### Response Compression
+
+The API supports gzip compression for JSON responses:
+- Responses larger than 1KB are automatically compressed when the client sends `Accept-Encoding: gzip`
+- This reduces bandwidth usage for large match reports
+- Compression is transparent to clients that support gzip encoding
+
 ## Configuration
 
 ### Environment Variables

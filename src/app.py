@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
@@ -69,6 +70,11 @@ CANDIDATE_PROCESSING_CAP = 1000
 
 # --- FastAPI App ---
 app = FastAPI()
+
+# Add gzip compression middleware for JSON responses
+# Compress responses larger than 1KB (1000 bytes)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 logger.info("✔ Matching Service API Ready")
 
 
