@@ -5,6 +5,7 @@ A document matching service that compares documents (invoices, purchase orders, 
 ## Table of Contents
 
 - [Project Overview](#project-overview)
+- [Matching Topology](#matching-topology)
 - [Repository Structure](#repository-structure)
 - [Quick Start](#quick-start)
 - [Development](#development)
@@ -21,6 +22,33 @@ The Document-Matcher service provides:
 - Deviation analysis between matched documents
 - RESTful API for document matching requests
 - Comprehensive test suite with BDD scenarios
+
+## Matching Topology
+
+The system uses a **PO-Hub Model** for document matching (see [ADR-001](docs/decisions/ADR-001-matching-topology.md)):
+
+```
+Invoice ←→ PO ←→ Delivery Receipt
+         (hub)
+```
+
+### How It Works
+
+| Matching Direction | Method | Status |
+|-------------------|--------|--------|
+| Invoice → PO | Reference + ML fallback | Implemented |
+| PO → Invoice | Reference matching | Implemented |
+| Delivery → PO | Reference matching | Implemented |
+| PO → Delivery | Reference matching | Implemented |
+| Invoice ↔ Delivery | Transitive (via shared PO) | Implemented |
+
+### Key Design Decisions
+
+1. **PO as Hub**: The Purchase Order serves as the central document linking invoices and deliveries
+2. **Transitive Matching**: Invoice-to-Delivery relationships are inferred through shared PO references
+3. **ML Fallback**: When reference matching fails, ML model provides similarity-based matching (currently Invoice→PO only)
+
+For architectural details, see the [Architecture Decision Records](docs/decisions/)
 
 ## Repository Structure
 

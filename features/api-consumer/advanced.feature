@@ -6,7 +6,8 @@ Feature: Advanced Document Matching Features
   Background:
     Given the document matching service is available
 
-  # NOTE: API does not produce "delivery-receipt-has-future-match-certainty" metric - see issue #61
+  # NOTE: API does not produce "delivery-receipt-has-future-match-certainty" metric
+  # BLOCKED BY: #61 (Add delivery-receipt-has-future-match-certainty metric)
   @story-1.1 @advanced @future_match @wip
   Scenario: Future Match Certainty
     Given I have a primary invoice document
@@ -39,6 +40,7 @@ Feature: Advanced Document Matching Features
 
   # NOTE: ML model does not guarantee same-supplier matches have highest certainty
   # The model considers multiple features and may select different candidates
+  # BLOCKED BY: #58 (Investigate supplier ID priority in ML matching model)
   @story-1.1 @advanced @supplier_matching @wip
   Scenario: Matching Documents from Same Supplier
     Given I have a primary invoice document from supplier "ABC Corp"

@@ -35,6 +35,7 @@ Feature: Core Document Matching API
     And the match report should complete within 60 seconds
 
   # NOTE: PO-primary matching not supported - ML model trained for invoice-primary only
+  # BLOCKED BY: #14 (Enable all matching directions)
   @story-1.1 @core @po_dr_match @wip
   Scenario: Basic PO-Delivery Receipt Match
     Given I have a primary purchase order document
@@ -48,6 +49,7 @@ Feature: Core Document Matching API
     And the match report should complete within 60 seconds
 
   # NOTE: System returns single best match report, not separate reports for each pair
+  # BLOCKED BY: #53 (Three-way document matching with separate reports)
   @story-1.1 @core @three_way_match @wip
   Scenario: Three-Way Document Matching
     Given I have an invoice document

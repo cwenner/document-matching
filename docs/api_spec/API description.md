@@ -2,6 +2,27 @@
 
 Clarifications for the matching API with examples of how the shared data structures could be converted to the API format.
 
+## Matching Topology
+
+The API uses a **PO-Hub Model** for document matching. See [ADR-001](../decisions/ADR-001-matching-topology.md) for architectural details.
+
+### Supported Matching Directions
+
+| Primary Document | Candidate Type | Matching Method |
+|-----------------|----------------|-----------------|
+| Invoice | Purchase Order | Reference + ML fallback |
+| Invoice | Delivery Receipt | Transitive (via PO) |
+| Purchase Order | Invoice | Reference matching |
+| Purchase Order | Delivery Receipt | Reference matching |
+| Delivery Receipt | Purchase Order | Reference matching |
+| Delivery Receipt | Invoice | Transitive (via PO) |
+
+### Notes
+
+- **ML fallback** is currently only available for Invoice→PO matching
+- **Transitive matching** infers Invoice↔Delivery relationships through shared PO references
+- For best results, use Invoice as the primary document when ML-based matching is required
+
 ## JSON Super Schema:
 
 Described here: [https://github.com/omnimodular/api-spec](https://github.com/omnimodular/api-spec)

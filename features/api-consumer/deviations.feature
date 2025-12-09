@@ -232,6 +232,7 @@ Feature: Document Matching - Detailed Deviation Information
   # The challenge is that the item pairing algorithm uses the SAME item-id similarity
   # that ITEMS_DIFFER checks against, so items with very different item-ids won't pair.
 
+  # BLOCKED BY: #49 (ITEMS_DIFFER deviation cannot be triggered due to item pairing algorithm)
   @deviations @items_differ @high @wip
   Scenario: Items differ - high severity when both similarities very low
     Given I have a primary invoice with item article number "WIDGET-A" and description "Red plastic widget"
@@ -242,6 +243,7 @@ Feature: Document Matching - Detailed Deviation Information
     And the match report should contain item deviation with code "ITEMS_DIFFER"
     And the ITEMS_DIFFER item deviation severity should be "high"
 
+  # BLOCKED BY: #49 (ITEMS_DIFFER deviation cannot be triggered due to item pairing algorithm)
   @deviations @items_differ @medium @wip
   Scenario: Items differ - medium severity for mixed similarity signals
     Given I have a primary invoice with item article number "BOLT-123" and description "Steel fastener bolt"

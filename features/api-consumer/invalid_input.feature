@@ -18,6 +18,7 @@ Feature: Document Matching API - Invalid Input Handling
     And the error message should be machine-readable
 
   # NOTE: API does not validate document structure - accepts any dict and attempts processing
+  # BLOCKED BY: Design decision - validation strictness not yet defined
   @error_cases @invalid_format @wip
   Scenario: Invalid Document Format
     Given I have a primary document with invalid format
@@ -57,6 +58,7 @@ Feature: Document Matching API - Invalid Input Handling
     And the error message should be machine-readable
 
   # NOTE: API does not validate required document fields - accepts minimal dict
+  # BLOCKED BY: Design decision - required field validation not yet defined
   @error_cases @missing_required_fields @wip
   Scenario: Missing Required Document Fields
     Given I have a primary document missing required fields
@@ -68,6 +70,7 @@ Feature: Document Matching API - Invalid Input Handling
     And the error message should be machine-readable
 
   # NOTE: API does not validate field values - accepts any values
+  # BLOCKED BY: Design decision - field value validation not yet defined
   @error_cases @invalid_field_values @wip
   Scenario: Invalid Field Values
     Given I have a primary document with invalid field values
