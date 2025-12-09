@@ -34,17 +34,27 @@ def run_matching_pipeline(
     input_document: dict,
     historical_documents: list[dict],
 ):
-    """
-    Runs the full matching pipeline for a given input document against historical ones.
+    """Run the complete document matching pipeline.
+
+    Executes the full workflow:
+    1. Unpacks attachments from all documents
+    2. Records documents in predictor for state management
+    3. Predicts document pairings using SVM and reference logic
+    4. For matches: extracts items, pairs them, collects deviations, generates match report
+    5. For no matches: generates no-match report
 
     Args:
-        predictor: An initialized DocumentPairingPredictor instance.
-        input_document: The target document dictionary.
-        historical_documents: A list of candidate document dictionaries.
+        predictor: Initialized DocumentPairingPredictor instance with loaded model
+        input_document: Target document dictionary to find matches for
+        historical_documents: List of candidate document dictionaries to match against
 
     Returns:
-        A dictionary representing the match report (either match or no-match).
-        Returns None if a critical error occurs during processing.
+        dict: Match report or no-match report dictionary containing documents,
+              itempairs, deviations, metrics, and labels. Returns None if
+              critical error occurs (predictor not initialized).
+
+    Raises:
+        Returns error reports (not exceptions) for recoverable errors
     """
     logger.info(
         f"--- Running Pipeline for Document ID: {input_document.get('id', 'N/A')} ---"
@@ -375,6 +385,23 @@ def run_matching_pipeline(
 
 # Helper for __main__ test
 def get_sample_data() -> dict:
+    """Load sample documents for testing the matching pipeline.
+
+    Loads invoice, delivery receipt, and purchase order documents from
+    the sample data directory. Used for standalone testing.
+
+    Returns:
+        dict: Dictionary containing:
+              - target_document: The document to match
+              - invoices: List of other invoice documents
+              - delivery_receipts: List of delivery receipt documents
+              - purchase_orders: List of purchase order documents
+              - past_documents: Combined list of all candidate documents
+
+    Raises:
+        RuntimeError: If no sample data files can be loaded
+        ValueError: If target document fails to load
+    """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     default_data_root = os.path.join(script_dir, "..", "data", "converted-shared-data")
     data_root = os.environ.get("SAMPLE_DATA_ROOT", default_data_root)

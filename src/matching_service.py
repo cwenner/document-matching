@@ -90,8 +90,17 @@ class MatchingService:
             return None
 
     def adapt_report_to_v3(self, report: dict) -> dict:
-        """
-        Adapts report generated to API spec.
+        """Adapt internal match report to V3 API specification.
+
+        Converts internal report format to V3 API format by adding version field
+        and ensuring all required sections are present.
+
+        Args:
+            report: Internal match report dictionary
+
+        Returns:
+            dict: V3-formatted report with version, headers, deviations, itempairs,
+                  metrics, and labels sections
         """
         if not report:
             return report
@@ -114,8 +123,16 @@ class MatchingService:
         return v3_report
 
     def get_dummy_matching_report(self, document: Dict) -> Dict:
-        """
-        Generates a dummy matching report based on hash of document ID.
+        """Generate a dummy matching report for testing purposes.
+
+        Creates either a match or no-match report based on a hash of the document ID.
+        Used when prediction models are disabled or unavailable.
+
+        Args:
+            document: Document dictionary containing at least 'id' field
+
+        Returns:
+            dict: Dummy match report or no-match report with placeholder data
         """
         document_id = document.get("id", "<id missing>")
 

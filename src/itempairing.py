@@ -16,6 +16,19 @@ except Exception:
 
 
 def _calculate_description_similarity(desc1, desc2):
+    """Calculate semantic similarity between two item descriptions.
+
+    Uses SentenceTransformer embeddings to compute similarity score.
+
+    Args:
+        desc1: First description string
+        desc2: Second description string
+
+    Returns:
+        float: Similarity score between 0 and 1, or None if model unavailable
+               Returns 1.0 if both descriptions are empty
+               Returns 0.0 if only one description is empty
+    """
     if not model:
         logger.warning(
             "SentenceTransformer model not available. Cannot calculate description similarity."
@@ -40,6 +53,20 @@ def _calculate_description_similarity(desc1, desc2):
 
 
 def _calculate_item_id_similarity(id1, id2):
+    """Calculate similarity between two item IDs/article numbers.
+
+    Uses SentenceTransformer embeddings for fuzzy matching.
+    Returns 1.0 for exact matches.
+
+    Args:
+        id1: First item ID string
+        id2: Second item ID string
+
+    Returns:
+        float: Similarity score between 0 and 1, or None if model unavailable
+               Returns 1.0 if IDs are identical or both are empty
+               Returns 0.0 if only one ID is empty
+    """
     if not model:
         logger.warning(
             "SentenceTransformer model not available. Cannot calculate item ID similarity."
@@ -67,6 +94,20 @@ def _calculate_item_id_similarity(id1, id2):
 
 
 def _calculate_unit_price_similarity(up1, up2):
+    """Calculate similarity between two unit prices.
+
+    Uses ratio of smaller to larger price for similarity score.
+    Returns 1.0 if prices are nearly identical (within 0.00001 relative tolerance).
+    Returns 0.0 if prices have opposite signs or cannot be converted.
+
+    Args:
+        up1: First unit price (numeric value or string)
+        up2: Second unit price (numeric value or string)
+
+    Returns:
+        float: Similarity score between 0 and 1, or None if either price is None
+               Returns 0.0 if prices cannot be converted to float
+    """
     if up1 is None or up2 is None:
         return None
     try:
@@ -87,6 +128,20 @@ def _calculate_unit_price_similarity(up1, up2):
 
 
 def _calculate_match_score(item_id_sim, desc_sim, price_sim):
+    """Calculate overall match score from individual similarity metrics.
+
+    Computes the average of available similarity scores and determines
+    if items are a match based on threshold of 0.8.
+
+    Args:
+        item_id_sim: Item ID similarity score (or None)
+        desc_sim: Description similarity score (or None)
+        price_sim: Unit price similarity score (or None)
+
+    Returns:
+        tuple: (match_score, is_match) where match_score is float between 0-1
+               and is_match is bool indicating if score >= 0.8
+    """
     actual_values = [x for x in [item_id_sim, desc_sim, price_sim] if x is not None]
     match_score = sum(actual_values) / len(actual_values)
     is_match = match_score >= 0.8
@@ -109,6 +164,21 @@ def _calculate_match_score(item_id_sim, desc_sim, price_sim):
 def find_best_item_match(
     source_item_data: dict, target_items_data: list[dict]
 ) -> dict | None:
+    """Find the best matching item from a list of target items.
+
+    Compares source item against all unmatched target items using
+    item ID, description, and unit price similarities. Returns the
+    highest-scoring match that exceeds the match threshold.
+
+    Args:
+        source_item_data: Source item dictionary with fields like item-id,
+                         description, unit-price, etc.
+        target_items_data: List of target item dictionaries to search
+
+    Returns:
+        dict: Dictionary with keys 'target_item', 'score', 'is_match', and
+              'similarities', or None if no match found or model unavailable
+    """
     if not target_items_data or not model:
         return None
 
@@ -173,6 +243,24 @@ def find_best_item_match(
 def pair_document_items(
     doc1_items_data: list[dict], doc2_items_data: list[dict]
 ) -> list[dict]:
+    """Match line items between two documents.
+
+    Performs one-to-one matching between items from two documents.
+    Each item from doc2 is matched with the best available item from doc1.
+    Items are marked as 'matched' to prevent duplicate pairings.
+
+    Args:
+        doc1_items_data: List of item dictionaries from first document
+        doc2_items_data: List of item dictionaries from second document
+
+    Returns:
+        list: List of matched pairs, each containing:
+              - item1: Matched item from doc1_items_data
+              - item2: Matched item from doc2_items_data
+              - score: Overall match score
+              - similarities: Dict of individual similarity scores
+              Returns empty list if model unavailable
+    """
     if not model:
         logger.error(
             "SentenceTransformer model not available. Cannot perform item pairing."
