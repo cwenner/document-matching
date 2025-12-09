@@ -73,6 +73,7 @@ class FieldDeviation(BaseModel):
     code: str = ""
     message: str = ""
     severity: DeviationSeverity = DeviationSeverity.NO_SEVERITY
+    confidence: float = 1.0  # How certain we are this deviation exists (0.0-1.0)
     field_names: list[str | None] = []
     field_values: list[Any] = []
 
@@ -641,6 +642,7 @@ def check_items_differ(
         return FieldDeviation(
             code="ITEMS_DIFFER",
             severity=severity,
+            confidence=confidence,
             message=f"Items may be different products (confidence: {confidence:.0%})",
             field_names=[],
             field_values=[],
@@ -651,6 +653,7 @@ def check_items_differ(
         return FieldDeviation(
             code="ITEMS_DIFFER",
             severity=DeviationSeverity.MEDIUM,
+            confidence=MIXED_SIMILARITY_CONFIDENCE,
             message=f"Items may be different products (confidence: {MIXED_SIMILARITY_CONFIDENCE:.0%})",
             field_names=[],
             field_values=[],
