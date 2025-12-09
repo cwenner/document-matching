@@ -1,11 +1,14 @@
 import json
 import logging
+import time
+import uuid
 from typing import Any, List, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from document_utils import DocumentKind
 from matching_service import MatchingService
@@ -14,6 +17,57 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("matching_service_api")
+
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware for logging HTTP requests and responses."""
+
+    def __init__(self, app, log_level: int = logging.INFO):
+        super().__init__(app)
+        self.log_level = log_level
+
+    async def dispatch(self, request: Request, call_next):
+        """Process request and log details."""
+        # Generate or extract request ID
+        request_id = request.headers.get("x-om-trace-id")
+        if not request_id:
+            request_id = str(uuid.uuid4())
+
+        # Store request ID for use in handlers
+        request.state.request_id = request_id
+
+        # Log incoming request
+        start_time = time.time()
+        logger.log(
+            self.log_level,
+            f"Request ID {request_id}: {request.method} {request.url.path} - "
+            f"Headers: {dict(request.headers)}",
+        )
+
+        # Process request
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            # Log exception
+            duration = time.time() - start_time
+            logger.error(
+                f"Request ID {request_id}: {request.method} {request.url.path} - "
+                f"Exception: {str(e)} - Duration: {duration:.3f}s"
+            )
+            raise
+
+        # Log response
+        duration = time.time() - start_time
+        logger.log(
+            self.log_level,
+            f"Request ID {request_id}: {request.method} {request.url.path} - "
+            f"Status: {response.status_code} - Duration: {duration:.3f}s",
+        )
+
+        # Add request ID to response headers
+        response.headers["X-Request-ID"] = request_id
+
+        return response
 
 
 class Document(BaseModel):
@@ -69,6 +123,10 @@ CANDIDATE_PROCESSING_CAP = 1000
 
 # --- FastAPI App ---
 app = FastAPI()
+
+# Add request logging middleware
+app.add_middleware(RequestLoggingMiddleware, log_level=logging.INFO)
+
 logger.info("✔ Matching Service API Ready")
 
 
