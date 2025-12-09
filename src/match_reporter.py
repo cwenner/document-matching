@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import os
 from decimal import Decimal
 
 from document_utils import get_field
@@ -14,9 +15,37 @@ from itempair_deviations import (
 
 logger = logging.getLogger(__name__)
 
-# Certainty thresholds for label logic (from ticket #29)
-MATCHED_CERTAINTY_THRESHOLD = 0.5  # >= 0.5 -> "matched"
-NO_MATCH_CERTAINTY_THRESHOLD = 0.2  # < 0.2 -> "no-match"
+
+def _get_threshold_from_env(env_var: str, default: float) -> float:
+    """
+    Get a threshold value from environment variable with validation.
+
+    Args:
+        env_var: Name of the environment variable
+        default: Default value if env var not set
+
+    Returns:
+        Validated threshold value between 0.0 and 1.0
+    """
+    try:
+        value = float(os.environ.get(env_var, default))
+        if not 0.0 <= value <= 1.0:
+            logger.warning(
+                f"{env_var}={value} is out of valid range [0.0, 1.0]. Using default {default}"
+            )
+            return default
+        return value
+    except (ValueError, TypeError) as e:
+        logger.warning(
+            f"Invalid value for {env_var}: {os.environ.get(env_var)}. Using default {default}. Error: {e}"
+        )
+        return default
+
+
+# Certainty thresholds for label logic (from ticket #29, configurable via #105)
+# Default values: >= 0.5 -> "matched", < 0.2 -> "no-match"
+MATCHED_CERTAINTY_THRESHOLD = _get_threshold_from_env("MATCH_CONFIDENCE_THRESHOLD", 0.5)
+NO_MATCH_CERTAINTY_THRESHOLD = _get_threshold_from_env("NO_MATCH_CONFIDENCE_THRESHOLD", 0.2)
 
 
 def calculate_future_match_certainty(
