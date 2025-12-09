@@ -6,9 +6,11 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
+from slowapi.errors import RateLimitExceeded
 
 from document_utils import DocumentKind
 from matching_service import MatchingService
+from rate_limiter import get_limiter, rate_limit_exceeded_handler
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -69,6 +71,12 @@ CANDIDATE_PROCESSING_CAP = 1000
 
 # --- FastAPI App ---
 app = FastAPI()
+
+# Configure rate limiter
+limiter = get_limiter()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 logger.info("✔ Matching Service API Ready")
 
 
@@ -107,6 +115,7 @@ async def liveness_handler(_request: Request):
 
 # Main endpoint for matching - handles all document matching requests
 @app.post("/")
+@limiter.limit("100/minute")
 async def request_handler(request: Request):
     """Handles matching requests."""
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")

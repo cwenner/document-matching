@@ -10,4 +10,5 @@ pytest
 requests
 scikit-learn
 sentence-transformers
+slowapi
 uvicorn[standard]
