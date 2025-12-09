@@ -1,0 +1,477 @@
+[
+  {
+    "version": "v3",
+    "id": "PO-S04-001",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "PO-2025-004"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-400"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-01-10"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "6000.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "5000.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-004A"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-40001"
+          },
+          {
+            "name": "description",
+            "value": "Gear Assembly A"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "200.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "5.00"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-004B"
+          },
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-40002"
+          },
+          {
+            "name": "description",
+            "value": "Gear Assembly B"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "300.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "5.00"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-004C"
+          },
+          {
+            "name": "lineNumber",
+            "value": "3"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-40003"
+          },
+          {
+            "name": "description",
+            "value": "Bearing Type 1"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "100.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "10.00"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-004D"
+          },
+          {
+            "name": "lineNumber",
+            "value": "4"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-40004"
+          },
+          {
+            "name": "description",
+            "value": "Bearing Type 2"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "150.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "10.00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "INV-S04-001",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+      {
+        "name": "invoiceNumber",
+        "value": "INV-2025-004A"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-400"
+      },
+      {
+        "name": "invoiceDate",
+        "value": "2025-01-15"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-004"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "3000.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "2500.00"
+      },
+      {
+        "name": "currencyCode",
+        "value": "USD"
+      },
+      {
+        "name": "type",
+        "value": "DEBIT"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Gear Assembly A"
+          },
+          {
+            "name": "debit",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantity",
+            "value": "5"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004A"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "text",
+            "value": "Gear Assembly B"
+          },
+          {
+            "name": "debit",
+            "value": "1500.00"
+          },
+          {
+            "name": "quantity",
+            "value": "5"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004B"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "INV-S04-002",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+      {
+        "name": "invoiceNumber",
+        "value": "INV-2025-004B"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-400"
+      },
+      {
+        "name": "invoiceDate",
+        "value": "2025-01-16"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-004"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "3000.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "2500.00"
+      },
+      {
+        "name": "currencyCode",
+        "value": "USD"
+      },
+      {
+        "name": "type",
+        "value": "DEBIT"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Bearing Type 1"
+          },
+          {
+            "name": "debit",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantity",
+            "value": "10"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004C"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "text",
+            "value": "Bearing Type 2"
+          },
+          {
+            "name": "debit",
+            "value": "1500.00"
+          },
+          {
+            "name": "quantity",
+            "value": "10"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004D"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S04-001",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-004A"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-400"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-12"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-004"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Gear Assembly A"
+          },
+          {
+            "name": "quantity",
+            "value": "5"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004A"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "text",
+            "value": "Gear Assembly B"
+          },
+          {
+            "name": "quantity",
+            "value": "5"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004B"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S04-002",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-004B"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-400"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-13"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-004"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Bearing Type 1"
+          },
+          {
+            "name": "quantity",
+            "value": "10"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004C"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "text",
+            "value": "Bearing Type 2"
+          },
+          {
+            "name": "quantity",
+            "value": "10"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-004D"
+          }
+        ]
+      }
+    ]
+  }
+]

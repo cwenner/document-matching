@@ -1,0 +1,18 @@
+{
+  "scenario": "scenario-07-multiple-pos",
+  "description": "Multiple POs: 2 POs, 2 Invoices, 2 Deliveries - each pair matches to one PO",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S07-001", "INV-S07-001", "DR-S07-001"],
+      "shared_po_lines": ["PO-LINE-007A"],
+      "reasoning": "Invoice and Delivery for monitors both reference PO-2025-007A line A"
+    },
+    {
+      "group_id": "group-2",
+      "documents": ["PO-S07-002", "INV-S07-002", "DR-S07-002"],
+      "shared_po_lines": ["PO-LINE-007B"],
+      "reasoning": "Invoice and Delivery for keyboards both reference PO-2025-007B line B"
+    }
+  ]
+}

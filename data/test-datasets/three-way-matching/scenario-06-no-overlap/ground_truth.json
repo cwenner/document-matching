@@ -1,0 +1,18 @@
+{
+  "scenario": "scenario-06-no-overlap",
+  "description": "No overlap: 1 PO with 4 lines, Invoice covers lines 1-2, Delivery covers lines 3-4",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S06-001", "INV-S06-001"],
+      "shared_po_lines": ["PO-LINE-006A", "PO-LINE-006B"],
+      "reasoning": "Invoice references PO lines A and B only"
+    },
+    {
+      "group_id": "group-2",
+      "documents": ["PO-S06-001", "DR-S06-001"],
+      "shared_po_lines": ["PO-LINE-006C", "PO-LINE-006D"],
+      "reasoning": "Delivery references PO lines C and D only. NO shared PO lines with invoice, so they should not be grouped together."
+    }
+  ]
+}

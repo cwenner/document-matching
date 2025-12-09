@@ -1,0 +1,12 @@
+{
+  "scenario": "scenario-01-simple-match",
+  "description": "Simple case: 1 PO, 1 Invoice, 1 Delivery - all line items match",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S01-001", "INV-S01-001", "DR-S01-001"],
+      "shared_po_lines": ["PO-LINE-001"],
+      "reasoning": "All three documents reference the same PO line"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "scenario": "scenario-09-multiple-items",
+  "description": "Multiple items: Each document has multiple line items referencing different PO lines",
+  "expected_groups": [
+    {
+      "group_id": "group-1",
+      "documents": ["PO-S09-001", "INV-S09-001", "DR-S09-001", "DR-S09-002"],
+      "shared_po_lines": ["PO-LINE-009A", "PO-LINE-009B"],
+      "reasoning": "INV-S09-001 references lines A,B. DR-S09-001 references A,C,E. DR-S09-002 references B,D. Shared lines A and B connect these documents."
+    },
+    {
+      "group_id": "group-2",
+      "documents": ["PO-S09-001", "INV-S09-002", "DR-S09-001", "DR-S09-002"],
+      "shared_po_lines": ["PO-LINE-009C", "PO-LINE-009D"],
+      "reasoning": "INV-S09-002 references lines C,D. DR-S09-001 references A,C,E. DR-S09-002 references B,D. Shared lines C and D connect these documents."
+    }
+  ],
+  "notes": "This demonstrates complex overlapping groups where documents share some but not all PO lines. INV-S09-001 and INV-S09-002 do NOT share PO lines directly, but are connected through the delivery receipts."
+}

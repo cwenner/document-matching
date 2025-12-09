@@ -1,0 +1,319 @@
+[
+  {
+    "version": "v3",
+    "id": "PO-S06-001",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "PO-2025-006"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-600"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-01-10"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "4800.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "4000.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-006A"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-60001"
+          },
+          {
+            "name": "description",
+            "value": "Server Rack A"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "500.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "2.00"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-006B"
+          },
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-60002"
+          },
+          {
+            "name": "description",
+            "value": "Power Supply Unit"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "500.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "2.00"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-006C"
+          },
+          {
+            "name": "lineNumber",
+            "value": "3"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-60003"
+          },
+          {
+            "name": "description",
+            "value": "Network Switch"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "1.00"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-006D"
+          },
+          {
+            "name": "lineNumber",
+            "value": "4"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-60004"
+          },
+          {
+            "name": "description",
+            "value": "Cooling Unit"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "1.00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "INV-S06-001",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+      {
+        "name": "invoiceNumber",
+        "value": "INV-2025-006"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-600"
+      },
+      {
+        "name": "invoiceDate",
+        "value": "2025-01-15"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-006"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "2400.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "2000.00"
+      },
+      {
+        "name": "currencyCode",
+        "value": "USD"
+      },
+      {
+        "name": "type",
+        "value": "DEBIT"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Server Rack A"
+          },
+          {
+            "name": "debit",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantity",
+            "value": "2"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-006A"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "text",
+            "value": "Power Supply Unit"
+          },
+          {
+            "name": "debit",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantity",
+            "value": "2"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-006B"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S06-001",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-006"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-600"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-12"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-006"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Network Switch"
+          },
+          {
+            "name": "quantity",
+            "value": "1"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-006C"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "text",
+            "value": "Cooling Unit"
+          },
+          {
+            "name": "quantity",
+            "value": "1"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-006D"
+          }
+        ]
+      }
+    ]
+  }
+]

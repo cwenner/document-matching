@@ -1,0 +1,310 @@
+[
+  {
+    "version": "v3",
+    "id": "PO-S10-001",
+    "kind": "purchase-order",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "orderNumber",
+        "value": "PO-2025-010"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-1000"
+      },
+      {
+        "name": "orderDate",
+        "value": "2025-01-10"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "3600.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "3000.00"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-010A"
+          },
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-10000"
+          },
+          {
+            "name": "description",
+            "value": "Bolt M8x50mm - Warehouse A"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "2.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "500.00"
+          },
+          {
+            "name": "deliveryLocation",
+            "value": "WAREHOUSE-A"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-010B"
+          },
+          {
+            "name": "lineNumber",
+            "value": "2"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-10000"
+          },
+          {
+            "name": "description",
+            "value": "Bolt M8x50mm - Warehouse B"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "2.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "500.00"
+          },
+          {
+            "name": "deliveryLocation",
+            "value": "WAREHOUSE-B"
+          }
+        ]
+      },
+      {
+        "fields": [
+          {
+            "name": "id",
+            "value": "PO-LINE-010C"
+          },
+          {
+            "name": "lineNumber",
+            "value": "3"
+          },
+          {
+            "name": "inventory",
+            "value": "ART-10000"
+          },
+          {
+            "name": "description",
+            "value": "Bolt M8x50mm - Warehouse C"
+          },
+          {
+            "name": "uom",
+            "value": "PCS"
+          },
+          {
+            "name": "unitAmount",
+            "value": "2.00"
+          },
+          {
+            "name": "quantityOrdered",
+            "value": "500.00"
+          },
+          {
+            "name": "deliveryLocation",
+            "value": "WAREHOUSE-C"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "INV-S10-001",
+    "kind": "invoice",
+    "site": "test-site",
+    "stage": "input",
+    "headers": [
+      {
+        "name": "invoiceNumber",
+        "value": "INV-2025-010"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-1000"
+      },
+      {
+        "name": "invoiceDate",
+        "value": "2025-01-15"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-010"
+      },
+      {
+        "name": "incVatAmount",
+        "value": "1200.00"
+      },
+      {
+        "name": "excVatAmount",
+        "value": "1000.00"
+      },
+      {
+        "name": "currencyCode",
+        "value": "USD"
+      },
+      {
+        "name": "type",
+        "value": "DEBIT"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Bolt M8x50mm - 500pcs for Warehouse A"
+          },
+          {
+            "name": "debit",
+            "value": "1000.00"
+          },
+          {
+            "name": "quantity",
+            "value": "500"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-010A"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S10-001",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-010A"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-1000"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-12"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-010"
+      },
+      {
+        "name": "deliveryLocation",
+        "value": "WAREHOUSE-A"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Bolt M8x50mm"
+          },
+          {
+            "name": "quantity",
+            "value": "500"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-010A"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "v3",
+    "id": "DR-S10-002",
+    "kind": "delivery-receipt",
+    "site": "test-site",
+    "stage": "final",
+    "headers": [
+      {
+        "name": "deliveryNumber",
+        "value": "DR-2025-010B"
+      },
+      {
+        "name": "supplierId",
+        "value": "SUP-1000"
+      },
+      {
+        "name": "deliveryDate",
+        "value": "2025-01-13"
+      },
+      {
+        "name": "orderReference",
+        "value": "PO-2025-010"
+      },
+      {
+        "name": "deliveryLocation",
+        "value": "WAREHOUSE-B"
+      }
+    ],
+    "items": [
+      {
+        "fields": [
+          {
+            "name": "lineNumber",
+            "value": "1"
+          },
+          {
+            "name": "text",
+            "value": "Bolt M8x50mm"
+          },
+          {
+            "name": "quantity",
+            "value": "500"
+          },
+          {
+            "name": "poLineReference",
+            "value": "PO-LINE-010B"
+          }
+        ]
+      }
+    ]
+  }
+]
