@@ -106,6 +106,71 @@ def _calculate_match_score(item_id_sim, desc_sim, price_sim):
     # return normalized_score, is_match
 
 
+def _normalize_inventory_code(inventory_value):
+    """Normalize inventory code for comparison (lowercase, strip whitespace)."""
+    if inventory_value is None:
+        return ""
+    return str(inventory_value).strip().lower()
+
+
+def _inventory_codes_match(item1: dict, item2: dict) -> bool:
+    """Check if two items have matching inventory codes.
+
+    Returns True if both items have non-empty inventory codes that match
+    after normalization (case-insensitive, whitespace-stripped).
+    """
+    inv1 = _normalize_inventory_code(item1.get("inventory"))
+    inv2 = _normalize_inventory_code(item2.get("inventory"))
+
+    if not inv1 or not inv2:
+        return False
+
+    return inv1 == inv2
+
+
+def _calculate_all_similarities(item1: dict, item2: dict) -> dict:
+    """Calculate all similarity metrics between two items.
+
+    Returns dict with keys: item_id, description, unit_price
+    """
+    item1_id = item1.get("item-id", "")
+    item2_id = item2.get("item-id", "")
+
+    item1_price = item1.get("unit-price-adjusted", item1.get("unit-price"))
+    item2_price = item2.get("unit-price")
+
+    # Collect all description fields
+    item1_descs = [
+        item1.get("description", ""),
+        item1.get("text", ""),
+        item1.get("inventory", ""),
+    ]
+    item2_descs = [
+        item2.get("description", ""),
+        item2.get("text", ""),
+        item2.get("inventory", ""),
+    ]
+    item1_descs = [x for x in item1_descs if x]
+    item2_descs = [x for x in item2_descs if x]
+
+    item_id_sim = _calculate_item_id_similarity(item1_id, item2_id)
+    price_sim = _calculate_unit_price_similarity(item1_price, item2_price)
+
+    # Calculate best description similarity
+    desc_sims = [
+        _calculate_description_similarity(desc1, desc2)
+        for desc1 in item1_descs
+        for desc2 in item2_descs
+    ]
+    desc_sim = max([0.0] + [x for x in desc_sims if x is not None])
+
+    return {
+        "item_id": item_id_sim,
+        "description": desc_sim,
+        "unit_price": price_sim,
+    }
+
+
 def find_best_item_match(
     source_item_data: dict, target_items_data: list[dict]
 ) -> dict | None:
@@ -173,18 +238,99 @@ def find_best_item_match(
 def pair_document_items(
     doc1_items_data: list[dict], doc2_items_data: list[dict]
 ) -> list[dict]:
+    """Pair items from two documents using multi-pass matching strategy.
+
+    Pass 1: Exact inventory code matches (forced pairing)
+    Pass 2: Single-item-each-side (forced pairing when only 1 item left on each side)
+    Pass 3: Similarity-based matching (existing logic, requires score >= 0.8)
+
+    This approach enables ITEMS_DIFFER detection by forcing pairing in certain
+    scenarios even when similarity scores are low.
+    """
     if not model:
         logger.error(
             "SentenceTransformer model not available. Cannot perform item pairing."
         )
         return []
 
+    # Initialize all items as unmatched
     for item in doc1_items_data:
         item["matched"] = False
     for item in doc2_items_data:
         item["matched"] = False
 
     matched_item_pairs = []
+
+    # PASS 1: Exact inventory code matches (force pairing)
+    logger.debug("Pass 1: Checking for exact inventory code matches")
+    for doc1_item in doc1_items_data:
+        if doc1_item.get("matched"):
+            continue
+
+        for doc2_item in doc2_items_data:
+            if doc2_item.get("matched"):
+                continue
+
+            if _inventory_codes_match(doc1_item, doc2_item):
+                similarities = _calculate_all_similarities(doc1_item, doc2_item)
+                score, _ = _calculate_match_score(
+                    similarities["item_id"],
+                    similarities["description"],
+                    similarities["unit_price"],
+                )
+
+                doc1_item["matched"] = True
+                doc2_item["matched"] = True
+
+                matched_item_pairs.append(
+                    {
+                        "item1": doc1_item,
+                        "item2": doc2_item,
+                        "score": score,
+                        "similarities": similarities,
+                    }
+                )
+
+                logger.info(
+                    f"Pass 1: Forced pairing via inventory code match: "
+                    f"{doc1_item.get('inventory')} (score: {score:.2f})"
+                )
+                break
+
+    # PASS 2: Single-item-each-side (force pairing)
+    unmatched_doc1 = [item for item in doc1_items_data if not item.get("matched")]
+    unmatched_doc2 = [item for item in doc2_items_data if not item.get("matched")]
+
+    if len(unmatched_doc1) == 1 and len(unmatched_doc2) == 1:
+        logger.debug("Pass 2: Single item on each side - forcing pair")
+        doc1_item = unmatched_doc1[0]
+        doc2_item = unmatched_doc2[0]
+
+        similarities = _calculate_all_similarities(doc1_item, doc2_item)
+        score, _ = _calculate_match_score(
+            similarities["item_id"],
+            similarities["description"],
+            similarities["unit_price"],
+        )
+
+        doc1_item["matched"] = True
+        doc2_item["matched"] = True
+
+        matched_item_pairs.append(
+            {
+                "item1": doc1_item,
+                "item2": doc2_item,
+                "score": score,
+                "similarities": similarities,
+            }
+        )
+
+        logger.info(
+            f"Pass 2: Forced pairing (single item each side): score {score:.2f}"
+        )
+
+    # PASS 3: Similarity-based matching (existing logic)
+    logger.debug("Pass 3: Similarity-based matching for remaining items")
     available_doc1_items = [item for item in doc1_items_data if not item.get("matched")]
 
     for doc2_item in doc2_items_data:

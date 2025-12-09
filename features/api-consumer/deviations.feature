@@ -232,22 +232,20 @@ Feature: Document Matching - Detailed Deviation Information
   # The challenge is that the item pairing algorithm uses the SAME item-id similarity
   # that ITEMS_DIFFER checks against, so items with very different item-ids won't pair.
 
-  # BLOCKED BY: #49 (ITEMS_DIFFER deviation cannot be triggered due to item pairing algorithm)
-  @deviations @items_differ @high @wip
+  @deviations @items_differ @high
   Scenario: Items differ - high severity when both similarities very low
-    Given I have a primary invoice with item article number "WIDGET-A" and description "Red plastic widget"
-    And I have a candidate purchase order with item article number "GADGET-B" and description "Blue metal gadget"
+    Given I have a primary invoice with item article number "12345" and description "Computer keyboard"
+    And I have a candidate purchase order with item article number "ABCDE" and description "Fresh orange juice"
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report
     And the match report should contain item deviation with code "ITEMS_DIFFER"
     And the ITEMS_DIFFER item deviation severity should be "high"
 
-  # BLOCKED BY: #49 (ITEMS_DIFFER deviation cannot be triggered due to item pairing algorithm)
-  @deviations @items_differ @medium @wip
+  @deviations @items_differ @medium
   Scenario: Items differ - medium severity for mixed similarity signals
-    Given I have a primary invoice with item article number "BOLT-123" and description "Steel fastener bolt"
-    And I have a candidate purchase order with item article number "SCREW-456" and description "Steel fastener screw"
+    Given I have a primary invoice with item article number "12345" and description "Bolt type A"
+    And I have a candidate purchase order with item article number "ABCDE" and description "Screw type B"
     When I send a POST request to "/" with the primary document and candidate document
     Then the response status code should be 200
     And the response body should contain a match report

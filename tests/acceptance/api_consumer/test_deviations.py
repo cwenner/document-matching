@@ -1694,14 +1694,25 @@ def test_unit_price_medium_severity():
 
 
 # ==============================================================================
-# ITEMS_DIFFER Tests (#43)
+# ITEMS_DIFFER Tests (#49)
 # ITEMS_DIFFER requires items to be PAIRED but have low item_id AND description
-# similarity. This is challenging because the pairing algorithm uses the SAME
-# item-id similarity, so items with low item-id similarity won't pair at all.
-#
-# These scenarios are marked @wip in the feature file and excluded from test runs.
-# See issue #43 for detailed investigation notes.
+# similarity. Implemented via multi-pass pairing (inventory match + single-item forcing).
 # ==============================================================================
 
 
-# Scenarios marked @wip are not run - they need implementation investigation
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Items differ - high severity when both similarities very low",
+)
+def test_items_differ_high_severity():
+    """Test high severity for items with very different article numbers and descriptions."""
+    pass
+
+
+@scenario(
+    str(get_feature_path("api-consumer/deviations.feature")),
+    "Items differ - medium severity for mixed similarity signals",
+)
+def test_items_differ_medium_severity():
+    """Test medium severity for items with mixed similarity signals."""
+    pass
