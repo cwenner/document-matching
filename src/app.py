@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 from document_utils import DocumentKind
+from error_codes import ErrorCode, StandardErrorResponse
 from matching_service import MatchingService
 
 logging.basicConfig(
@@ -76,15 +77,39 @@ logger.info("✔ Matching Service API Ready")
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    """Convert Pydantic validation errors to 400 responses with clear messages."""
+    """Convert Pydantic validation errors to standardized 400 responses."""
     errors = exc.errors()
     error_messages = []
+    field_errors = {}
+
     for error in errors:
         loc = ".".join(str(x) for x in error.get("loc", []))
         msg = error.get("msg", "validation error")
         error_messages.append(f"{loc}: {msg}")
+        field_errors[loc] = msg
+
     detail = "; ".join(error_messages) if error_messages else "Validation error"
-    return JSONResponse(status_code=400, content={"detail": detail})
+
+    error_response = StandardErrorResponse(
+        error_code=ErrorCode.VALIDATION_ERROR,
+        message="Request validation failed",
+        detail=detail,
+        fields=field_errors if field_errors else None,
+    )
+
+    return JSONResponse(
+        status_code=400, content=error_response.model_dump(exclude_none=True)
+    )
+
+
+def create_error_response(
+    error_code: ErrorCode, message: str, detail: Optional[str] = None
+) -> dict:
+    """Create a standardized error response."""
+    error_response = StandardErrorResponse(
+        error_code=error_code, message=message, detail=detail
+    )
+    return error_response.model_dump(exclude_none=True)
 
 
 @app.get("/health")
@@ -115,8 +140,13 @@ async def request_handler(request: Request):
     content_type = request.headers.get("content-type", "")
     if content_type and not content_type.lower().startswith("application/json"):
         logger.error(f"Trace ID {trace_id}: Unsupported Content-Type: {content_type}")
-        raise HTTPException(
-            status_code=415, detail="Unsupported Media Type. Use application/json"
+        return JSONResponse(
+            status_code=415,
+            content=create_error_response(
+                ErrorCode.UNSUPPORTED_MEDIA_TYPE,
+                "Unsupported Media Type",
+                "Content-Type must be application/json",
+            ),
         )
 
     try:
@@ -132,7 +162,14 @@ async def request_handler(request: Request):
 
             if isinstance(validation_error, ValidationError):
                 raise RequestValidationError(validation_error.errors())
-            raise HTTPException(status_code=400, detail=str(validation_error))
+            return JSONResponse(
+                status_code=400,
+                content=create_error_response(
+                    ErrorCode.VALIDATION_ERROR,
+                    "Request validation failed",
+                    str(validation_error),
+                ),
+            )
 
         # Use validated model data for matching service
         # exclude_none=True maintains backward compatibility with code expecting missing keys
@@ -147,9 +184,13 @@ async def request_handler(request: Request):
             logger.error(
                 f"Trace ID {trace_id}: Too many candidate documents: {len(candidate_documents)}"
             )
-            raise HTTPException(
+            return JSONResponse(
                 status_code=413,
-                detail=f"Payload too large. Maximum {MAX_CANDIDATE_DOCUMENTS} candidate documents allowed",
+                content=create_error_response(
+                    ErrorCode.PAYLOAD_TOO_LARGE,
+                    "Payload too large",
+                    f"Maximum {MAX_CANDIDATE_DOCUMENTS} candidate documents allowed, received {len(candidate_documents)}",
+                ),
             )
 
         # Soft cap: if over processing limit, log warning and truncate
@@ -179,17 +220,29 @@ async def request_handler(request: Request):
         # Handle errors
         if not final_report:
             logger.error(json.dumps(log_entry))
-            raise HTTPException(
-                status_code=500, detail="Matching service failed to process document"
+            return JSONResponse(
+                status_code=500,
+                content=create_error_response(
+                    ErrorCode.MATCHING_SERVICE_ERROR,
+                    "Matching service error",
+                    "Failed to process document",
+                ),
             )
 
         # Log success and return result
         logger.info(json.dumps(log_entry))
         return final_report
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         logger.error(f"Trace ID {trace_id}: Failed to decode JSON request body.")
-        raise HTTPException(status_code=400, detail="Invalid JSON request body")
+        return JSONResponse(
+            status_code=400,
+            content=create_error_response(
+                ErrorCode.INVALID_JSON,
+                "Invalid JSON",
+                f"Failed to parse JSON request body: {str(e)}",
+            ),
+        )
     except RequestValidationError:
         # Re-raise validation errors to let FastAPI handle them
         raise
@@ -198,4 +251,11 @@ async def request_handler(request: Request):
         raise e
     except Exception as e:
         logger.exception(f"Trace ID {trace_id}: Unexpected error in request handler.")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content=create_error_response(
+                ErrorCode.INTERNAL_SERVER_ERROR,
+                "Internal server error",
+                str(e),
+            ),
+        )
