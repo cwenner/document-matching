@@ -4,7 +4,7 @@ import logging
 import re
 from decimal import Decimal
 from enum import StrEnum
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -127,7 +127,7 @@ def _calculate_diff_metrics(
 
 def get_header_amount_severity(
     amount1: Decimal | float, amount2: Decimal | float
-) -> DeviationSeverity | None:
+) -> Optional[DeviationSeverity]:
     """
     Severity for header-level total amount differences.
 
@@ -165,7 +165,7 @@ def get_header_amount_severity(
 
 def get_line_amount_severity(
     amount1: Decimal | float, amount2: Decimal | float
-) -> DeviationSeverity | None:
+) -> Optional[DeviationSeverity]:
     """
     Severity for line-level item amount differences.
 
@@ -203,7 +203,7 @@ def get_line_amount_severity(
 
 def get_unit_price_severity(
     price1: Decimal | float, price2: Decimal | float
-) -> DeviationSeverity | None:
+) -> Optional[DeviationSeverity]:
     """
     Severity for unit price differences.
     More sensitive than line totals - uses relative difference primarily.
@@ -242,7 +242,7 @@ def get_unit_price_severity(
 
 def get_quantity_severity(
     qty1: Decimal | float, qty2: Decimal | float
-) -> DeviationSeverity | None:
+) -> Optional[DeviationSeverity]:
     """
     Severity for quantity differences (non-partial delivery).
     Only called when qty > PO qty.
@@ -275,7 +275,7 @@ def get_quantity_severity(
 
 
 def get_description_deviation_severity(
-    similarity: float | None,
+    similarity: Optional[float],
 ) -> DeviationSeverity:
     """
     Severity for description differences based on semantic similarity.
@@ -303,7 +303,7 @@ def get_description_deviation_severity(
     return DeviationSeverity.HIGH
 
 
-def _normalize_for_comparison(text: str | None) -> str:
+def _normalize_for_comparison(text: Optional[str]) -> str:
     """Normalize text for casing/whitespace comparison."""
     if text is None:
         return ""
@@ -312,7 +312,7 @@ def _normalize_for_comparison(text: str | None) -> str:
 
 def get_differing_amounts_severity(
     amount1: Decimal | float, amount2: Decimal | float
-) -> DeviationSeverity | None:
+) -> Optional[DeviationSeverity]:
     """
     Legacy function - redirects to line amount severity.
     Kept for backward compatibility.
@@ -400,7 +400,7 @@ FIELD_COMPARISONS.append(
 )
 
 
-def getkv_value(kvs: list[dict] | None, name: str) -> Any | None:
+def getkv_value(kvs: Optional[list[dict]], name: str) -> Optional[Any]:
     if not isinstance(kvs, list):
         return None
     for kv in kvs:
@@ -411,8 +411,8 @@ def getkv_value(kvs: list[dict] | None, name: str) -> Any | None:
 
 def check_partial_delivery(
     document_kinds: list[DocumentKind],
-    document_item_fields: list[list[dict] | None],
-) -> FieldDeviation | None:
+    document_item_fields: list[Optional[list[dict]]],
+) -> Optional[FieldDeviation]:
     """
     Check for partial delivery: invoice/DR quantity < PO quantity.
     Always returns INFO severity as this is informational, not an error.
@@ -470,8 +470,8 @@ def check_partial_delivery(
 
 def check_quantity_deviation(
     document_kinds: list[DocumentKind],
-    document_item_fields: list[list[dict] | None],
-) -> FieldDeviation | None:
+    document_item_fields: list[Optional[list[dict]]],
+) -> Optional[FieldDeviation]:
     """
     Check for quantity mismatch (not partial delivery).
     Only fires when invoice/DR qty > PO qty.
@@ -531,7 +531,7 @@ def check_quantity_deviation(
 
 
 def get_unmatched_item_severity(
-    line_amount: Decimal | float | None,
+    line_amount: Optional[Decimal | float],
 ) -> DeviationSeverity:
     """
     Determine severity for unmatched item based on line amount value.
@@ -604,8 +604,8 @@ def create_item_unmatched_deviation(
 
 
 def check_items_differ(
-    similarities: dict | None = None,
-) -> FieldDeviation | None:
+    similarities: Optional[dict] = None,
+) -> Optional[FieldDeviation]:
     """
     Predict if paired items are actually different products.
     Based on article number and description similarities.
@@ -661,9 +661,9 @@ def check_items_differ(
 
 def check_article_numbers_differ(
     document_kinds: list[DocumentKind],
-    document_item_fields: list[list[dict] | None],
-    description_similarity: float | None = None,
-) -> FieldDeviation | None:
+    document_item_fields: list[Optional[list[dict]]],
+    description_similarity: Optional[float] = None,
+) -> Optional[FieldDeviation]:
     """
     Check for article number differences with severity based on description similarity.
 
@@ -716,9 +716,9 @@ def check_article_numbers_differ(
 
 def check_description_deviation(
     document_kinds: list[DocumentKind],
-    document_item_fields: list[list[dict] | None],
-    description_similarity: float | None = None,
-) -> FieldDeviation | None:
+    document_item_fields: list[Optional[list[dict]]],
+    description_similarity: Optional[float] = None,
+) -> Optional[FieldDeviation]:
     """
     Check for description differences with similarity-based severity.
 
@@ -796,8 +796,8 @@ def check_description_deviation(
 def check_itempair_comparison(
     comparison: FieldComparison,
     document_kinds: list[DocumentKind],
-    document_item_fields: list[list[dict] | None],
-) -> FieldDeviation | None:
+    document_item_fields: list[Optional[list[dict]]],
+) -> Optional[FieldDeviation]:
     values = []
     field_names_used = []
 
@@ -907,8 +907,8 @@ def check_itempair_comparison(
 
 def collect_itempair_deviations(
     document_kinds: list[DocumentKind],
-    document_item_fields: list[list[dict] | None],
-    similarities: dict | None = None,
+    document_item_fields: list[Optional[list[dict]]],
+    similarities: Optional[dict] = None,
 ) -> list[FieldDeviation]:
     deviations = []
     if len(document_kinds) != len(document_item_fields):

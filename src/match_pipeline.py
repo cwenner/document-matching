@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from typing import Any, Dict, List, Optional
 
 # Keep existing imports
 from docpairing import DocumentPairingPredictor
@@ -31,9 +32,9 @@ CONFIDENT_NO_MATCH_CERTAINTY = NO_MATCH_CERTAINTY_THRESHOLD - 0.05  # 0.15
 
 def run_matching_pipeline(
     predictor: DocumentPairingPredictor,
-    input_document: dict,
-    historical_documents: list[dict],
-):
+    input_document: Dict[str, Any],
+    historical_documents: List[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
     """
     Runs the full matching pipeline for a given input document against historical ones.
 
@@ -374,7 +375,7 @@ def run_matching_pipeline(
 
 
 # Helper for __main__ test
-def get_sample_data() -> dict:
+def get_sample_data() -> Dict[str, Any]:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     default_data_root = os.path.join(script_dir, "..", "data", "converted-shared-data")
     data_root = os.environ.get("SAMPLE_DATA_ROOT", default_data_root)

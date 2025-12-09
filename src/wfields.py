@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+from typing import Any, Dict, List, Optional
 
 from document_utils import DocumentKind, get_field
 
@@ -10,7 +11,7 @@ from document_utils import DocumentKind, get_field
 logger = logging.getLogger(__name__)
 
 
-def unpack_attachments(doc):
+def unpack_attachments(doc: Dict[str, Any]) -> None:
     if doc.get("attachments"):
         for attachment in doc["attachments"]:
             if attachment["name"].lower().endswith(".pdf"):
@@ -43,7 +44,7 @@ def unpack_attachments(doc):
                         )
 
 
-def get_supplier_ids(doc):
+def get_supplier_ids(doc: Dict[str, Any]) -> List[str]:
     supplier_ids = []
     for n in [
         "supplierId",
@@ -63,7 +64,7 @@ def get_supplier_ids(doc):
     return supplier_ids
 
 
-def get_item_description(item) -> str:
+def get_item_description(item: Dict[str, Any]) -> str:
     return (
         get_field(item, "inventoryDescription")
         or get_field(item, "description")
@@ -71,11 +72,11 @@ def get_item_description(item) -> str:
     )
 
 
-def get_item_article_number(item) -> str:
+def get_item_article_number(item: Dict[str, Any]) -> Optional[str]:
     return get_field(item, "inventoryNumber") or get_field(item, "inventory")
 
 
-def extract_item_data(item, document_kind, item_index):
+def extract_item_data(item: Dict[str, Any], document_kind: DocumentKind, item_index: int) -> Optional[Dict[str, Any]]:
     item_data = {
         "number": None,
         "description": None,
@@ -155,7 +156,7 @@ def extract_item_data(item, document_kind, item_index):
     return item_data
 
 
-def get_document_items(doc):
+def get_document_items(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     if not isinstance(doc, dict):
         logger.warning(
             "Invalid document format passed to get_document_items: expected dict."
