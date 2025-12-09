@@ -1,8 +1,12 @@
+import asyncio
 import json
 import logging
-from typing import Any, List, Optional
+import uuid
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
@@ -59,6 +63,44 @@ class MatchRequest(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class JobStatus(str, Enum):
+    """Job status enumeration."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class BatchRequest(BaseModel):
+    """Pydantic model for batch request validation."""
+
+    requests: List[MatchRequest] = Field(
+        ..., description="List of match requests to process"
+    )
+
+
+class JobResponse(BaseModel):
+    """Response model for job creation."""
+
+    job_id: str = Field(..., description="Unique job identifier")
+    status: JobStatus = Field(..., description="Current job status")
+    created_at: str = Field(..., description="Job creation timestamp")
+
+
+class JobStatusResponse(BaseModel):
+    """Response model for job status query."""
+
+    job_id: str = Field(..., description="Unique job identifier")
+    status: JobStatus = Field(..., description="Current job status")
+    created_at: str = Field(..., description="Job creation timestamp")
+    completed_at: Optional[str] = Field(None, description="Job completion timestamp")
+    total_requests: int = Field(..., description="Total number of requests")
+    completed_requests: int = Field(..., description="Number of completed requests")
+    results: Optional[List[Any]] = Field(None, description="Results if completed")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
 # Create a service instance
 matching_service = MatchingService()
 
@@ -66,6 +108,9 @@ matching_service = MatchingService()
 MAX_CANDIDATE_DOCUMENTS = 10000
 # Soft cap for processing - logs warning and truncates to this limit
 CANDIDATE_PROCESSING_CAP = 1000
+
+# In-memory job storage
+jobs: Dict[str, Dict[str, Any]] = {}
 
 # --- FastAPI App ---
 app = FastAPI()
@@ -199,3 +244,113 @@ async def request_handler(request: Request):
     except Exception as e:
         logger.exception(f"Trace ID {trace_id}: Unexpected error in request handler.")
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+
+async def process_batch_job(job_id: str, batch_request: BatchRequest):
+    """Background task to process batch requests."""
+    try:
+        logger.info(f"Job {job_id}: Starting batch processing")
+        jobs[job_id]["status"] = JobStatus.PROCESSING
+
+        results = []
+        for idx, match_request in enumerate(batch_request.requests):
+            try:
+                # Convert to dict format expected by matching service
+                document = match_request.document.model_dump(
+                    by_alias=True, exclude_none=True
+                )
+                candidate_documents = [
+                    doc.model_dump(by_alias=True, exclude_none=True)
+                    for doc in match_request.candidate_documents
+                ]
+
+                # Apply same limits as main endpoint
+                if len(candidate_documents) > MAX_CANDIDATE_DOCUMENTS:
+                    raise ValueError(
+                        f"Request {idx}: Too many candidate documents: {len(candidate_documents)}"
+                    )
+
+                if len(candidate_documents) > CANDIDATE_PROCESSING_CAP:
+                    original_count = len(candidate_documents)
+                    candidate_documents = candidate_documents[:CANDIDATE_PROCESSING_CAP]
+                    logger.warning(
+                        f"Job {job_id}, Request {idx}: Candidate count {original_count} exceeds cap. "
+                        f"Truncated to {CANDIDATE_PROCESSING_CAP}."
+                    )
+
+                # Initialize service if needed
+                if matching_service._predictor is None:
+                    matching_service.initialize()
+
+                # Process the document
+                trace_id = f"batch-{job_id}-{idx}"
+                final_report, log_entry = matching_service.process_document(
+                    document, candidate_documents, trace_id
+                )
+
+                if final_report:
+                    results.append(final_report)
+                    logger.info(json.dumps(log_entry))
+                else:
+                    logger.error(json.dumps(log_entry))
+                    results.append({"error": "Processing failed", "request_index": idx})
+
+                jobs[job_id]["completed_requests"] = idx + 1
+
+            except Exception as e:
+                logger.exception(f"Job {job_id}, Request {idx}: Error processing request")
+                results.append({"error": str(e), "request_index": idx})
+                jobs[job_id]["completed_requests"] = idx + 1
+
+        # Mark job as completed
+        jobs[job_id]["status"] = JobStatus.COMPLETED
+        jobs[job_id]["results"] = results
+        jobs[job_id]["completed_at"] = datetime.utcnow().isoformat()
+        logger.info(f"Job {job_id}: Completed successfully")
+
+    except Exception as e:
+        logger.exception(f"Job {job_id}: Fatal error in batch processing")
+        jobs[job_id]["status"] = JobStatus.FAILED
+        jobs[job_id]["error"] = str(e)
+        jobs[job_id]["completed_at"] = datetime.utcnow().isoformat()
+
+
+@app.post("/batch/async", response_model=JobResponse)
+async def create_batch_job(
+    batch_request: BatchRequest, background_tasks: BackgroundTasks
+):
+    """Create an async batch processing job."""
+    # Generate unique job ID
+    job_id = str(uuid.uuid4())
+    created_at = datetime.utcnow().isoformat()
+
+    # Initialize job in storage
+    jobs[job_id] = {
+        "job_id": job_id,
+        "status": JobStatus.PENDING,
+        "created_at": created_at,
+        "completed_at": None,
+        "total_requests": len(batch_request.requests),
+        "completed_requests": 0,
+        "results": None,
+        "error": None,
+    }
+
+    # Add background task to process the batch
+    background_tasks.add_task(process_batch_job, job_id, batch_request)
+
+    logger.info(
+        f"Job {job_id}: Created with {len(batch_request.requests)} requests to process"
+    )
+
+    return JobResponse(job_id=job_id, status=JobStatus.PENDING, created_at=created_at)
+
+
+@app.get("/batch/{job_id}", response_model=JobStatusResponse)
+async def get_job_status(job_id: str):
+    """Get the status of a batch processing job."""
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    job_data = jobs[job_id]
+    return JobStatusResponse(**job_data)
