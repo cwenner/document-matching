@@ -169,11 +169,13 @@ class DocumentPairingPredictor:
         if use_reference_logic:
             ref_pred = self._predict_document_by_order_ref(document)
 
-            # For invoices with no PO match, try SVM fallback
-            # @TODO this should be all documents
+            # Apply SVM fallback for invoice→PO or PO→invoice when no reference match
             if (
                 document["kind"] == "invoice"
                 and not ref_pred["paired_purchase_order_ids"]
+            ) or (
+                document["kind"] == "purchase-order"
+                and not ref_pred["paired_invoice_ids"]
             ):
                 ref_pred = self._apply_svm_fallback(
                     document,
@@ -418,6 +420,9 @@ class DocumentPairingPredictor:
         """
         Apply SVM fallback for documents that didn't match using reference logic.
 
+        Supports bidirectional matching: invoice→PO and PO→invoice.
+        Feature extraction normalizes to canonical (invoice, PO) order.
+
         Args:
             document (dict): The document to find pairings for
             base_pred (dict): Prediction from reference-based logic
@@ -426,51 +431,61 @@ class DocumentPairingPredictor:
         Returns:
             dict: Updated prediction with SVM-based matches
         """
-        # @TODO do we not want POs here?
-        if document["kind"] != "invoice":
+        primary_kind = document["kind"]
+
+        # Determine matching direction and result field
+        if primary_kind == "invoice":
+            target_kind = "purchase-order"
+            result_field = "paired_purchase_order_ids"
+        elif primary_kind == "purchase-order":
+            target_kind = "invoice"
+            result_field = "paired_invoice_ids"
+        else:
             return base_pred
 
-        if len(base_pred.get("paired_purchase_order_ids", [])) > 0:
+        # Skip if already has matches for target type
+        if len(base_pred.get(result_field, [])) > 0:
             return base_pred
 
         if self.model is None:
             return base_pred
 
         supplier_ids = get_supplier_ids(document)
-        candidate_po_ids = []
+        candidate_ids = []
 
-        # Get candidate POs from the same supplier created before this invoice
+        # Get candidates of target kind from the same supplier
         if self.filter_by_supplier:
             for doc in candidate_documents:
                 if (
-                    doc["kind"] == "purchase-order"
+                    doc["kind"] == target_kind
                     and (set(get_supplier_ids(doc)) & set(supplier_ids))
                     and (
                         ignore_chronology
                         or self._is_chronologically_valid(document, doc)
                     )
                 ):
-                    candidate_po_ids.append(doc["id"])
+                    candidate_ids.append(doc["id"])
         else:
             for doc in candidate_documents:
-                if doc["kind"] == "purchase-order" and (
+                if doc["kind"] == target_kind and (
                     ignore_chronology or self._is_chronologically_valid(document, doc)
                 ):
-                    candidate_po_ids.append(doc["id"])
+                    candidate_ids.append(doc["id"])
 
-        if not candidate_po_ids:
+        if not candidate_ids:
             return base_pred
 
         feats_list = []
         candidates_list = []
 
-        for candidate_po_id in candidate_po_ids:
-            po_doc = self.id2document[candidate_po_id]
-            feats = self._get_comparison_features(document, po_doc)
+        for candidate_id in candidate_ids:
+            candidate_doc = self.id2document[candidate_id]
+            # Feature extraction handles canonical order normalization
+            feats = self._get_comparison_features(document, candidate_doc)
             feats_eng = self._engineer_features(feats)
             feats_svm, _ = self._features_for_svm(feats_eng)
             feats_list.append(feats_svm)
-            candidates_list.append(candidate_po_id)
+            candidates_list.append(candidate_id)
 
         if not feats_list:
             return base_pred
@@ -480,16 +495,16 @@ class DocumentPairingPredictor:
         probas = self.model.predict_proba(X_cand)[:, 1]
         best_idx = np.argmax(probas)
         best_score = probas[best_idx]
-        best_po_id = candidates_list[best_idx]
+        best_match_id = candidates_list[best_idx]
 
         # Apply threshold
         if best_score > self.svc_threshold:
-            base_pred["paired_purchase_order_ids"] = [best_po_id]
+            base_pred[result_field] = [best_match_id]
             # Store the actual SVM confidence score for this match
             base_pred["_svm_confidence_scores"] = base_pred.get(
                 "_svm_confidence_scores", {}
             )
-            base_pred["_svm_confidence_scores"][best_po_id] = float(best_score)
+            base_pred["_svm_confidence_scores"][best_match_id] = float(best_score)
             # Make transitive again after updating
             base_pred = self._make_pairings_transitive(document, base_pred)
 
