@@ -170,6 +170,56 @@ def generate_match_report(
     else:
         labels.append("potential-match-no-items")
 
+    # Build metrics list
+    metrics = [
+        {"name": "certainty", "value": max(0.0, min(1.0, match_confidence))},
+        {
+            "name": "deviation-severity",
+            "value": DeviationSeverity.NO_SEVERITY.value,
+        },
+        {
+            "name": f"{kind1.value}-has-future-match-certainty",
+            "value": calculate_future_match_certainty(doc1, kind1, is_matched=True),
+        },
+        {
+            "name": f"{kind2.value}-has-future-match-certainty",
+            "value": calculate_future_match_certainty(doc2, kind2, is_matched=True),
+        },
+    ]
+
+    # Add future-match-certainty for the "missing" document type in PO-Hub model
+    # When matching Invoice <-> PO, add metric for delivery-receipt
+    # When matching Invoice <-> Delivery or PO <-> Delivery, add metric for the other
+    matched_kinds = {kind1, kind2}
+    all_kinds = {
+        DocumentKind.INVOICE,
+        DocumentKind.PURCHASE_ORDER,
+        DocumentKind.DELIVERY_RECEIPT,
+    }
+    missing_kinds = all_kinds - matched_kinds
+
+    for missing_kind in missing_kinds:
+        # Create a synthetic document dict for the missing kind
+        # We use a dummy document with just the kind to calculate future certainty
+        dummy_doc = {"kind": missing_kind.value}
+        metrics.append(
+            {
+                "name": f"{missing_kind.value}-has-future-match-certainty",
+                "value": calculate_future_match_certainty(
+                    dummy_doc, missing_kind, is_matched=False
+                ),
+            }
+        )
+
+    # Add count metrics
+    metrics.extend(
+        [
+            {"name": "matched-item-pairs", "value": len(processed_item_pairs)},
+            {"name": f"{kind1.value}-total-items", "value": len(doc1.get("items", []))},
+            {"name": f"{kind2.value}-total-items", "value": len(doc2.get("items", []))},
+        ]
+    )
+
     report = {
         "version": "v4.1-dev-split",
         "id": report_id,
@@ -182,24 +232,7 @@ def generate_match_report(
             {"kind": kind2.value, "id": doc2.get("id")},
         ],
         "labels": labels,
-        "metrics": [
-            {"name": "certainty", "value": max(0.0, min(1.0, match_confidence))},
-            {
-                "name": "deviation-severity",
-                "value": DeviationSeverity.NO_SEVERITY.value,
-            },
-            {
-                "name": f"{kind1.value}-has-future-match-certainty",
-                "value": calculate_future_match_certainty(doc1, kind1, is_matched=True),
-            },
-            {
-                "name": f"{kind2.value}-has-future-match-certainty",
-                "value": calculate_future_match_certainty(doc2, kind2, is_matched=True),
-            },
-            {"name": "matched-item-pairs", "value": len(processed_item_pairs)},
-            {"name": f"{kind1.value}-total-items", "value": len(doc1.get("items", []))},
-            {"name": f"{kind2.value}-total-items", "value": len(doc2.get("items", []))},
-        ],
+        "metrics": metrics,
         "deviations": [dev.model_dump() for dev in document_deviations],
         "itempairs": [],
     }

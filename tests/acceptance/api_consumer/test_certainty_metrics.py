@@ -413,6 +413,19 @@ def check_po_future_match(context):
     ), f"Expected purchase-order-has-future-match-certainty in {metric_names}"
 
 
+@then(
+    'the match report should include a "delivery-receipt-has-future-match-certainty" metric'
+)
+def check_delivery_receipt_future_match(context):
+    """Check for delivery receipt future match certainty metric."""
+    response_data = context["response"].json()
+    metrics = response_data.get("metrics", [])
+    metric_names = [m.get("name") for m in metrics]
+    assert (
+        "delivery-receipt-has-future-match-certainty" in metric_names
+    ), f"Expected delivery-receipt-has-future-match-certainty in {metric_names}"
+
+
 @then("the response body should contain a match report with line item matches")
 def check_match_report_with_items(context):
     """Check match report has line item matches."""
