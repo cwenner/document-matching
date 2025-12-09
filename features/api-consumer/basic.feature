@@ -35,8 +35,8 @@ Feature: Core Document Matching API
     And the match report should complete within 60 seconds
 
   # NOTE: PO→Delivery uses reference-based matching per ADR-001 (not ML)
-  # BLOCKED BY: #75 (Verify PO→Delivery matching works)
-  @story-1.1 @core @po_dr_match @wip
+  # Delivery receipt must include purchaseOrderNumber in line items for reference matching
+  @story-1.1 @core @po_dr_match @implemented
   Scenario: Basic PO-Delivery Receipt Match
     Given I have a primary purchase order document
     And I have a candidate delivery receipt document
