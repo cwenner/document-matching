@@ -37,7 +37,7 @@ Invoice ←→ PO ←→ Delivery Receipt
 | Matching Direction | Method | Status |
 |-------------------|--------|--------|
 | Invoice → PO | Reference + ML fallback | Implemented |
-| PO → Invoice | Reference matching | Implemented |
+| PO → Invoice | Reference + ML fallback | Implemented |
 | Delivery → PO | Reference matching | Implemented |
 | PO → Delivery | Reference matching | Implemented |
 | Invoice ↔ Delivery | Transitive (via shared PO) | Implemented |
@@ -46,7 +46,7 @@ Invoice ←→ PO ←→ Delivery Receipt
 
 1. **PO as Hub**: The Purchase Order serves as the central document linking invoices and deliveries
 2. **Transitive Matching**: Invoice-to-Delivery relationships are inferred through shared PO references
-3. **ML Fallback**: When reference matching fails, ML model provides similarity-based matching (currently Invoice→PO only)
+3. **Bidirectional ML**: ML fallback works for both Invoice→PO and PO→Invoice via canonical order normalization ([ADR-002](docs/decisions/ADR-002-model-architecture.md))
 
 For architectural details, see the [Architecture Decision Records](docs/decisions/)
 

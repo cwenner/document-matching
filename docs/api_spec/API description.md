@@ -12,16 +12,16 @@ The API uses a **PO-Hub Model** for document matching. See [ADR-001](../decision
 |-----------------|----------------|-----------------|
 | Invoice | Purchase Order | Reference + ML fallback |
 | Invoice | Delivery Receipt | Transitive (via PO) |
-| Purchase Order | Invoice | Reference matching |
+| Purchase Order | Invoice | Reference + ML fallback |
 | Purchase Order | Delivery Receipt | Reference matching |
 | Delivery Receipt | Purchase Order | Reference matching |
 | Delivery Receipt | Invoice | Transitive (via PO) |
 
 ### Notes
 
-- **ML fallback** is currently only available for Invoice→PO matching
+- **ML fallback** is available for bidirectional Invoice↔PO matching ([ADR-002](../decisions/ADR-002-model-architecture.md))
 - **Transitive matching** infers Invoice↔Delivery relationships through shared PO references
-- For best results, use Invoice as the primary document when ML-based matching is required
+- Both Invoice and PO can be used as primary documents for ML-based matching
 
 ## JSON Super Schema:
 
