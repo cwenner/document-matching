@@ -64,6 +64,18 @@ def _calculate_overall_severity(
 def collect_document_deviations(
     doc1: dict | None, doc2: dict | None
 ) -> list[FieldDeviation]:
+    """Collect document-level deviations between two matched documents.
+
+    Checks for mismatches in currency and total amounts (incVatAmount).
+
+    Args:
+        doc1: First document dictionary
+        doc2: Second document dictionary
+
+    Returns:
+        list: List of FieldDeviation objects for document-level issues.
+              Returns empty list if either document is None or invalid.
+    """
     deviations = []
     if not doc1 or not doc2:
         logger.warning("Cannot collect document deviations with missing documents.")
@@ -140,6 +152,23 @@ def generate_match_report(
     document_deviations: list[FieldDeviation],
     match_confidence: float = 0.5,
 ) -> dict:
+    """Generate a comprehensive match report for two matched documents.
+
+    Creates a structured report containing matched documents, item pairs,
+    deviations, metrics, and labels based on the matching results.
+
+    Args:
+        doc1: First matched document
+        doc2: Second matched document
+        processed_item_pairs: List of matched item pairs with deviations
+        document_deviations: List of document-level deviations
+        match_confidence: Confidence score for the document match (0-1)
+
+    Returns:
+        dict: Complete match report with version, documents, itempairs,
+              deviations, metrics, and labels. Returns error dict if
+              documents are invalid.
+    """
     if not doc1 or not doc2:
         logger.error("Cannot generate match report with missing input documents.")
         return {"error": "Missing input documents"}
@@ -281,6 +310,20 @@ def generate_match_report(
 
 
 def generate_no_match_report(doc1, doc2=None, no_match_confidence: float = 0.5):
+    """Generate a no-match report for a document without suitable matches.
+
+    Creates a structured report indicating that no matching document was found
+    among the candidates.
+
+    Args:
+        doc1: Primary document that has no match
+        doc2: Optional secondary document (rarely used for no-match)
+        no_match_confidence: Confidence score for the no-match determination (0-1)
+
+    Returns:
+        dict: No-match report with version, document info, metrics, and labels.
+              Returns error dict if primary document is invalid.
+    """
     if not doc1:
         logger.error("Cannot generate no-match report without primary document.")
         return {"error": "Missing primary document for no-match report"}

@@ -401,6 +401,15 @@ FIELD_COMPARISONS.append(
 
 
 def getkv_value(kvs: list[dict] | None, name: str) -> Any | None:
+    """Extract value from a list of key-value dictionaries.
+
+    Args:
+        kvs: List of dictionaries with 'name' and 'value' keys
+        name: Key name to search for
+
+    Returns:
+        Value associated with the key, or None if not found
+    """
     if not isinstance(kvs, list):
         return None
     for kv in kvs:
@@ -910,6 +919,20 @@ def collect_itempair_deviations(
     document_item_fields: list[list[dict] | None],
     similarities: dict | None = None,
 ) -> list[FieldDeviation]:
+    """Collect all deviations for a pair of matched line items.
+
+    Checks for various types of deviations including quantity differences,
+    partial deliveries, price discrepancies, description mismatches, and
+    article number differences.
+
+    Args:
+        document_kinds: List of DocumentKind enums for the matched documents
+        document_item_fields: List of field lists for the matched items
+        similarities: Optional dictionary of similarity scores (item_id, description, unit_price)
+
+    Returns:
+        list: List of FieldDeviation objects describing all detected deviations
+    """
     deviations = []
     if len(document_kinds) != len(document_item_fields):
         logger.error(

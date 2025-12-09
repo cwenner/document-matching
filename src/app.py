@@ -76,7 +76,15 @@ logger.info("✔ Matching Service API Ready")
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    """Convert Pydantic validation errors to 400 responses with clear messages."""
+    """Convert Pydantic validation errors to 400 responses with clear messages.
+
+    Args:
+        request: FastAPI request object
+        exc: Pydantic RequestValidationError exception
+
+    Returns:
+        JSONResponse: 400 status response with validation error details
+    """
     errors = exc.errors()
     error_messages = []
     for error in errors:
@@ -89,26 +97,72 @@ async def validation_exception_handler(
 
 @app.get("/health")
 async def health_handler(_request: Request):
-    """Health probe endpoint."""
+    """Health probe endpoint.
+
+    Args:
+        _request: FastAPI request object (unused)
+
+    Returns:
+        Response: Plain text response indicating service is ready
+    """
     return Response("Ready to match\r\n")
 
 
 @app.get("/health/readiness")
 async def readiness_handler(_request: Request):
-    """Readiness probe endpoint - used to determine if the service is ready to accept requests."""
+    """Readiness probe endpoint.
+
+    Used by orchestrators to determine if the service is ready to accept requests.
+
+    Args:
+        _request: FastAPI request object (unused)
+
+    Returns:
+        dict: Status dictionary with "READY" status
+    """
     return {"status": "READY"}
 
 
 @app.get("/health/liveness")
 async def liveness_handler(_request: Request):
-    """Liveness probe endpoint - used to determine if the service is running."""
+    """Liveness probe endpoint.
+
+    Used by orchestrators to determine if the service is running and healthy.
+
+    Args:
+        _request: FastAPI request object (unused)
+
+    Returns:
+        dict: Status dictionary with "HEALTHY" status
+    """
     return {"status": "HEALTHY"}
 
 
 # Main endpoint for matching - handles all document matching requests
 @app.post("/")
 async def request_handler(request: Request):
-    """Handles matching requests."""
+    """Handle document matching requests.
+
+    Main API endpoint that accepts a document and candidate documents,
+    validates the input, enforces candidate limits, and delegates to
+    the matching service for processing.
+
+    Args:
+        request: FastAPI request object containing JSON payload with:
+                 - document: Primary document to match
+                 - candidate-documents: List of candidate documents
+
+    Returns:
+        dict: Match report from matching service containing documents,
+              itempairs, deviations, metrics, and labels
+
+    Raises:
+        HTTPException: For various error conditions:
+                      - 415: Unsupported media type
+                      - 400: Invalid JSON or validation errors
+                      - 413: Too many candidate documents
+                      - 500: Internal server errors
+    """
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")
 
     # Validate Content-Type header (case-insensitive per RFC 7231)

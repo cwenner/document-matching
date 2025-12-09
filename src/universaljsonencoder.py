@@ -23,6 +23,17 @@ class UniversalJSONEncoder(json.JSONEncoder):
     """
 
     def default(self, o):
+        """Convert special Python types to JSON-serializable formats.
+
+        Args:
+            o: Object to serialize
+
+        Returns:
+            JSON-serializable representation of the object
+
+        Raises:
+            TypeError: If object type is not supported (raised by parent class)
+        """
         if isinstance(o, PydanticBaseModel):
             try:
                 return o.model_dump(mode="json")

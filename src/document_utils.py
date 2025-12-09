@@ -2,12 +2,37 @@ from enum import Enum
 
 
 class DocumentKind(str, Enum):
+    """Enumeration of supported document types.
+
+    Attributes:
+        INVOICE: Invoice document type
+        PURCHASE_ORDER: Purchase order document type
+        DELIVERY_RECEIPT: Delivery receipt document type
+    """
+
     INVOICE = "invoice"
     PURCHASE_ORDER = "purchase-order"
     DELIVERY_RECEIPT = "delivery-receipt"
 
 
 def get_field(element, key):
+    """Extract a field value from a document element.
+
+    Supports multiple data structures:
+    - List of key-value dictionaries (with 'name' and 'value' fields)
+    - Dictionary with 'headers' or 'fields' lists containing key-value pairs
+    - Direct dictionary access
+
+    Args:
+        element: Document element (dict or list) to extract from
+        key: Field name to look up
+
+    Returns:
+        Field value if found, None otherwise
+
+    Raises:
+        Exception: If element is neither a dict nor a list
+    """
     if isinstance(element, list):
         for item in element:
             if isinstance(item, dict):

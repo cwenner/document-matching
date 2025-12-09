@@ -11,6 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 def unpack_attachments(doc):
+    """Extract and decode attachments from a document.
+
+    Unpacks base64-encoded JSON attachments (interpreted_data.json and interpreted_xml.json)
+    and adds them as top-level document fields.
+
+    Args:
+        doc: Document dictionary containing attachments
+
+    Returns:
+        None (modifies doc in-place)
+    """
     if doc.get("attachments"):
         for attachment in doc["attachments"]:
             if attachment["name"].lower().endswith(".pdf"):
@@ -44,6 +55,17 @@ def unpack_attachments(doc):
 
 
 def get_supplier_ids(doc):
+    """Extract all supplier IDs from a document.
+
+    Checks multiple supplier ID fields including supplierId, supplierExternalId,
+    supplierInternalId, supplierIncomingId, bankgiro, and interpreted_data.
+
+    Args:
+        doc: Document dictionary
+
+    Returns:
+        list: List of supplier ID strings found in the document
+    """
     supplier_ids = []
     for n in [
         "supplierId",
@@ -64,6 +86,16 @@ def get_supplier_ids(doc):
 
 
 def get_item_description(item) -> str:
+    """Get description from a line item.
+
+    Tries multiple field names in order: inventoryDescription, description, text.
+
+    Args:
+        item: Line item dictionary
+
+    Returns:
+        str: Item description or None if not found
+    """
     return (
         get_field(item, "inventoryDescription")
         or get_field(item, "description")
@@ -72,10 +104,35 @@ def get_item_description(item) -> str:
 
 
 def get_item_article_number(item) -> str:
+    """Get article/inventory number from a line item.
+
+    Tries multiple field names: inventoryNumber, inventory.
+
+    Args:
+        item: Line item dictionary
+
+    Returns:
+        str: Article number or None if not found
+    """
     return get_field(item, "inventoryNumber") or get_field(item, "inventory")
 
 
 def extract_item_data(item, document_kind, item_index):
+    """Extract standardized data from a line item.
+
+    Converts document-specific item formats into a unified structure with
+    standardized field names. Handles different field naming conventions
+    for invoices, purchase orders, and delivery receipts.
+
+    Args:
+        item: Line item dictionary
+        document_kind: DocumentKind enum value indicating document type
+        item_index: Index of this item in the document's items list
+
+    Returns:
+        dict: Standardized item data with fields like number, description,
+              unit-price, quantity, item-id, etc. Returns None for unknown document kinds.
+    """
     item_data = {
         "number": None,
         "description": None,
@@ -156,6 +213,18 @@ def extract_item_data(item, document_kind, item_index):
 
 
 def get_document_items(doc):
+    """Extract and standardize all line items from a document.
+
+    Processes the items array from a document and converts each item
+    into a standardized format using extract_item_data.
+
+    Args:
+        doc: Document dictionary containing 'kind' and 'items' fields
+
+    Returns:
+        list: List of standardized item dictionaries. Returns empty list
+              if document is invalid or items cannot be extracted.
+    """
     if not isinstance(doc, dict):
         logger.warning(
             "Invalid document format passed to get_document_items: expected dict."
