@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from docpairing import DocumentPairingPredictor
 from itempair_deviations import DocumentKind
@@ -30,7 +30,7 @@ WHITELISTED_SITES = {
 class MatchingService:
     """Class that handles document matching operations with proper initialization control."""
 
-    def __init__(self, model_path=None, svc_threshold=0.15):
+    def __init__(self, model_path: Optional[str] = None, svc_threshold: float = 0.15) -> None:
         """
         Initialize the matching service.
 
@@ -89,7 +89,7 @@ class MatchingService:
             logger.error(f"Failed to initialize predictor: {e}")
             return None
 
-    def adapt_report_to_v3(self, report: dict) -> dict:
+    def adapt_report_to_v3(self, report: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adapts report generated to API spec.
         """
@@ -113,7 +113,7 @@ class MatchingService:
 
         return v3_report
 
-    def get_dummy_matching_report(self, document: Dict) -> Dict:
+    def get_dummy_matching_report(self, document: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generates a dummy matching report based on hash of document ID.
         """
@@ -125,7 +125,7 @@ class MatchingService:
         else:
             return self._dummy_match_report(document)
 
-    def _dummy_no_match_report(self, document: Dict) -> Dict:
+    def _dummy_no_match_report(self, document: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generates a dummy V3 no-match report.
         """
@@ -189,7 +189,7 @@ class MatchingService:
 
         return report
 
-    def _dummy_match_report(self, document: Dict) -> Dict:
+    def _dummy_match_report(self, document: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generates a dummy V3 match report.
         """
@@ -301,10 +301,10 @@ class MatchingService:
 
     def process_document(
         self,
-        document: Dict,
-        candidate_documents: List[Dict],
+        document: Dict[str, Any],
+        candidate_documents: List[Dict[str, Any]],
         trace_id: str = "<trace_id missing>",
-    ) -> Tuple[Optional[Dict], Dict]:
+    ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
         """
         Process a document against candidate documents and return a matching report.
 

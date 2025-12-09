@@ -1,5 +1,6 @@
 import logging
 from math import isclose
+from typing import Optional
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -15,7 +16,7 @@ except Exception:
     model = None
 
 
-def _calculate_description_similarity(desc1, desc2):
+def _calculate_description_similarity(desc1: Optional[str], desc2: Optional[str]) -> Optional[float]:
     if not model:
         logger.warning(
             "SentenceTransformer model not available. Cannot calculate description similarity."
@@ -39,7 +40,7 @@ def _calculate_description_similarity(desc1, desc2):
         return 0.0
 
 
-def _calculate_item_id_similarity(id1, id2):
+def _calculate_item_id_similarity(id1: Optional[str], id2: Optional[str]) -> Optional[float]:
     if not model:
         logger.warning(
             "SentenceTransformer model not available. Cannot calculate item ID similarity."
@@ -66,7 +67,7 @@ def _calculate_item_id_similarity(id1, id2):
         return None
 
 
-def _calculate_unit_price_similarity(up1, up2):
+def _calculate_unit_price_similarity(up1: Optional[float], up2: Optional[float]) -> Optional[float]:
     if up1 is None or up2 is None:
         return None
     try:
@@ -86,7 +87,7 @@ def _calculate_unit_price_similarity(up1, up2):
     return 0.0
 
 
-def _calculate_match_score(item_id_sim, desc_sim, price_sim):
+def _calculate_match_score(item_id_sim: Optional[float], desc_sim: Optional[float], price_sim: Optional[float]) -> tuple[float, bool]:
     actual_values = [x for x in [item_id_sim, desc_sim, price_sim] if x is not None]
     match_score = sum(actual_values) / len(actual_values)
     is_match = match_score >= 0.8
@@ -108,7 +109,7 @@ def _calculate_match_score(item_id_sim, desc_sim, price_sim):
 
 def find_best_item_match(
     source_item_data: dict, target_items_data: list[dict]
-) -> dict | None:
+) -> Optional[dict]:
     if not target_items_data or not model:
         return None
 

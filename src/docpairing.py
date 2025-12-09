@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 class DocumentPairingPredictor:
     def __init__(
         self,
-        model_path="data/models/document-pairing-svm.pkl",
-        svc_threshold=0.15,
-        filter_by_supplier=True,
-    ):
+        model_path: str = "data/models/document-pairing-svm.pkl",
+        svc_threshold: float = 0.15,
+        filter_by_supplier: bool = True,
+    ) -> None:
         """
         Initialize the document pairing predictor with a trained SVM model.
 
@@ -63,7 +63,7 @@ class DocumentPairingPredictor:
         self.ids_have_received_purchase_orders = set()
         self.supplier_id2document_ids = collections.defaultdict(list)
 
-    def clear_documents(self):
+    def clear_documents(self) -> None:
         """Clear all document tracking data structures"""
         self.order_reference2invoice_ids.clear()
         self.purchase_order_nbr2delivery_ids.clear()
@@ -75,7 +75,7 @@ class DocumentPairingPredictor:
         self.ids_have_received_purchase_orders.clear()
         self.supplier_id2document_ids.clear()
 
-    def record_document(self, doc, target=None):
+    def record_document(self, doc: Dict, target: Optional[Dict] = None) -> None:
         """
         Record the existence of a document in tracking data structures.
         This is needed to pair with that document in other calls.
@@ -141,12 +141,12 @@ class DocumentPairingPredictor:
 
     def predict_pairings(
         self,
-        document,
-        candidate_documents,
-        threshold=0.15,
-        use_reference_logic=True,
-        ignore_chronology=False,
-    ):
+        document: Dict,
+        candidate_documents: List[Dict],
+        threshold: float = 0.15,
+        use_reference_logic: bool = True,
+        ignore_chronology: bool = False,
+    ) -> List[Tuple[str, float]]:
         """
         Predict pairings between the input document and a list of candidate documents.
         Uses a combination of reference-based logic and SVM predictions.
@@ -249,12 +249,12 @@ class DocumentPairingPredictor:
 
     def predict_best_pairing(
         self,
-        document,
-        candidate_documents,
-        threshold=0.15,
-        use_reference_logic=True,
-        ignore_chronology=False,
-    ):
+        document: Dict,
+        candidate_documents: List[Dict],
+        threshold: float = 0.15,
+        use_reference_logic: bool = True,
+        ignore_chronology: bool = False,
+    ) -> Tuple[Optional[str], float]:
         """
         Predict the single best pairing for a document.
 
@@ -617,7 +617,7 @@ class DocumentPairingPredictor:
             return True
 
     # @TODO drop this - use get_field instead
-    def _get_header(self, doc, key):
+    def _get_header(self, doc: Dict, key: str) -> Optional[str]:
         """Get a header value from a document"""
         for h in doc.get("headers", []):
             if h.get("name") == key:

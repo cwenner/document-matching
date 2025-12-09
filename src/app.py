@@ -88,26 +88,26 @@ async def validation_exception_handler(
 
 
 @app.get("/health")
-async def health_handler(_request: Request):
+async def health_handler(_request: Request) -> Response:
     """Health probe endpoint."""
     return Response("Ready to match\r\n")
 
 
 @app.get("/health/readiness")
-async def readiness_handler(_request: Request):
+async def readiness_handler(_request: Request) -> dict[str, str]:
     """Readiness probe endpoint - used to determine if the service is ready to accept requests."""
     return {"status": "READY"}
 
 
 @app.get("/health/liveness")
-async def liveness_handler(_request: Request):
+async def liveness_handler(_request: Request) -> dict[str, str]:
     """Liveness probe endpoint - used to determine if the service is running."""
     return {"status": "HEALTHY"}
 
 
 # Main endpoint for matching - handles all document matching requests
 @app.post("/")
-async def request_handler(request: Request):
+async def request_handler(request: Request) -> dict[str, Any]:
     """Handles matching requests."""
     trace_id = request.headers.get("x-om-trace-id", "<x-om-trace-id missing>")
 

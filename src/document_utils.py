@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any, Optional, Union
 
 
 class DocumentKind(str, Enum):
@@ -7,7 +8,7 @@ class DocumentKind(str, Enum):
     DELIVERY_RECEIPT = "delivery-receipt"
 
 
-def get_field(element, key):
+def get_field(element: Union[list, dict], key: str) -> Optional[Any]:
     if isinstance(element, list):
         for item in element:
             if isinstance(item, dict):

@@ -3,6 +3,7 @@ import decimal
 import json
 import uuid
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 
@@ -22,7 +23,7 @@ class UniversalJSONEncoder(json.JSONEncoder):
     - Pydantic V2 BaseModels
     """
 
-    def default(self, o):
+    def default(self, o: Any) -> Any:
         if isinstance(o, PydanticBaseModel):
             try:
                 return o.model_dump(mode="json")

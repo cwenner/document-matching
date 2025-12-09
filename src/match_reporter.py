@@ -3,6 +3,7 @@
 import hashlib
 import logging
 from decimal import Decimal
+from typing import Any, Dict, List, Optional
 
 from document_utils import get_field
 from itempair_deviations import (
@@ -20,7 +21,7 @@ NO_MATCH_CERTAINTY_THRESHOLD = 0.2  # < 0.2 -> "no-match"
 
 
 def calculate_future_match_certainty(
-    document: dict, kind: DocumentKind, is_matched: bool
+    document: Dict[str, Any], kind: DocumentKind, is_matched: bool
 ) -> float:
     """
     Calculate P(document will receive more matches in future).
@@ -62,8 +63,8 @@ def _calculate_overall_severity(
 
 
 def collect_document_deviations(
-    doc1: dict | None, doc2: dict | None
-) -> list[FieldDeviation]:
+    doc1: Optional[Dict[str, Any]], doc2: Optional[Dict[str, Any]]
+) -> List[FieldDeviation]:
     deviations = []
     if not doc1 or not doc2:
         logger.warning("Cannot collect document deviations with missing documents.")
@@ -134,12 +135,12 @@ def collect_document_deviations(
 
 
 def generate_match_report(
-    doc1: dict,
-    doc2: dict,
-    processed_item_pairs: list[dict],
-    document_deviations: list[FieldDeviation],
+    doc1: Dict[str, Any],
+    doc2: Dict[str, Any],
+    processed_item_pairs: List[Dict[str, Any]],
+    document_deviations: List[FieldDeviation],
     match_confidence: float = 0.5,
-) -> dict:
+) -> Dict[str, Any]:
     if not doc1 or not doc2:
         logger.error("Cannot generate match report with missing input documents.")
         return {"error": "Missing input documents"}
@@ -280,7 +281,7 @@ def generate_match_report(
     return report
 
 
-def generate_no_match_report(doc1, doc2=None, no_match_confidence: float = 0.5):
+def generate_no_match_report(doc1: Dict[str, Any], doc2: Optional[Dict[str, Any]] = None, no_match_confidence: float = 0.5) -> Dict[str, Any]:
     if not doc1:
         logger.error("Cannot generate no-match report without primary document.")
         return {"error": "Missing primary document for no-match report"}
