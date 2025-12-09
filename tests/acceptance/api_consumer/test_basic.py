@@ -51,7 +51,6 @@ def test_basic_po_dr_match():
     pass
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/basic.feature")),
     "Three-Way Document Matching",
@@ -59,9 +58,8 @@ def test_basic_po_dr_match():
 def test_three_way_matching():
     """Test matching invoice with both PO and delivery receipt.
 
-    NOTE: Currently marked as WIP because the system returns a single match report
-    for the best match, not separate match reports for each candidate pair.
-    The feature expectation differs from current product behavior.
+    Returns multiple match reports: one for Invoice→PO and one for PO→Delivery.
+    Implements issue #53.
     """
     pass
 
@@ -304,17 +302,24 @@ def check_status_code(status_code, context):
 def check_v3_match_report(context):
     """Check that response contains a v3 schema match report."""
     response_data = context["response"].json()
-    assert isinstance(response_data, dict), "Response should be a dict"
-    assert response_data.get("version") == "v3", "Response should be v3 schema"
-    assert "documents" in response_data, "Response should have documents field"
-    assert "labels" in response_data, "Response should have labels field"
+    # Response is now an array of reports
+    assert isinstance(response_data, list), "Response should be a list of reports"
+    assert len(response_data) > 0, "Response should contain at least one report"
+    # Check first report
+    report = response_data[0]
+    assert report.get("version") == "v3", "Report should be v3 schema"
+    assert "documents" in report, "Report should have documents field"
+    assert "labels" in report, "Report should have labels field"
 
 
 @then(parsers.parse('the match report should contain "{label}" in labels'))
 def check_label_in_report(label, context):
     """Check that the match report contains specified label."""
     response_data = context["response"].json()
-    labels = response_data.get("labels", [])
+    # Response is now an array
+    assert isinstance(response_data, list) and len(response_data) > 0
+    report = response_data[0]
+    labels = report.get("labels", [])
     assert label in labels, f"Expected '{label}' in labels, got {labels}"
 
 
@@ -322,8 +327,10 @@ def check_label_in_report(label, context):
 def check_certainty_metrics(context):
     """Check that match report includes certainty metrics."""
     response_data = context["response"].json()
-    metrics = response_data.get("metrics", [])
-    assert len(metrics) > 0, "Response should have metrics"
+    assert isinstance(response_data, list) and len(response_data) > 0
+    report = response_data[0]
+    metrics = report.get("metrics", [])
+    assert len(metrics) > 0, "Report should have metrics"
     # Check for certainty-related metrics
     metric_names = [m.get("name", "") for m in metrics]
     certainty_metrics = [
@@ -336,7 +343,9 @@ def check_certainty_metrics(context):
 def check_document_ids_referenced(context):
     """Check that match report references both document IDs."""
     response_data = context["response"].json()
-    documents = response_data.get("documents", [])
+    assert isinstance(response_data, list) and len(response_data) > 0
+    report = response_data[0]
+    documents = report.get("documents", [])
     assert len(documents) >= 2, "Match report should reference at least 2 documents"
     doc_ids = [doc.get("id") for doc in documents]
     primary_id = context["document"]["id"]
@@ -355,40 +364,60 @@ def check_response_time(seconds, context):
 def check_two_match_reports(context):
     """Check for two match reports in response."""
     response_data = context["response"].json()
-    # Response could be a single report with multiple document pairs
-    # or could indicate matches with multiple documents
-    documents = response_data.get("documents", [])
-    assert len(documents) >= 2, "Should have at least 2 document matches"
+    # Response should be an array with 2 reports
+    assert isinstance(response_data, list), "Response should be a list of reports"
+    assert (
+        len(response_data) == 2
+    ), f"Expected 2 reports for three-way matching, got {len(response_data)}"
 
 
 @then("one match report should be between invoice and purchase order")
 def check_invoice_po_match(context):
     """Check for invoice-PO match in response."""
     response_data = context["response"].json()
-    documents = response_data.get("documents", [])
-    doc_kinds = [doc.get("kind") for doc in documents]
-    # Check that we have invoice and PO in the matches
-    assert "invoice" in doc_kinds or context["document"]["kind"] == "invoice"
+    assert isinstance(response_data, list), "Response should be a list"
+
+    # Find a report that contains both invoice and PO
+    invoice_po_report = None
+    for report in response_data:
+        documents = report.get("documents", [])
+        doc_kinds = [doc.get("kind") for doc in documents]
+        if "invoice" in doc_kinds and "purchase-order" in doc_kinds:
+            invoice_po_report = report
+            break
+
+    assert (
+        invoice_po_report is not None
+    ), f"No report found with Invoice-PO pair. Reports: {response_data}"
 
 
 @then("one match report should be between purchase order and delivery receipt")
 def check_po_dr_match(context):
     """Check for PO-DR match indication in response."""
     response_data = context["response"].json()
-    # This verifies that the response structure includes PO and/or DR matching
-    documents = response_data.get("documents", [])
-    doc_kinds = [doc.get("kind") for doc in documents]
-    # At least one candidate kind should be present
-    assert any(
-        k in ["purchase-order", "delivery-receipt"] for k in doc_kinds
-    ), f"Expected PO or DR match, got kinds: {doc_kinds}"
+    assert isinstance(response_data, list), "Response should be a list"
+
+    # Find a report that contains both PO and DR
+    po_dr_report = None
+    for report in response_data:
+        documents = report.get("documents", [])
+        doc_kinds = [doc.get("kind") for doc in documents]
+        if "purchase-order" in doc_kinds and "delivery-receipt" in doc_kinds:
+            po_dr_report = report
+            break
+
+    assert (
+        po_dr_report is not None
+    ), f"No report found with PO-DR pair. Reports: {response_data}"
 
 
 @then("both match reports should follow the v3 schema")
 def check_both_v3_schema(context):
-    """Check that response follows v3 schema."""
+    """Check that all reports follow v3 schema."""
     response_data = context["response"].json()
-    assert response_data.get("version") == "v3", "Response should be v3 schema"
+    assert isinstance(response_data, list), "Response should be a list"
+    for report in response_data:
+        assert report.get("version") == "v3", f"Report should be v3 schema: {report}"
 
 
 @then(parsers.parse("both match reports should complete within {seconds:d} seconds"))
@@ -401,15 +430,20 @@ def check_both_response_time(seconds, context):
 def check_reports_for_each_candidate(context):
     """Check that response addresses all candidate documents."""
     response_data = context["response"].json()
-    # V3 response structure includes matched documents
-    assert "documents" in response_data or "labels" in response_data
+    # Response is now an array
+    assert isinstance(response_data, list) and len(response_data) > 0
+    # Each report should have documents or labels
+    for report in response_data:
+        assert "documents" in report or "labels" in report
 
 
 @then("each match report should follow the v3 schema")
 def check_each_v3_schema(context):
     """Check v3 schema compliance."""
     response_data = context["response"].json()
-    assert response_data.get("version") == "v3"
+    assert isinstance(response_data, list) and len(response_data) > 0
+    for report in response_data:
+        assert report.get("version") == "v3"
 
 
 @then(parsers.parse("the entire response should complete within {seconds:d} seconds"))

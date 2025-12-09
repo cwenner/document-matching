@@ -29,6 +29,178 @@ logger = logging.getLogger(__name__)
 CONFIDENT_NO_MATCH_CERTAINTY = NO_MATCH_CERTAINTY_THRESHOLD - 0.05  # 0.15
 
 
+def _generate_match_report_for_pair(
+    doc1: dict,
+    doc2: dict,
+    match_confidence: float,
+    id2doc: dict,
+) -> dict:
+    """
+    Helper function to generate a single match report for a document pair.
+
+    Args:
+        doc1: First document
+        doc2: Second document
+        match_confidence: Confidence score for this match
+        id2doc: Dictionary mapping document IDs to document objects
+
+    Returns:
+        A match report dictionary, or None if generation fails
+    """
+    logger.info(f"--- Generating Match Report for {doc1.get('id')} ↔ {doc2.get('id')} ---")
+
+    # Collect document-level deviations
+    document_deviations = []
+    try:
+        document_deviations = collect_document_deviations(doc1, doc2)
+        logger.info(f"Collected {len(document_deviations)} document-level deviations.")
+    except Exception as e:
+        logger.exception(f"Error collecting document deviations: {e}")
+        raise e
+
+    # Extract document items
+    doc1_items, doc2_items = [], []
+    try:
+        doc1_items = get_document_items(doc1)
+        doc2_items = get_document_items(doc2)
+        logger.info(
+            f"Extracted {len(doc1_items)} items from doc1 (ID: {doc1.get('id')}), "
+            f"{len(doc2_items)} items from doc2 (ID: {doc2.get('id')})."
+        )
+    except Exception as e:
+        logger.exception(f"Error extracting document items: {e}")
+        raise e
+
+    processed_item_pairs = []
+    if not doc1_items or not doc2_items:
+        logger.warning(
+            "One or both documents have no extractable items. Skipping item pairing."
+        )
+    else:
+        try:
+            # Pair items by similarity
+            matched_item_pairs_raw = pair_document_items(doc1_items, doc2_items)
+            logger.info(
+                f"Found {len(matched_item_pairs_raw)} initial item pairs based on similarity."
+            )
+
+            # Collect deviations for each item pair
+            for raw_pair in matched_item_pairs_raw:
+                item1_data = raw_pair.get("item1")
+                item2_data = raw_pair.get("item2")
+
+                if not item1_data or not item2_data:
+                    logger.warning("Skipping deviation check due to missing item data.")
+                    continue
+
+                doc_kinds = [item1_data["document_kind"], item2_data["document_kind"]]
+                item1_fields = item1_data.get("raw_item", {}).get("fields")
+                item2_fields = item2_data.get("raw_item", {}).get("fields")
+
+                item_deviations = []
+                if item1_fields is None or item2_fields is None:
+                    logger.warning(
+                        f"Missing 'fields' list in raw_item for pair. Cannot calculate deviations."
+                    )
+                else:
+                    try:
+                        item_deviations = collect_itempair_deviations(
+                            doc_kinds,
+                            [item1_fields, item2_fields],
+                            raw_pair.get("similarities"),
+                        )
+                    except Exception as e_dev:
+                        logger.exception(f"Error collecting item deviations: {e_dev}")
+                        item_deviations.append(
+                            FieldDeviation(
+                                code="deviation-calc-failed",
+                                message=str(e_dev),
+                                severity=DeviationSeverity.HIGH,
+                            )
+                        )
+
+                processed_item_pairs.append(
+                    {
+                        "item1": item1_data,
+                        "item2": item2_data,
+                        "score": raw_pair.get("score"),
+                        "similarities": raw_pair.get("similarities"),
+                        "deviations": item_deviations,
+                    }
+                )
+
+            # Add unmatched items from both documents
+            for item in doc1_items:
+                if not item.get("matched"):
+                    doc_kind = item.get("document_kind")
+                    if doc_kind:
+                        unmatched_deviation = create_item_unmatched_deviation(
+                            item, doc_kind
+                        )
+                        processed_item_pairs.append(
+                            {
+                                "item1": item,
+                                "item2": None,
+                                "score": None,
+                                "similarities": None,
+                                "deviations": [unmatched_deviation],
+                                "match_type": "unmatched",
+                            }
+                        )
+
+            for item in doc2_items:
+                if not item.get("matched"):
+                    doc_kind = item.get("document_kind")
+                    if doc_kind:
+                        unmatched_deviation = create_item_unmatched_deviation(
+                            item, doc_kind
+                        )
+                        processed_item_pairs.append(
+                            {
+                                "item1": None,
+                                "item2": item,
+                                "score": None,
+                                "similarities": None,
+                                "deviations": [unmatched_deviation],
+                                "match_type": "unmatched",
+                            }
+                        )
+
+        except Exception as e_item_processing:
+            logger.exception("Error during item pairing or deviation collection.")
+            document_deviations.append(
+                FieldDeviation(
+                    code="item-processing-failed",
+                    message=str(e_item_processing),
+                    severity=DeviationSeverity.HIGH,
+                )
+            )
+
+    # Generate the match report
+    try:
+        report = generate_match_report(
+            doc1,
+            doc2,
+            processed_item_pairs,
+            document_deviations,
+            match_confidence=match_confidence,
+        )
+        logger.info(f"Match report generated successfully (ID: {report.get('id')}).")
+        return report
+    except Exception as e:
+        logger.exception("Error occurred during match report generation.")
+        # Fallback: create a basic error report
+        return {
+            "error": "Failed to generate final match report",
+            "details": str(e),
+            "documents": [
+                {"kind": doc1.get("kind", "unknown"), "id": doc1.get("id")},
+                {"kind": doc2.get("kind", "unknown"), "id": doc2.get("id")},
+            ],
+            "labels": ["matched", "report-generation-error"],
+        }
+
+
 def run_matching_pipeline(
     predictor: DocumentPairingPredictor,
     input_document: dict,
@@ -43,7 +215,9 @@ def run_matching_pipeline(
         historical_documents: A list of candidate document dictionaries.
 
     Returns:
-        A dictionary representing the match report (either match or no-match).
+        A list of match reports. For three-way matching scenarios, returns multiple
+        reports (e.g., Invoice→PO and PO→Delivery). For simple matching, returns a
+        single-element list. Returns list with one no-match report if no matches found.
         Returns None if a critical error occurs during processing.
     """
     logger.info(
@@ -119,246 +293,126 @@ def run_matching_pipeline(
         logger.exception("Error occurred during document pairing prediction.")
         pairings = []
 
-    final_report = None
-
     # --- Process Matches or Generate No-Match Report ---
-    if pairings:
-        # Assume top pairing is the best match for now
-        matched_doc_id = pairings[0][0]
-        match_confidence = pairings[0][1]  # Keep confidence for use in report
-        logger.info(
-            f"\n--- Processing Top Match: ID {matched_doc_id} (Confidence: {match_confidence:.4f}) ---"
-        )
+    reports = []  # List to store all generated reports
 
-        if matched_doc_id not in id2doc:
-            logger.error(
-                f"FATAL: Matched document ID {matched_doc_id} not found in recorded documents map 'id2doc'. This should not happen."
+    if pairings:
+        logger.info(f"Found {len(pairings)} total pairings (including transitive).")
+
+        # Track which documents we've already generated reports for to avoid duplicates
+        processed_pairs = set()
+
+        # Process each pairing
+        for pairing_idx, (matched_doc_id, match_confidence) in enumerate(pairings):
+            logger.info(
+                f"\n--- Processing Pairing {pairing_idx + 1}/{len(pairings)}: "
+                f"ID {matched_doc_id} (Confidence: {match_confidence:.4f}) ---"
             )
-            # Generate a no-match report, maybe add specific error label/deviation
-            final_report = generate_no_match_report(input_document)
-            final_report["labels"].append("internal-error")
-            final_report["deviations"] = [
-                {
-                    "code": "match-lookup-failed",
-                    "message": f"Matched ID {matched_doc_id} not found.",
-                    "severity": "high",
-                }
+
+            if matched_doc_id not in id2doc:
+                logger.error(
+                    f"Matched document ID {matched_doc_id} not found in id2doc. Skipping."
+                )
+                continue
+
+            matched_doc = id2doc[matched_doc_id]
+
+            # Create a canonical pair key to avoid duplicates (sort IDs for consistency)
+            pair_key = tuple(sorted([input_document["id"], matched_doc_id]))
+            if pair_key in processed_pairs:
+                logger.info(
+                    f"Pair {pair_key} already processed, skipping duplicate report."
+                )
+                continue
+
+            processed_pairs.add(pair_key)
+
+            # Generate report for this pair
+            try:
+                report = _generate_match_report_for_pair(
+                    input_document,
+                    matched_doc,
+                    match_confidence,
+                    id2doc,
+                )
+                reports.append(report)
+            except Exception as e:
+                logger.exception(
+                    f"Failed to generate report for pair {input_document['id']} ↔ {matched_doc_id}: {e}"
+                )
+
+        # Check for three-way matching: if primary matched a PO, check if that PO also matches a Delivery
+        # This handles the case where: Invoice → PO, and PO → Delivery (both in candidates)
+        if input_document.get("kind") == "invoice" and len(pairings) > 0:
+            # Find if we matched to a PO
+            matched_po_ids = [
+                pid
+                for pid, _ in pairings
+                if id2doc.get(pid, {}).get("kind") == "purchase-order"
             ]
 
-        else:
-            matched_doc = id2doc[matched_doc_id]
-            doc1, doc2 = input_document, matched_doc
-
-            # Ensure correct order if needed (e.g., always Invoice then PO) - reporter might handle this
-            # For now, keep the order input_document, matched_doc
-
-            logger.info("--- STEP 2a: Collecting Document Deviations ---")
-            document_deviations = []
-            try:
-                document_deviations = collect_document_deviations(doc1, doc2)
-                logger.info(
-                    f"Collected {len(document_deviations)} document-level deviations."
+            for po_id in matched_po_ids:
+                po_doc = id2doc[po_id]
+                # Check if this PO matches any delivery receipts in the candidates
+                po_pairings = predictor.predict_pairings(
+                    po_doc,
+                    historical_documents,
+                    use_reference_logic=True,
                 )
-            except Exception as e:
-                raise e
 
-            logger.info("--- STEP 2b: Extracting Document Items ---")
-            doc1_items, doc2_items = [], []
-            try:
-                doc1_items = get_document_items(doc1)
-                doc2_items = get_document_items(doc2)
-                logger.info(
-                    f"Extracted {len(doc1_items)} items from doc1 (ID: {doc1.get('id')}), {len(doc2_items)} items from doc2 (ID: {doc2.get('id')})."
-                )
-            except Exception as e:
-                raise e
-
-            processed_item_pairs = []
-            if not doc1_items or not doc2_items:
-                logger.warning(
-                    "One or both documents have no extractable items. Skipping item pairing and deviation steps."
-                )
-            else:
-                try:
-                    logger.info("--- STEP 3a: Pairing Items by Similarity ---")
-                    # Ensure the item pairing function can handle the extracted format
-                    matched_item_pairs_raw = pair_document_items(doc1_items, doc2_items)
-                    logger.info(
-                        f"Found {len(matched_item_pairs_raw)} initial item pairs based on similarity."
-                    )
-
-                    logger.info(
-                        "--- STEP 3b: Collecting Deviations for Each Item Pair ---"
-                    )
-                    pair_count = 0
-                    for raw_pair in matched_item_pairs_raw:
-                        pair_count += 1
-                        item1_data = raw_pair.get("item1")
-                        item2_data = raw_pair.get("item2")
-
-                        if not item1_data or not item2_data:
-                            logger.warning(
-                                f"Skipping deviation check for raw pair {pair_count} due to missing item data."
+                for delivery_id, delivery_confidence in po_pairings:
+                    delivery_doc = id2doc.get(delivery_id)
+                    if (
+                        delivery_doc
+                        and delivery_doc.get("kind") == "delivery-receipt"
+                    ):
+                        # Check if this is a new pair we haven't processed
+                        pair_key = tuple(sorted([po_id, delivery_id]))
+                        if pair_key not in processed_pairs:
+                            processed_pairs.add(pair_key)
+                            logger.info(
+                                f"\n--- Three-Way Match Detected: Generating PO→Delivery Report ---"
                             )
-                            continue
-
-                        # Get necessary info for collect_itempair_deviations
-                        # It expects list of kinds and list of fields lists
-                        doc_kinds = [
-                            item1_data["document_kind"],
-                            item2_data["document_kind"],
-                        ]
-                        # Access the 'raw_item' which should hold the original structure
-                        item1_fields = item1_data.get("raw_item", {}).get("fields")
-                        item2_fields = item2_data.get("raw_item", {}).get("fields")
-
-                        item_deviations = []
-                        # Handle cases where items might not have the 'fields' list directly
-                        if item1_fields is None or item2_fields is None:
-                            logger.warning(
-                                f"Missing 'fields' list in raw_item for pair indices {item1_data.get('item_index')}/{item2_data.get('item_index')}. Cannot calculate deviations for this pair using standard method."
-                                # Potential fallback: try extracting fields differently if needed
-                            )
-                        else:
                             try:
-                                item_deviations = collect_itempair_deviations(
-                                    doc_kinds,
-                                    [item1_fields, item2_fields],
-                                    raw_pair.get("similarities"),
+                                po_dr_report = _generate_match_report_for_pair(
+                                    po_doc,
+                                    delivery_doc,
+                                    delivery_confidence,
+                                    id2doc,
                                 )
-                                logger.debug(
-                                    f"  Pair {item1_data.get('item_index')}/{item2_data.get('item_index')} (Score: {raw_pair.get('score', 0):.3f}): Found {len(item_deviations)} deviations."
-                                )
-                            except Exception as e_dev:
+                                reports.append(po_dr_report)
+                            except Exception as e:
                                 logger.exception(
-                                    f"Error collecting deviations for pair {item1_data.get('item_index')}/{item2_data.get('item_index')}"
-                                )
-                                # Add a deviation indicating this failure?
-                                item_deviations.append(
-                                    FieldDeviation(
-                                        code="deviation-calc-failed",
-                                        message=str(e_dev),
-                                        severity=DeviationSeverity.HIGH,
-                                    )
+                                    f"Failed to generate PO→Delivery report: {e}"
                                 )
 
-                        processed_item_pairs.append(
-                            {
-                                "item1": item1_data,
-                                "item2": item2_data,
-                                "score": raw_pair.get("score"),
-                                "similarities": raw_pair.get(
-                                    "similarities"
-                                ),  # Keep for potential debugging/reporting
-                                "deviations": item_deviations,
-                            }
-                        )
-                    logger.info(
-                        f"Finished collecting deviations for {len(processed_item_pairs)} item pairs."
-                    )
-
-                    for item in doc1_items:
-                        if not item.get("matched"):
-                            doc_kind = item.get("document_kind")
-                            if doc_kind:
-                                unmatched_deviation = create_item_unmatched_deviation(
-                                    item, doc_kind
-                                )
-                                processed_item_pairs.append(
-                                    {
-                                        "item1": item,
-                                        "item2": None,
-                                        "score": None,
-                                        "similarities": None,
-                                        "deviations": [unmatched_deviation],
-                                        "match_type": "unmatched",
-                                    }
-                                )
-
-                    for item in doc2_items:
-                        if not item.get("matched"):
-                            doc_kind = item.get("document_kind")
-                            if doc_kind:
-                                unmatched_deviation = create_item_unmatched_deviation(
-                                    item, doc_kind
-                                )
-                                processed_item_pairs.append(
-                                    {
-                                        "item1": None,
-                                        "item2": item,
-                                        "score": None,
-                                        "similarities": None,
-                                        "deviations": [unmatched_deviation],
-                                        "match_type": "unmatched",
-                                    }
-                                )
-
-                    unmatched_count = len(
-                        [
-                            p
-                            for p in processed_item_pairs
-                            if p.get("match_type") == "unmatched"
-                        ]
-                    )
-                    if unmatched_count > 0:
-                        logger.info(f"Found {unmatched_count} unmatched items.")
-
-                except Exception as e_item_processing:
-                    logger.exception(
-                        "Error during item pairing or deviation collection."
-                    )
-                    # Add a deviation to the main report?
-                    document_deviations.append(
-                        FieldDeviation(
-                            code="item-processing-failed",
-                            message=str(e_item_processing),
-                            severity=DeviationSeverity.HIGH,
-                        )
-                    )
-
-            logger.info("--- STEP 4: Generating Match Report ---")
-            try:
-                final_report = generate_match_report(
-                    doc1,
-                    doc2,
-                    processed_item_pairs,
-                    document_deviations,
-                    match_confidence=match_confidence,
-                )
-                logger.info(
-                    f"Match report generated successfully (ID: {final_report.get('id')})."
-                )
-            except Exception as e:
-                logger.exception("Error occurred during match report generation.")
-                # Fallback: create a basic error report
-                final_report = {
-                    "error": "Failed to generate final match report",
-                    "details": str(e),
-                    "documents": [  # Try to include basic doc info
-                        {"kind": doc1.get("kind", "unknown"), "id": doc1.get("id")},
-                        {"kind": doc2.get("kind", "unknown"), "id": doc2.get("id")},
-                    ],
-                    "labels": ["matched", "report-generation-error"],
-                }
+        if not reports:
+            # All pairings failed to generate reports - treat as no-match
+            logger.warning(
+                "All pairings failed to generate reports. Returning no-match."
+            )
+            no_match_report = generate_no_match_report(
+                input_document, no_match_confidence=CONFIDENT_NO_MATCH_CERTAINTY
+            )
+            reports.append(no_match_report)
 
     else:  # No pairings predicted
         logger.info("--- STEP 4: Generating No-Match Report ---")
         try:
-            # Use low certainty value since no candidates matched - we're confident
-            # this is a no-match among the provided candidates.
-            final_report = generate_no_match_report(
+            no_match_report = generate_no_match_report(
                 input_document, no_match_confidence=CONFIDENT_NO_MATCH_CERTAINTY
             )
             logger.info(
-                f"No-match report generated successfully (ID: {final_report.get('id')})."
+                f"No-match report generated successfully (ID: {no_match_report.get('id')})."
             )
+            reports.append(no_match_report)
         except Exception as e:
             logger.exception("Error occurred during no-match report generation.")
             # Fallback: basic error report
-            final_report = {
+            error_report = {
                 "error": "Failed to generate no-match report",
                 "details": str(e),
-                "documents": [  # Try to include basic doc info
+                "documents": [
                     {
                         "kind": input_document.get("kind", "unknown"),
                         "id": input_document.get("id"),
@@ -366,11 +420,13 @@ def run_matching_pipeline(
                 ],
                 "labels": ["no-match", "report-generation-error"],
             }
+            reports.append(error_report)
 
     logger.info(
         f"--- Pipeline Finished for Document ID: {input_document.get('id', 'N/A')} ---"
     )
-    return final_report
+    logger.info(f"Generated {len(reports)} match report(s).")
+    return reports
 
 
 # Helper for __main__ test
@@ -497,24 +553,21 @@ if __name__ == "__main__":
         exit(1)
 
     logger.info("--- Running Pipeline via run_matching_pipeline (__main__ Test) ---")
-    final_report = run_matching_pipeline(
+    reports = run_matching_pipeline(
         predictor,
         input_document,
         historical_documents,
     )
 
-    logger.info("\n--- FINAL REPORT (Standalone Test) ---")
-    if final_report:
-        # from app import adapt_report_to_v3
-        # final_report = adapt_report_to_v3(final_report)
+    logger.info("\n--- FINAL REPORTS (Standalone Test) ---")
+    if reports:
         try:
-            print(json.dumps(final_report, indent=2, default=str))
+            logger.info(f"Generated {len(reports)} report(s):")
+            print(json.dumps(reports, indent=2, default=str))
         except Exception as e:
-            logger.error(f"Failed to serialize final report to JSON: {e}")
-            print(
-                f"Error: Could not display final report.\nReport data: {final_report}"
-            )
+            logger.error(f"Failed to serialize reports to JSON: {e}")
+            print(f"Error: Could not display reports.\nReport data: {reports}")
     else:
-        logger.error("No final report was generated by the pipeline.")
+        logger.error("No reports were generated by the pipeline.")
 
     logger.info("\nStandalone Pipeline Test finished.")

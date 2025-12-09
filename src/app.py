@@ -172,12 +172,12 @@ async def request_handler(request: Request):
             matching_service.initialize()
 
         # Delegate to matching service for processing
-        final_report, log_entry = matching_service.process_document(
+        final_reports, log_entry = matching_service.process_document(
             document, candidate_documents, trace_id
         )
 
         # Handle errors
-        if not final_report:
+        if not final_reports:
             logger.error(json.dumps(log_entry))
             raise HTTPException(
                 status_code=500, detail="Matching service failed to process document"
@@ -185,7 +185,11 @@ async def request_handler(request: Request):
 
         # Log success and return result
         logger.info(json.dumps(log_entry))
-        return final_report
+
+        # Return array of reports for API consistency
+        # For three-way matching, this will contain multiple reports
+        # For simple matching, it will contain a single report
+        return final_reports
 
     except json.JSONDecodeError:
         logger.error(f"Trace ID {trace_id}: Failed to decode JSON request body.")

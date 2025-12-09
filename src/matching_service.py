@@ -304,9 +304,9 @@ class MatchingService:
         document: Dict,
         candidate_documents: List[Dict],
         trace_id: str = "<trace_id missing>",
-    ) -> Tuple[Optional[Dict], Dict]:
+    ) -> Tuple[Optional[List[Dict]], Dict]:
         """
-        Process a document against candidate documents and return a matching report.
+        Process a document against candidate documents and return matching reports.
 
         Args:
             document: The document to process
@@ -314,7 +314,10 @@ class MatchingService:
             trace_id: Trace ID for logging
 
         Returns:
-            tuple containing (matching report, log entry)
+            tuple containing (list of matching reports, log entry)
+            For three-way matching, the list may contain multiple reports.
+            For simple matching, the list contains one report.
+            Returns (None, log_entry) on critical errors.
         """
         # Ensure we have a predictor if needed - lazy initialization
         if self._predictor is None and USE_PREDICTION:
@@ -344,11 +347,11 @@ class MatchingService:
                 f"Trace ID {trace_id}: Site '{site}' is whitelisted. Attempting real pipeline matching."
             )
             try:
-                pipeline_report = run_matching_pipeline(
+                pipeline_reports = run_matching_pipeline(
                     self._predictor, document, candidate_documents
                 )
 
-                if pipeline_report is None:
+                if pipeline_reports is None:
                     logger.error(
                         f"Trace ID {trace_id}: Pipeline run failed critically for document {doc_id}."
                     )
@@ -358,38 +361,47 @@ class MatchingService:
                     )
                     return None, log_entry
 
-                final_report = self.adapt_report_to_v3(pipeline_report)
-                final_report["metrics"].append(
-                    {"name": "candidate-documents", "value": len(candidate_documents)}
-                )
-                final_report["internal"] = final_report.get("internal", [])
-                final_report["internal"].append(
-                    {
-                        "name": "candidate-documents",
-                        "value": [
-                            {"kind": cd["kind"], "id": cd["id"]}
-                            for cd in candidate_documents
-                        ],
-                    }
-                )
+                # Adapt all reports to v3 and add candidate documents info
+                final_reports = []
+                for pipeline_report in pipeline_reports:
+                    final_report = self.adapt_report_to_v3(pipeline_report)
+                    final_report["metrics"].append(
+                        {
+                            "name": "candidate-documents",
+                            "value": len(candidate_documents),
+                        }
+                    )
+                    final_report["internal"] = final_report.get("internal", [])
+                    final_report["internal"].append(
+                        {
+                            "name": "candidate-documents",
+                            "value": [
+                                {"kind": cd["kind"], "id": cd["id"]}
+                                for cd in candidate_documents
+                            ],
+                        }
+                    )
+                    final_reports.append(final_report)
 
-                if not final_report:
+                if not final_reports:
                     logger.error(
-                        f"Trace ID {trace_id}: Pipeline returned an error for doc {doc_id}"
+                        f"Trace ID {trace_id}: Pipeline returned empty reports list for doc {doc_id}"
                     )
                     log_entry["level"] = "error"
                     log_entry["message"] = (
-                        f"Pipeline returned an error for doc {doc_id}"
+                        f"Pipeline returned empty reports list for doc {doc_id}"
                     )
                     return None, log_entry
 
                 log_entry["message"] = (
-                    f"Successfully processed document {doc_id} using pipeline."
+                    f"Successfully processed document {doc_id} using pipeline. Generated {len(final_reports)} report(s)."
                 )
-                log_entry["matchResult"] = final_report.get("labels", ["unknown"])[
+                # Log the first report's match result for backward compatibility
+                log_entry["matchResult"] = final_reports[0].get("labels", ["unknown"])[
                     0
-                ]  # Log match/no-match
-                return final_report, log_entry
+                ]
+                log_entry["numReports"] = len(final_reports)
+                return final_reports, log_entry
 
             except Exception as e:
                 logger.exception(
@@ -409,4 +421,5 @@ class MatchingService:
 
             log_entry["message"] = f"Processed document {doc_id} using dummy logic."
             log_entry["matchResult"] = dummy_report.get("labels", ["unknown"])[0]
-            return dummy_report, log_entry
+            # Return as list for consistency
+            return [dummy_report], log_entry
