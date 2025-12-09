@@ -223,6 +223,50 @@ class MatchingService:
         except ValueError:
             partner_future_certainty = DUMMY_CERTAINTY
 
+        # Build metrics list including the missing document type
+        metrics = [
+            {"name": "candidate-documents", "value": 1},
+            {"name": "certainty", "value": DUMMY_CERTAINTY},
+            {
+                "name": "deviation-severity",
+                "value": DeviationSeverity.HIGH.value,
+            },
+            {
+                "name": f"{doc_kind}-has-future-match-certainty",
+                "value": doc_future_certainty,
+            },
+            {
+                "name": f"{partner_kind}-has-future-match-certainty",
+                "value": partner_future_certainty,
+            },
+        ]
+
+        # Add future-match-certainty for the "missing" document type in PO-Hub model
+        try:
+            kind_enum = DocumentKind(doc_kind)
+            partner_kind_enum = DocumentKind(partner_kind)
+            matched_kinds = {kind_enum, partner_kind_enum}
+            all_kinds = {
+                DocumentKind.INVOICE,
+                DocumentKind.PURCHASE_ORDER,
+                DocumentKind.DELIVERY_RECEIPT,
+            }
+            missing_kinds = all_kinds - matched_kinds
+
+            for missing_kind in missing_kinds:
+                dummy_doc = {"kind": missing_kind.value}
+                metrics.append(
+                    {
+                        "name": f"{missing_kind.value}-has-future-match-certainty",
+                        "value": calculate_future_match_certainty(
+                            dummy_doc, missing_kind, is_matched=False
+                        ),
+                    }
+                )
+        except ValueError:
+            # If there's an error determining document kinds, skip the missing metric
+            pass
+
         report = {
             "version": "v3",
             "id": report_id,
@@ -278,22 +322,7 @@ class MatchingService:
                     "item_unchanged_certainty": DUMMY_CERTAINTY,
                 }
             ],
-            "metrics": [
-                {"name": "candidate-documents", "value": 1},
-                {"name": "certainty", "value": DUMMY_CERTAINTY},
-                {
-                    "name": "deviation-severity",
-                    "value": DeviationSeverity.HIGH.value,
-                },
-                {
-                    "name": f"{doc_kind}-has-future-match-certainty",
-                    "value": doc_future_certainty,
-                },
-                {
-                    "name": f"{partner_kind}-has-future-match-certainty",
-                    "value": partner_future_certainty,
-                },
-            ],
+            "metrics": metrics,
             "labels": ["match"],
         }
 

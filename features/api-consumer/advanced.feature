@@ -6,9 +6,7 @@ Feature: Advanced Document Matching Features
   Background:
     Given the document matching service is available
 
-  # NOTE: API does not produce "delivery-receipt-has-future-match-certainty" metric
-  # BLOCKED BY: #61 (Add delivery-receipt-has-future-match-certainty metric)
-  @story-1.1 @advanced @future_match @wip
+  @story-1.1 @advanced @future_match @implemented
   Scenario: Future Match Certainty
     Given I have a primary invoice document
     And I have a candidate purchase order document

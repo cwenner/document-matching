@@ -27,7 +27,6 @@ def context():
 # ==============================================================================
 
 
-@pytest.mark.wip
 @scenario(
     str(get_feature_path("api-consumer/advanced.feature")),
     "Future Match Certainty",
@@ -35,8 +34,8 @@ def context():
 def test_future_match_certainty():
     """Test future match certainty metrics in response.
 
-    NOTE: Currently marked as WIP because the API does not produce
-    'delivery-receipt-has-future-match-certainty' metric. See issue #61.
+    Tests that all three document types have future-match-certainty metrics
+    in the PO-Hub model, including the 'missing' document type.
     """
     pass
 
