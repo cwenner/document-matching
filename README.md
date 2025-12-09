@@ -231,6 +231,9 @@ API specifications are available in the `docs/` directory:
 - `DISABLE_MODELS=true` - Disable ML model loading (uses dummy logic)
 - `DOCPAIR_MODEL_PATH` - Custom path to ML model file
 - `PYTHONPATH=src` - Required for running the application
+- `CORS_ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins (default: `*` for all origins)
+  - Example: `CORS_ALLOWED_ORIGINS="https://example.com,https://app.example.com"`
+  - Use `*` to allow all origins (not recommended for production)
 
 ### Whitelisted Sites
 

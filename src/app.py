@@ -1,9 +1,11 @@
 import json
 import logging
+import os
 from typing import Any, List, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
@@ -69,6 +71,27 @@ CANDIDATE_PROCESSING_CAP = 1000
 
 # --- FastAPI App ---
 app = FastAPI()
+
+# --- CORS Configuration ---
+# Get allowed origins from environment variable (comma-separated)
+# Default to ["*"] for development if not specified
+cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+if cors_origins_env == "*":
+    allowed_origins = ["*"]
+else:
+    # Split by comma and strip whitespace
+    allowed_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+logger.info(f"✔ CORS configured with allowed origins: {allowed_origins}")
 logger.info("✔ Matching Service API Ready")
 
 
