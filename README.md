@@ -231,6 +231,8 @@ API specifications are available in the `docs/` directory:
 - `DISABLE_MODELS=true` - Disable ML model loading (uses dummy logic)
 - `DOCPAIR_MODEL_PATH` - Custom path to ML model file
 - `PYTHONPATH=src` - Required for running the application
+- `MATCH_CONFIDENCE_THRESHOLD` - Confidence threshold for "matched" label (default: 0.5, range: 0.0-1.0)
+- `NO_MATCH_CONFIDENCE_THRESHOLD` - Confidence threshold for "no-match" label (default: 0.2, range: 0.0-1.0)
 
 ### Whitelisted Sites
 
